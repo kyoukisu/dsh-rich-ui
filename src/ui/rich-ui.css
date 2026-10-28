@@ -289,7 +289,7 @@
   width: 34px;
   height: 21px;
   border-radius: 30px;
-  background: #d6d6d6;
+  background: color-mix(in srgb, var(--ru-ink) 22%, transparent);
   position: relative;
   flex-shrink: 0;
   cursor: pointer;
@@ -485,16 +485,16 @@
   margin-top: 2px;
 }
 .ru-callout.ru-success {
-  background: var(--ru-soft);
-  color: var(--ru-accent);
+  background: color-mix(in srgb, var(--ru-success) 12%, var(--ru-bg));
+  color: var(--ru-success);
 }
 .ru-callout.ru-error {
-  background: #fceeee;
-  color: #b73737;
+  background: color-mix(in srgb, var(--ru-danger) 12%, var(--ru-bg));
+  color: var(--ru-danger);
 }
 .ru-callout.ru-warning {
-  background: #fff7e5;
-  color: #916516;
+  background: color-mix(in srgb, var(--ru-warning-text) 14%, var(--ru-bg));
+  color: var(--ru-warning-text);
 }
 .ru-table-wrap {
   overflow-x: auto;
@@ -609,6 +609,45 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.55;
+}
+.ru-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 12px;
+  color: var(--ru-muted);
+}
+.ru-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ru-meta-item + .ru-meta-item::before {
+  content: "·";
+  margin-right: 4px;
+  color: var(--ru-muted);
+}
+.ru-entity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ru-success);
+}
+.ru-entity-badge[data-tone="warning"] {
+  color: var(--ru-warning-text);
+}
+.ru-entity-badge[data-tone="danger"] {
+  color: var(--ru-danger);
+}
+.ru-entity-badge[data-tone="accent"] {
+  color: var(--ru-accent);
+}
+.ru-entity-badge[data-tone="info"] {
+  color: var(--ru-muted);
 }
 .ru-entity-row > svg {
   flex-shrink: 0;
@@ -946,6 +985,7 @@ body[data-ds-dark-theme] .rich-ui {
   --ru-success: #74c79f;
   --ru-warning-text: #e0b062;
   --ru-danger: #f08a80;
+  --ru-soft: color-mix(in srgb, var(--ru-success) 16%, transparent);
   color-scheme: dark;
 }
 body[data-ds-dark-theme] .rich-ui .ru-code,

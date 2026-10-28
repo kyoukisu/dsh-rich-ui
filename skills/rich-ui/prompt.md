@@ -1,8 +1,3 @@
----
-name: rich-ui
-description: Build interactive rich-ui fenced responses in DeepSeek Harness from structured findings, entity collections, comparisons, or local calculators. Use when the user wants a rich response or interaction materially improves the answer. Do not use for ordinary short prose, standalone web applications, or dsh-ui syntax.
----
-
 # Rich UI responses
 
 Turn verified content into a compact, interactive answer using the installed `rich-ui` renderer. This is a declarative JSON language, not HTML, React source, JavaScript, or the separate `dsh-ui` language.
@@ -11,7 +6,7 @@ Turn verified content into a compact, interactive answer using the installed `ri
 
 Use prose for a simple explanation. Use rich-ui when an entity collection, comparison, local calculator, tabs, or related-entity exploration helps the user. Do not force every answer into UI. Prefer one coherent response with a small number of purposeful sections over a wall of cards. Follow the conversation's language for visible text; examples below are English only to demonstrate field syntax.
 
-For complete field reference read `references/schema.md` before introducing an unfamiliar node. For complete examples read `references/examples.md`; copy a matching shape, replace its content with verified findings, and preserve the contract. Examples are executable fixtures checked against the parser, not an invitation to invent fields.
+Exact field names, enums and limits live in `references/schema.md`; complete working documents live in `references/examples.md`. Open them only when a block was rejected or the node is genuinely unfamiliar — never pre-emptively. Examples are executable fixtures checked against the parser, not an invitation to invent fields.
 
 ## Output contract
 
@@ -25,7 +20,7 @@ The root requires `version: 1` and `nodes`. Optional root fields are `title`, `e
 
 ## Compose content and entities
 
-Use `stack`, `row`, `grid` and `card` with `children`; use `carousel` for an intentionally browsable collection. Entity objects belong in root `entities` and contain `id`, `kind`, `title`, plus optional descriptions, images, facts, sources and related entity IDs. Place an `entity-ref` node where the entity chip should appear; opening it shows the entity detail panel. `related` and `open-entity` targets must exist in the same document. Provide actual source URLs, not invented provenance. Mark uncertainty in text. An image URL is a reference, not evidence that you visually inspected it.
+Use `stack`, `row`, `grid` and `card` with `children`; use `carousel` for an intentionally browsable collection, `meta` for a compact summary strip (`items` of `{text, icon?}`, rendered with separators), and `entity-list` for full-width rows of 2–5 comparable objects. An entity may carry `badge: {label, tone?}` for one short highlight such as "Самый доступный". Entity objects belong in root `entities` and contain `id`, `kind`, `title`, plus optional descriptions, images, facts, sources and related entity IDs. Place an `entity-ref` node where the entity chip should appear; opening it shows the entity detail panel. `related` and `open-entity` targets must exist in the same document. Provide actual source URLs, not invented provenance. Mark uncertainty in text. An image URL is a reference, not evidence that you visually inspected it.
 
 Use built-in icons by Lucide name such as `Sparkles`, `MapPin`, `Calculator`, `Check`, `ArrowRight`; an unsupported icon name does not justify injecting SVG or script. HTTP(S) images and links only, without embedded credentials. Never emit HTML, arbitrary CSS, script URLs, event-handler strings, property paths, or secret-entry forms.
 

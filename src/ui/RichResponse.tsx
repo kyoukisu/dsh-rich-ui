@@ -19,6 +19,10 @@ import {
   Zap,
   Search,
   ImageOff,
+  Package,
+  Wallet,
+  Truck,
+  Tag,
 } from "lucide-react";
 import {
   parseRichSpec,
@@ -51,6 +55,11 @@ const glyphs: Record<string, React.ComponentType<any>> = {
   film: Film,
   book: BookOpen,
   "map-pin": MapPin,
+  package: Package,
+  box: Package,
+  wallet: Wallet,
+  truck: Truck,
+  tag: Tag,
 };
 function Inline({ text }: { text: string }) {
   return (
@@ -366,6 +375,28 @@ export function RichResponse({
             </span>
           );
         }
+        case "meta":
+          return (
+            <div key={key} className="ru-meta">
+              {n.items.map((item, i) => (
+                <span key={i} className="ru-meta-item">
+                  {item.icon && (
+                    <span
+                      className="ru-icon"
+                      data-tone="muted"
+                      aria-hidden="true"
+                    >
+                      {React.createElement(
+                        glyphs[item.icon.toLowerCase()] ?? Info,
+                        { size: 15, strokeWidth: 1.7 },
+                      )}
+                    </span>
+                  )}
+                  {item.text}
+                </span>
+              ))}
+            </div>
+          );
         case "entity-list":
           return (
             <EntityRows
@@ -731,6 +762,15 @@ function EntityRows({
               {entity.description && (
                 <span className="ru-entity-row-description">
                   {entity.description}
+                </span>
+              )}
+              {entity.badge && (
+                <span
+                  className="ru-entity-badge"
+                  data-tone={entity.badge.tone ?? "success"}
+                >
+                  <Check size={14} aria-hidden="true" />
+                  {entity.badge.label}
                 </span>
               )}
             </span>

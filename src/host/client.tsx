@@ -120,6 +120,34 @@ export function fencePersistenceKey(
   ]);
 }
 
+/**
+ * The harness replaces an unrecognized fence language with its localized
+ * "Code block" heading, so the literal `rich-ui` label is not visible for a
+ * plain ```rich-ui fence. Discovery therefore combines the banner label with a
+ * strict payload signature:
+ *   - explicit single-token language other than `rich-ui` => never claim it;
+ *   - explicit `rich-ui` => claim it;
+ *   - generic/absent label => claim only a payload that starts like a spec
+ *     document, which the strict parser still has to accept.
+ * Ordinary JSON code blocks keep rendering as code.
+ */
+export function isRichFence(
+  source: HTMLElement,
+  body: HTMLElement,
+  raw: string,
+): boolean {
+  const banner = source.querySelector("[data-code-block-banner]");
+  const label =
+    [...(banner ?? source).querySelectorAll("*")]
+      .filter((element) => !body.contains(element))
+      .filter((element) => element.children.length === 0)
+      .map((element) => element.textContent?.trim() ?? "")
+      .find((text) => text.length > 0) ?? "";
+  const token = label.toLowerCase();
+  if (/^[a-z0-9+#._-]{1,24}$/.test(token)) return token === "rich-ui";
+  return /^\{\s*"version"\s*:\s*1\s*,/.test(raw.trimStart());
+}
+
 /** Captures the session when the fence mounts, never at the later click. */
 export function actionHandler(
   ctx: ClientContext,
@@ -186,16 +214,12 @@ export function installDomRenderer(
         source.querySelector("pre") ??
         source.querySelector("[data-code-block-content]");
       if (!body) continue;
-      // Exact leaf banner label, never text from inside the JSON/code body.
-      const labelled = [...source.querySelectorAll("*")].some(
-        (element) =>
-          !body.contains(element) &&
-          element.children.length === 0 &&
-          element.textContent?.trim() === "rich-ui",
-      );
       const mount = mounts.get(source);
       const raw = body.textContent ?? "";
-      if (!labelled || source.closest("[data-streaming]")) {
+      if (
+        !isRichFence(source, body, raw) ||
+        source.closest("[data-streaming]")
+      ) {
         if (mount) remove(source, mount);
         continue;
       }

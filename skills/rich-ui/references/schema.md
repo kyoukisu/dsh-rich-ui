@@ -13,6 +13,8 @@ Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?:
 - `text`: `{type:"text",content:Expr,variant?:"body"|"title"|"subtitle"|"caption"}`.
 - Layout: `{type:"stack"|"row"|"grid"|"card",children:Node[],gap?:number,columns?:integer,title?:string}`. Gap 0–128; columns 1–12. The field is `children`, never `items`.
 - `carousel`: `{type:"carousel",children:Node[]}`.
+- `meta`: `{type:"meta",items:[{text:string,icon?:string}]}` — one inline summary strip ("4 модели · От 1 382 ₽ · Доставка 7–18 ноября"). Not for paragraphs.
+- entity `badge`: `{label:string,tone?:"success"|"info"|"warning"|"danger"|"accent"}` — one short highlight under a row, e.g. cheapest or smart-home support. Enum values only.
 - `icon`: `{type:"icon",name:string,size?:number,tone?:"default"|"muted"|"success"|"warning"|"danger"|"info"|"accent"}`. Size 8–128; name starts with a letter and contains only letters/digits/hyphen, up to 64 characters. Use Lucide PascalCase names. No inline SVG, no arbitrary colours: `tone` is a semantic token so both themes stay legible. Use `danger` for failures, `warning` for blocked/at-risk state, `muted` for neutral timeline marks.
 - `entity-list`: `{type:"entity-list",entityIds:string[]}` — full-width rows (compact poster, kind, title, subtitle, short description, chevron). Every id must be declared in `entities`. Prefer rows for 2–5 comparable objects; use `carousel` for browsing many posters.
 - `checkbox`: `{type:"checkbox",stateKey:string,label:string}` — boolean consent/selection, distinct from the `switch` toggle.

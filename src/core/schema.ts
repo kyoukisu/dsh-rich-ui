@@ -34,6 +34,10 @@ export type RichAction =
   | { type: "copy"; text: Expr }
   | { type: "open-url"; url: string }
   | { type: "send-message"; text: Expr };
+export interface EntityBadge {
+  label: string;
+  tone?: "success" | "info" | "warning" | "danger" | "accent";
+}
 export interface Entity {
   id: string;
   kind: string;
@@ -45,6 +49,8 @@ export interface Entity {
   facts?: { label: string; value: Scalar }[];
   sources?: { title: string; url: string }[];
   related?: string[];
+  /** Short highlight under the row, e.g. "Самый доступный". */
+  badge?: EntityBadge;
 }
 export interface NodeBase {
   id?: string;
@@ -68,6 +74,15 @@ export interface IconNode extends NodeBase {
   /** Semantic colour only; arbitrary values are rejected so themes stay legible. */
   tone?:
     "default" | "muted" | "success" | "warning" | "danger" | "info" | "accent";
+}
+export interface MetaItem {
+  text: string;
+  icon?: string;
+}
+/** Compact inline summary strip: "4 модели · От 1 382 ₽ · Доставка 7–18 ноября". */
+export interface MetaNode extends NodeBase {
+  type: "meta";
+  items: MetaItem[];
 }
 export interface EntityListNode extends NodeBase {
   type: "entity-list";
@@ -198,6 +213,7 @@ export type RichNode =
   | ContainerNode
   | IconNode
   | EntityListNode
+  | MetaNode
   | ImageNode
   | CarouselNode
   | EntityRefNode
@@ -473,6 +489,7 @@ export function parseRichSpec(input: unknown): RichSpec {
           "facts",
           "sources",
           "related",
+          "badge",
         ],
       );
       key(e.id);
@@ -498,6 +515,19 @@ export function parseRichSpec(input: unknown): RichSpec {
           str(x.title);
           url(x.url);
         });
+      if (e.badge !== undefined) {
+        const badge = obj(e.badge);
+        fields(badge, ["label"], ["tone"]);
+        str(badge.label);
+        if (badge.tone !== undefined)
+          choice(badge.tone, [
+            "success",
+            "info",
+            "warning",
+            "danger",
+            "accent",
+          ]);
+      }
       if (e.related !== undefined)
         arr(e.related, (r) => {
           key(r);
@@ -580,6 +610,22 @@ export function parseRichSpec(input: unknown): RichSpec {
             "accent",
           ]);
         break;
+      case "meta": {
+        check(["items"]);
+        if (!Array.isArray(o.items) || o.items.length === 0)
+          fail("Meta strip cannot be empty");
+        arr(o.items, (value) => {
+          const item = obj(value);
+          fields(item, ["text"], ["icon"]);
+          str(item.text);
+          if (item.icon !== undefined) {
+            str(item.icon);
+            if (!/^[a-zA-Z][a-zA-Z0-9-]{0,63}$/.test(item.icon))
+              fail("Invalid meta icon");
+          }
+        });
+        break;
+      }
       case "entity-list": {
         check(["entityIds"]);
         if (!Array.isArray(o.entityIds) || o.entityIds.length === 0)

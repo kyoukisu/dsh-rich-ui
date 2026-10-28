@@ -35,7 +35,11 @@ docker run --rm --network host --ipc host \
 
 The browser container sees only this project, not the user's home or main DSH profile. It uses host networking to reach the loopback-only laboratory. For initial regression baselines append `--update-snapshots`; baseline generation is not a visual-fidelity approval. Inspect the results first.
 
-See [quality gates](docs/QUALITY.md) and [DSH integration](docs/DSH-INTEGRATION.md).
+See [parity scorecard](docs/PARITY.md), [quality gates](docs/QUALITY.md) and [DSH integration](docs/DSH-INTEGRATION.md).
+
+## Parity, in numbers
+
+Measured, not claimed: **12 of 21** reference scenarios reproduced, 3 partial, 6 missing; deviations itemised in [docs/PARITY.md](docs/PARITY.md). Goldens in this repository are regression baselines and never evidence of visual fidelity.
 
 ## Architecture
 

@@ -329,3 +329,49 @@ describe("semantic icon colour and entity rows", () => {
       expect(() => parseRichSpec(spec(bad))).toThrow();
   });
 });
+
+describe("commerce presentation", () => {
+  it("accepts a meta strip and entity badges, rejecting bad shapes", () => {
+    const base = {
+      version: 1,
+      entities: [
+        {
+          id: "a",
+          kind: "Чайник",
+          title: "A",
+          badge: { label: "Хит", tone: "success" },
+        },
+      ],
+      nodes: [
+        { type: "meta", items: [{ icon: "package", text: "4 модели" }] },
+        { type: "entity-list", entityIds: ["a"] },
+      ],
+    };
+    expect(parseRichSpec(base)).toBeTruthy();
+    for (const bad of [
+      { ...base, nodes: [{ type: "meta", items: [] }] },
+      {
+        ...base,
+        nodes: [{ type: "meta", items: [{ text: "x", icon: "#bad" }] }],
+      },
+      {
+        ...base,
+        entities: [
+          { id: "a", kind: "k", title: "A", badge: { tone: "success" } },
+        ],
+      },
+      {
+        ...base,
+        entities: [
+          {
+            id: "a",
+            kind: "k",
+            title: "A",
+            badge: { label: "x", tone: "lime" },
+          },
+        ],
+      },
+    ])
+      expect(() => parseRichSpec(bad)).toThrow();
+  });
+});

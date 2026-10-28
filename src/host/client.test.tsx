@@ -30,16 +30,30 @@ async function tick() {
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
 }
-function source(raw = JSON.stringify(sample), kind = "assistant-step") {
+/** Mirrors the live harness markup: banner span inside data-code-wrap. */
+function source(
+  raw = JSON.stringify(sample),
+  kind = "assistant-step",
+  label = "Code block",
+) {
   const row = document.createElement("div");
   row.dataset.chatFlowKind = kind;
+  row.dataset.chatAnchorKey = "14:assistant-step15:1";
   const block = document.createElement("div");
   block.className = "md-code-block";
-  const label = document.createElement("div");
-  label.textContent = "rich-ui";
+  block.dataset.codeWrap = "true";
+  const banner = document.createElement("div");
+  banner.dataset.codeBlockBanner = "true";
+  const language = document.createElement("span");
+  language.className = "_language_1pq26_30";
+  language.textContent = label;
+  banner.append(language);
+  const content = document.createElement("div");
+  content.dataset.codeBlockContent = "true";
   const pre = document.createElement("pre");
   pre.textContent = raw;
-  block.append(label, pre);
+  content.append(pre);
+  block.append(banner, content);
   row.append(block);
   document.body.append(row);
   return { row, block, pre };
@@ -185,5 +199,39 @@ describe("installed-host DOM contract", () => {
     expect(actionHandler(context)).toBeUndefined();
     actionHandler(context, "x")?.("a".repeat(257));
     expect(send).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("live fence label rules", () => {
+  it("renders an unlabeled fence whose payload is a spec document", async () => {
+    const { block } = source(
+      JSON.stringify(sample),
+      "assistant-step",
+      "Code block",
+    );
+    dispose = installDomRenderer(ctx());
+    await tick();
+    expect(document.querySelector("[data-rich-ui-root]")).not.toBeNull();
+    expect(block.hidden).toBe(true);
+  });
+  it("keeps an explicitly labelled json block as code even if it parses", async () => {
+    const { block } = source(JSON.stringify(sample), "assistant-step", "json");
+    dispose = installDomRenderer(ctx());
+    await tick();
+    expect(document.querySelector("[data-rich-ui-root]")).toBeNull();
+    expect(block.hidden).toBe(false);
+  });
+  it("keeps an unlabeled block whose payload is ordinary JSON", async () => {
+    const { block } = source('{"hello":1}', "assistant-step", "Code block");
+    dispose = installDomRenderer(ctx());
+    await tick();
+    expect(document.querySelector("[data-rich-ui-root]")).toBeNull();
+    expect(block.hidden).toBe(false);
+  });
+  it("still accepts the explicit rich-ui label", async () => {
+    source(JSON.stringify(sample), "assistant-step", "rich-ui");
+    dispose = installDomRenderer(ctx());
+    await tick();
+    expect(document.querySelector("[data-rich-ui-root]")).not.toBeNull();
   });
 });
