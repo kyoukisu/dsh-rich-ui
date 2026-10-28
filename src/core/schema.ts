@@ -193,6 +193,8 @@ export interface CalloutNode extends NodeBase {
   type: "callout";
   content: Expr;
   tone?: "info" | "success" | "warning" | "error";
+  /** Optional one-line heading, rendered bold above the content. */
+  title?: string;
 }
 export interface DividerNode extends NodeBase {
   type: "divider";
@@ -757,7 +759,8 @@ export function parseRichSpec(input: unknown): RichSpec {
         });
         break;
       case "callout":
-        check(["content"], ["tone"]);
+        check(["content"], ["tone", "title"]);
+        if (o.title !== undefined) str(o.title);
         validateExpr(o.content);
         if (o.tone !== undefined)
           choice(o.tone, ["info", "success", "warning", "error"]);

@@ -366,5 +366,68 @@ export const configurator: RichSpec = {
     },
   ],
 };
-export const demos = { technical, films, calculator, configurator };
+
+export const listing: RichSpec = {
+  version: 1,
+  title: "Чайники на Ozon",
+  nodes: [
+    {
+      type: "text",
+      content:
+        "Подборка из 3 электрических чайников — от простого стеклянного до моделей с сенсорным управлением.",
+    },
+    {
+      type: "meta",
+      items: [
+        { icon: "package", text: "4 модели" },
+        { icon: "wallet", text: "От 1 382 ₽" },
+        { icon: "truck", text: "Доставка 7–18 ноября" },
+      ],
+    },
+    { type: "entity-list", entityIds: ["wk1760", "wk1500", "tuvio"] },
+    {
+      type: "callout",
+      tone: "info",
+      title: "Демонстрация",
+      content:
+        "Цены и наличие условные; постеры заменены нейтральными изображениями.",
+    },
+  ],
+  entities: [
+    {
+      id: "wk1760",
+      kind: "Чайник",
+      title: "Weissgauff WK 1760 EcoGlass",
+      subtitle: "1 382 ₽ · 1,7 л · стекло",
+      description: "LED-подсветка, 1850–2200 Вт",
+      badge: { label: "Самый доступный", tone: "success" },
+      image: "https://picsum.photos/seed/kettle-a/220/300",
+      facts: [{ label: "Объём", value: "1,7 л" }],
+      sources: [{ title: "Ozon", url: "https://www.ozon.ru/" }],
+    },
+    {
+      id: "wk1500",
+      kind: "Чайник",
+      title: "Weissgauff WK 1500 DT Touch",
+      subtitle: "2 459 ₽ · 1,5 л · сенсор",
+      description: "Дисплей и регулировка нагрева",
+      image: "https://picsum.photos/seed/kettle-b/220/300",
+      facts: [{ label: "Объём", value: "1,5 л" }],
+      sources: [{ title: "Ozon", url: "https://www.ozon.ru/" }],
+    },
+    {
+      id: "tuvio",
+      kind: "Чайник",
+      title: "Tuvio STRIX",
+      subtitle: "4 336 ₽ · 1,7 л",
+      description: "Поддержка Алисы",
+      badge: { label: "Умный дом", tone: "info" },
+      image: "https://picsum.photos/seed/kettle-c/220/300",
+      facts: [{ label: "Объём", value: "1,7 л" }],
+      sources: [{ title: "Ozon", url: "https://www.ozon.ru/" }],
+    },
+  ],
+};
+
+export const demos = { technical, films, listing, calculator, configurator };
 export type DemoName = keyof typeof demos;

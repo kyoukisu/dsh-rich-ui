@@ -417,6 +417,9 @@ export function RichResponse({
             <aside key={key} className={`ru-callout ru-${n.tone ?? "info"}`}>
               <Info size={18} />
               <div>
+                {n.title && (
+                  <strong className="ru-callout-title">{n.title}</strong>
+                )}
                 <Inline text={String(ev(n.content) ?? "")} />
               </div>
             </aside>

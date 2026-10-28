@@ -375,3 +375,14 @@ describe("commerce presentation", () => {
       expect(() => parseRichSpec(bad)).toThrow();
   });
 });
+
+describe("callout heading", () => {
+  it("accepts an optional title and still rejects unknown fields", () => {
+    expect(
+      parseRichSpec(spec({ type: "callout", content: "x", title: "Итог" })),
+    ).toBeTruthy();
+    expect(() =>
+      parseRichSpec(spec({ type: "callout", content: "x", subtitle: "y" })),
+    ).toThrow();
+  });
+});
