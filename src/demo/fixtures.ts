@@ -530,11 +530,22 @@ export const dashboard: RichSpec = {
         {
           type: "table",
           sortable: true,
+          filterable: true,
+          filterPlaceholder: "Найти задачу…",
           caption: "Нажми на заголовок, чтобы отсортировать.",
           columns: [
             { key: "task", label: "Задача" },
             { key: "owner", label: "Ответственный" },
-            { key: "status", label: "Статус" },
+            {
+              key: "status",
+              label: "Статус",
+              format: "status",
+              tones: {
+                Готово: "success",
+                "В работе": "warning",
+                Ожидание: "muted",
+              },
+            },
             { key: "progress", label: "Прогресс", align: "right" },
           ],
           rows: [

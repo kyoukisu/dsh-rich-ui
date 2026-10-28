@@ -333,11 +333,18 @@ Use this shape when the answer is a status page or a comparison with several kin
         {
           "type": "table",
           "sortable": true,
+          "filterable": true,
+          "filterPlaceholder": "Find a task…",
           "caption": "Sort by any column.",
           "columns": [
             { "key": "task", "label": "Task" },
-            { "key": "status", "label": "Status" },
-            { "key": "done", "label": "Done", "align": "right" }
+            {
+              "key": "status",
+              "label": "Status",
+              "format": "status",
+              "tones": { "Ready": "success", "In progress": "warning" }
+            },
+            { "key": "done", "label": "Done", "format": "number" }
           ],
           "rows": [
             { "task": "Design", "status": "Ready", "done": 100 },

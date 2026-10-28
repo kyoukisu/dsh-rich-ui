@@ -229,3 +229,21 @@ test("diagram steps keep their order and connector labels", async ({
     "описание интерфейса",
   );
 });
+
+test("table filters rows locally and renders semantic status tones", async ({
+  page,
+}) => {
+  await page.goto("/?demo=dashboard");
+  const filter = page.getByRole("searchbox", { name: "Фильтр по таблице" });
+  await filter.fill("Разработка");
+  await expect(page.locator(".ru-table-wrap tbody tr")).toHaveCount(1);
+  await expect(page.locator(".ru-table-wrap tbody tr")).toContainText("Марк");
+  await expect(page.locator(".ru-table-count")).toHaveText("1 из 4");
+  await filter.fill("нет такой задачи");
+  await expect(page.locator(".ru-table-none")).toHaveText("Ничего не найдено");
+  await filter.fill("");
+  await expect(page.locator(".ru-table-wrap tbody tr")).toHaveCount(4);
+  await expect(
+    page.locator('.ru-status-pill[data-tone="success"]').first(),
+  ).toHaveText("Готово");
+});

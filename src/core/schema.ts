@@ -223,10 +223,15 @@ export interface TabsNode extends NodeBase {
   stateKey: string;
   tabs: { id: string; label: string; children: RichNode[] }[];
 }
+export type TableFormat = "text" | "number" | "status";
 export interface TableColumn {
   key: string;
   label: string;
   align?: "left" | "right" | "center";
+  /** `status` renders a tone pill; `number` groups digits and aligns right. */
+  format?: TableFormat;
+  /** For `status`: maps a cell's display string to a semantic tone. */
+  tones?: Record<string, Exclude<Tone, "default">>;
 }
 export interface TableNode extends NodeBase {
   type: "table";
@@ -234,6 +239,9 @@ export interface TableNode extends NodeBase {
   rows: Record<string, Expr>[];
   /** Client-side sorting by column; no model call. */
   sortable?: boolean;
+  /** Client-side substring filter across visible cells. */
+  filterable?: boolean;
+  filterPlaceholder?: string;
   caption?: string;
   empty?: string;
 }
@@ -880,15 +888,33 @@ export function parseRichSpec(input: unknown): RichSpec {
         break;
       }
       case "table": {
-        check(["columns", "rows"], ["sortable", "caption", "empty"]);
+        check(
+          ["columns", "rows"],
+          ["sortable", "filterable", "filterPlaceholder", "caption", "empty"],
+        );
         const keys = new Set<string>();
         arr(o.columns, (c) => {
           const p = obj(c);
-          fields(p, ["key", "label"], ["align"]);
+          fields(p, ["key", "label"], ["align", "format", "tones"]);
           key(p.key);
           str(p.label);
           if (p.align !== undefined)
             choice(p.align, ["left", "right", "center"]);
+          if (p.format !== undefined)
+            choice(p.format, ["text", "number", "status"]);
+          if (p.tones !== undefined) {
+            if (p.format !== undefined && p.format !== "status")
+              fail("tones require format: status");
+            const tones = obj(p.tones);
+            const entries = Object.entries(tones);
+            if (entries.length === 0 || entries.length > 32)
+              fail("Invalid tone map size");
+            for (const [label, tone] of entries) {
+              if (label.length === 0 || label.length > 64)
+                fail("Invalid tone label");
+              choice(tone, BRIGHT_TONES);
+            }
+          }
           if (keys.has(p.key as string)) fail("Duplicate column");
           keys.add(p.key as string);
         });
@@ -898,8 +924,13 @@ export function parseRichSpec(input: unknown): RichSpec {
             validateExpr(v);
           }
         });
-        if (o.sortable !== undefined && typeof o.sortable !== "boolean")
-          fail("Expected boolean");
+        for (const k of ["sortable", "filterable"])
+          if (o[k] !== undefined && typeof o[k] !== "boolean")
+            fail("Expected boolean");
+        if (o.filterPlaceholder !== undefined) {
+          str(o.filterPlaceholder);
+          if (o.filterable !== true) fail("filterPlaceholder needs filterable");
+        }
         if (o.caption !== undefined) str(o.caption);
         if (o.empty !== undefined) str(o.empty);
         break;

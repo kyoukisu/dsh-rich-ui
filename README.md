@@ -37,10 +37,10 @@ The renderer is a real React tree behind a strict schema. There is no generated 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-desktop-dark.png">
-    <img alt="Dashboard answer with three KPI cards, a two-series line chart, a sortable table and a vertical flow" src="docs/images/dashboard-desktop.png" width="820">
+    <img alt="Dashboard answer with three KPI cards, a two-series line chart, a sortable, filterable table with status pills and a vertical flow" src="docs/images/dashboard-desktop.png" width="820">
   </picture>
   <br>
-  <em>Metrics, a two-series chart with units and hover, a sortable table and an ordered flow — one document.</em>
+  <em>Metrics, a two-series chart with units and hover, a filterable table with status pills and an ordered flow — one document.</em>
 </p>
 
 <p align="center">
@@ -93,7 +93,7 @@ Things worth trying: *"build a budget calculator with three sliders"*, *"show th
 | Layout | `stack`, `row`, `grid`, `card`, `divider`, `meta` |
 | Text | `text` with inline `code`, **bold** and links; `callout` with optional title; `code` with highlighting, line numbers and copy |
 | Objects | `entity-ref`, `entity-list`, detail panel with gallery, facts, sources, related entities |
-| Data | `stat` (KPI card), `progress`, `status`, `table` (sortable), `chart` (bar / line / area / donut, 1–6 series, units, tooltips), `computed` |
+| Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status columns), `chart` (bar / line / area / donut, 1–6 series, units, tooltips), `computed` |
 | Flow | `diagram` with ordered steps, connector labels and branch depth |
 | Media | `image`, `image-group`, gallery lightbox, popover, tooltip |
 | Controls | `input` (text / number / date), `select`, `slider`, `switch`, `checkbox`, `radio`, `segmented`, `tabs` |
@@ -165,7 +165,7 @@ flowchart LR
 
 ## Parity with the reference
 
-Measured, not claimed: **14 of 27** reference scenarios reproduced, **3 partial**, **10 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: same-turn repair, table filters, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps. Inside Harness the detail panel still overlays the column instead of reflowing it.
+Measured, not claimed: **15 of 27** reference scenarios reproduced, **3 partial**, **9 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: same-turn repair, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps. Inside Harness the detail panel still overlays the column instead of reflowing it.
 
 Known limitation: the fence label is not preserved by Harness, so an unlabelled block is claimed only when its payload looks like a spec document and passes the strict parser. A `json`-labelled block is never claimed.
 
@@ -184,7 +184,7 @@ npm ci
 npm run dev            # lab at http://127.0.0.1:4173, HMR, no Harness needed
 npm run build          # typecheck + lab build
 npm run build:plugin   # the two real bundle artifacts
-npm test               # 108 unit, schema and DOM tests
+npm test               # 112 unit, schema and DOM tests
 npm run test:browser   # Playwright desktop + mobile (goldens never auto-update)
 ```
 

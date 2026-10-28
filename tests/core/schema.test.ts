@@ -482,3 +482,64 @@ describe("dashboard vocabulary", () => {
       expect(() => parseRichSpec(spec(node))).toThrow();
   });
 });
+
+describe("table formats and filtering", () => {
+  it("accepts status tones and a filter", () => {
+    const parsed = parseRichSpec(
+      spec({
+        type: "table",
+        filterable: true,
+        filterPlaceholder: "Find a task",
+        sortable: true,
+        columns: [
+          { key: "task", label: "Task" },
+          {
+            key: "state",
+            label: "State",
+            format: "status",
+            tones: { Done: "success", Blocked: "danger" },
+          },
+          { key: "value", label: "Value", format: "number" },
+        ],
+        rows: [{ task: "A", state: "Done", value: 12000 }],
+      }),
+    );
+    expect(parsed.nodes).toHaveLength(1);
+  });
+
+  it("rejects tone maps without a status column and malformed filters", () => {
+    for (const node of [
+      {
+        type: "table",
+        columns: [
+          { key: "a", label: "A", format: "text", tones: { x: "success" } },
+        ],
+        rows: [],
+      },
+      {
+        type: "table",
+        columns: [
+          { key: "a", label: "A", format: "status", tones: { x: "purple" } },
+        ],
+        rows: [],
+      },
+      {
+        type: "table",
+        columns: [{ key: "a", label: "A", format: "status", tones: {} }],
+        rows: [],
+      },
+      {
+        type: "table",
+        columns: [{ key: "a", label: "A" }],
+        rows: [],
+        filterPlaceholder: "x",
+      },
+      {
+        type: "table",
+        columns: [{ key: "a", label: "A", format: "money" }],
+        rows: [],
+      },
+    ])
+      expect(() => parseRichSpec(spec(node))).toThrow();
+  });
+});

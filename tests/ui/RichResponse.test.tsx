@@ -388,3 +388,70 @@ describe("dashboard vocabulary", () => {
     expect(host.textContent).toContain("javascript:alert(1)");
   });
 });
+
+describe("table formats and filtering", () => {
+  const spec: RichSpec = {
+    version: 1,
+    nodes: [
+      {
+        type: "table",
+        filterable: true,
+        sortable: true,
+        columns: [
+          { key: "task", label: "Task" },
+          {
+            key: "state",
+            label: "State",
+            format: "status",
+            tones: { Done: "success", Blocked: "danger" },
+          },
+        ],
+        rows: [
+          { task: "Design", state: "Done" },
+          { task: "Build", state: "Blocked" },
+          { task: "Test", state: "Waiting" },
+        ],
+      },
+    ],
+  };
+
+  it("renders semantic status pills and filters rows locally", () => {
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelectorAll(".ru-status-pill")).toHaveLength(3);
+    expect(
+      host.querySelector('.ru-status-pill[data-tone="success"]')?.textContent,
+    ).toBe("Done");
+    const input = host.querySelector<HTMLInputElement>(
+      'input[aria-label="Фильтр по таблице"]',
+    )!;
+    act(() => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!.call(input, "Build");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(host.querySelectorAll("tbody tr")).toHaveLength(1);
+    expect(host.querySelector("tbody tr td")?.textContent).toBe("Build");
+    expect(host.querySelector('[role="status"]')?.textContent).toContain(
+      "1 из 3",
+    );
+  });
+
+  it("shows a no-results row instead of an empty table", () => {
+    act(() => root.render(<RichResponse spec={spec} />));
+    const input = host.querySelector<HTMLInputElement>(
+      'input[aria-label="Фильтр по таблице"]',
+    )!;
+    act(() => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!.call(input, "nothing");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(host.querySelector(".ru-table-none")?.textContent).toBe(
+      "Ничего не найдено",
+    );
+  });
+});

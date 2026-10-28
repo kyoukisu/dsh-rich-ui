@@ -34,7 +34,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Panel that reflows the conversation column                            | Partial | the lab reflows; the DSH adapter overlays a fixed drawer                          |
 | Citations attached to prose                                           | Partial | sources live in the entity panel, not inline                                      |
 | Inline entity chip inside a sentence                                  | Partial | only block-level `entity-ref`                                                     |
-| Filterable tables                                                     | Missing | sorting only                                                                      |
+| Filterable tables                                                     | Covered | `dashboard`; local substring filter, visible count and a no-results row           |
 | Scatter plot                                                          | Missing | bar, line, area and donut only                                                    |
 | Mermaid / ER / sequence diagrams                                      | Missing | `diagram` is an ordered flow, not a graph layout engine                           |
 | Math (KaTeX)                                                          | Missing | not implemented                                                                    |
@@ -44,7 +44,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Persistent panel / canvas across turns                                 | Missing | not implemented                                                                    |
 | Mini-apps with isolated runtime                                       | Missing | deliberately out of scope                                                          |
 
-Coverage: **14 / 27** scenarios covered, **3 partial**, **10 missing**.
+Coverage: **15 / 27** scenarios covered, **3 partial**, **9 missing**.
 
 ## Visual deviations (known, not yet fixed)
 
@@ -70,6 +70,6 @@ Ordered by effect on daily use:
 1. Same-turn validation feedback, so a rejected block can be repaired without a second user message.
 2. Panel that participates in host layout instead of covering content.
 3. Inline citations and entity chips inside prose.
-4. Table filters, then scatter and richer chart options.
+4. Scatter and richer chart options.
 5. Math, media nodes, artifacts and maps.
 6. Provider-backed entity data with provenance and empty/error states.

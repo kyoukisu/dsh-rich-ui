@@ -1,10 +1,21 @@
 import React, { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import type { Scalar, TableNode } from "../../core/schema";
+import { ArrowDown, ArrowUp, ArrowUpDown, Search } from "lucide-react";
+import type { Scalar, TableColumn, TableNode, Tone } from "../../core/schema";
 import { evaluate } from "../../core/evaluator";
 import { formatNumber } from "./Metrics";
 
-type Row = { cells: Scalar[]; missing: boolean };
+type CellTone = Exclude<Tone, "default">;
+type Cell = { value: Scalar; text: string; tone?: CellTone };
+
+function display(column: TableColumn, value: Scalar): Cell {
+  if (value === null || value === "")
+    return { value, text: "—", tone: column.tones?.[""] };
+  const text =
+    typeof value === "number" && column.format !== "status"
+      ? formatNumber(value)
+      : String(value);
+  return { value, text, tone: column.tones?.[String(value)] };
+}
 
 function compare(left: Scalar, right: Scalar): number {
   const emptyLeft = left === null || left === "";
@@ -27,40 +38,52 @@ export function SortableTable({
   state: Record<string, Scalar>;
 }) {
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 } | null>(null);
-  const rows = useMemo<Row[]>(
+  const [query, setQuery] = useState("");
+  const rows = useMemo<Cell[][]>(
     () =>
-      node.rows.map((row) => ({
-        missing: false,
-        cells: node.columns.map((column) => {
+      node.rows.map((row) =>
+        node.columns.map((column) => {
           const expr = row[column.key];
-          if (expr === undefined) return null;
+          if (expr === undefined) return { value: null, text: "—" };
           try {
-            return evaluate(expr, state);
+            return display(column, evaluate(expr, state));
           } catch {
-            return null;
+            return { value: null, text: "—" };
           }
         }),
-      })),
+      ),
     [node, state],
   );
-  const ordered = useMemo(() => {
-    if (!sort) return rows;
+  const visible = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase("ru");
+    const filtered = needle
+      ? rows.filter((row) =>
+          row.some((cell) =>
+            cell.text.toLocaleLowerCase("ru").includes(needle),
+          ),
+        )
+      : rows;
+    if (!sort) return filtered;
     const index = node.columns.findIndex((column) => column.key === sort.key);
-    if (index < 0) return rows;
-    return [...rows].sort(
+    if (index < 0) return filtered;
+    return [...filtered].sort(
       (left, right) =>
-        compare(left.cells[index]!, right.cells[index]!) * sort.dir,
+        compare(left[index]!.value, right[index]!.value) * sort.dir,
     );
-  }, [rows, sort, node.columns]);
-  const numeric = node.columns.map((_, index) =>
-    rows.every(
-      (row) =>
-        row.cells[index] === null || typeof row.cells[index] === "number",
-    ),
+  }, [rows, sort, query, node.columns]);
+  const numeric = node.columns.map((column, index) =>
+    column.format === "number"
+      ? true
+      : rows.every(
+          (row) =>
+            row[index] === undefined ||
+            row[index]!.value === null ||
+            typeof row[index]!.value === "number",
+        ),
   );
   if (rows.length === 0)
     return <p className="ru-empty">{node.empty ?? "Нет данных"}</p>;
-  return (
+  const table = (
     <div className="ru-table-wrap">
       <table>
         {node.caption && <caption>{node.caption}</caption>}
@@ -68,12 +91,19 @@ export function SortableTable({
           <tr>
             {node.columns.map((column, index) => {
               const active = sort?.key === column.key;
-              const align = column.align ?? (numeric[index] ? "right" : "left");
+              const align =
+                column.align ??
+                (column.format === "status"
+                  ? "left"
+                  : numeric[index]
+                    ? "right"
+                    : "left");
               return (
                 <th
                   key={column.key}
                   scope="col"
                   data-align={align}
+                  data-format={column.format ?? "text"}
                   aria-sort={
                     active
                       ? sort.dir === 1
@@ -119,26 +149,75 @@ export function SortableTable({
           </tr>
         </thead>
         <tbody>
-          {ordered.map((row, index) => (
+          {visible.map((row, index) => (
             <tr key={index}>
-              {node.columns.map((column, cell) => (
-                <td
-                  key={column.key}
-                  data-align={
-                    column.align ?? (numeric[cell] ? "right" : "left")
-                  }
-                >
-                  {row.cells[cell] === null
-                    ? "—"
-                    : typeof row.cells[cell] === "number"
-                      ? formatNumber(row.cells[cell] as number)
-                      : String(row.cells[cell])}
-                </td>
-              ))}
+              {node.columns.map((column, cell) => {
+                const value = row[cell]!;
+                const align =
+                  column.align ??
+                  (column.format === "status"
+                    ? "left"
+                    : numeric[cell]
+                      ? "right"
+                      : "left");
+                return (
+                  <td
+                    key={column.key}
+                    data-align={align}
+                    data-format={column.format ?? "text"}
+                  >
+                    {column.format === "status" ? (
+                      <span
+                        className="ru-status-pill"
+                        data-tone={value.tone ?? "muted"}
+                      >
+                        <i aria-hidden="true" />
+                        {value.text}
+                      </span>
+                    ) : (
+                      value.text
+                    )}
+                  </td>
+                );
+              })}
             </tr>
           ))}
+          {visible.length === 0 && (
+            <tr>
+              <td
+                colSpan={node.columns.length}
+                className="ru-table-none"
+                role="status"
+              >
+                Ничего не найдено
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
+    </div>
+  );
+  if (!node.filterable) return table;
+  return (
+    <div className="ru-table-block">
+      <div className="ru-table-toolbar">
+        <label className="ru-table-filter">
+          <Search size={14} aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            aria-label="Фильтр по таблице"
+            placeholder={node.filterPlaceholder ?? "Фильтр…"}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
+        {query.trim() !== "" && (
+          <span className="ru-table-count" role="status">
+            {visible.length} из {rows.length}
+          </span>
+        )}
+      </div>
+      {table}
     </div>
   );
 }
