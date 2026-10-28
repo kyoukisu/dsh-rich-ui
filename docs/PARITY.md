@@ -52,10 +52,9 @@ Coverage: **15 / 27** scenarios covered, **4 partial**, **8 missing**.
 | --- | ------------------------------------------------------------------------------------------- | -------- |
 | 1   | Desktop drawer overlays the conversation inside DSH instead of reflowing the column         | S2       |
 | 2   | Typography follows the host font but uses our own scale and rhythm                          | S2       |
-| 3   | Entity row posters use a fixed 2:3 crop: good for film posters, tight for product photos    | S3       |
-| 4   | Wide tables scroll horizontally on a phone; the demo four-column table now fits             | S3       |
-| 5   | Chart omits scatter plots and custom series styling                                         | S3       |
-| 6   | Entity panel success geometry was never observed in the reference (anonymous share errored) | Unknown  |
+| 3   | Wide tables scroll horizontally on a phone; the demo four-column table now fits             | S3       |
+| 4   | Chart omits scatter plots and custom series styling                                         | S3       |
+| 5   | Entity panel success geometry was never observed in the reference (anonymous share errored) | Unknown  |
 
 ## What we are not measuring
 

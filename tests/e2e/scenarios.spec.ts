@@ -267,3 +267,19 @@ test("rejected block explains the error and reveals its source", async ({
     page.getByRole("button", { name: "Попросить модель исправить" }),
   ).toBeEnabled();
 });
+
+test("progress columns expose values and product rows use square thumbnails", async ({
+  page,
+}) => {
+  await page.goto("/?demo=dashboard");
+  const bars = page.locator('.ru-table-wrap [role="progressbar"]');
+  await expect(bars).toHaveCount(4);
+  await expect(bars.first()).toHaveAttribute("aria-valuenow", "100");
+  await expect(bars.nth(1)).toHaveAttribute("aria-valuenow", "65");
+  await page.goto("/?demo=listing");
+  const square = page.locator(".ru-poster-square").first();
+  await expect(square).toBeVisible();
+  const box = await square.boundingBox();
+  expect(Math.round(box!.width)).toBe(56);
+  expect(Math.round(box!.height)).toBe(56);
+});

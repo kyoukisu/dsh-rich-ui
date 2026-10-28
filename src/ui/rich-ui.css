@@ -1951,15 +1951,28 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   }
   .rich-ui th,
   .rich-ui td {
-    padding: 6px 6px;
-    font-size: 12px;
+    padding: 6px 5px;
+    font-size: 11.5px;
   }
   .rich-ui th {
-    font-size: 10.5px;
+    font-size: 9.5px;
+    letter-spacing: 0;
   }
   .rich-ui th:first-child,
   .rich-ui td:first-child {
-    padding-left: 9px;
+    padding-left: 8px;
+  }
+  .rich-ui td .ru-status-pill {
+    padding: 2px 5px;
+    gap: 4px;
+    font-size: 10.5px;
+  }
+  .rich-ui td .ru-status-pill i {
+    display: none;
+  }
+  .ru-table-progress output {
+    min-width: 26px;
+    font-size: 10.5px;
   }
   .ru-th-button svg {
     display: none;
@@ -2069,4 +2082,60 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
 }
 .ru-diagnostic-error > span {
   color: var(--ru-muted);
+}
+
+/* Progress cell: compact bar plus a numeric readout. */
+.ru-table-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 118px;
+  vertical-align: middle;
+}
+.ru-table-bar {
+  flex: 1 1 auto;
+  min-width: 56px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ru-surface-2);
+  overflow: hidden;
+}
+.ru-table-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ru-accent);
+  transition: width 180ms ease;
+}
+.ru-table-progress[data-tone="success"] .ru-table-bar > i {
+  background: var(--ru-success);
+}
+.ru-table-progress[data-tone="warning"] .ru-table-bar > i {
+  background: var(--ru-warning);
+}
+.ru-table-progress[data-tone="danger"] .ru-table-bar > i {
+  background: var(--ru-danger);
+}
+.ru-table-progress[data-tone="info"] .ru-table-bar > i {
+  background: var(--ru-info);
+}
+.ru-table-progress output {
+  min-width: 34px;
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--ru-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ru-poster-square {
+  width: 56px;
+  height: 56px;
+  border-radius: 9px;
+}
+@media (max-width: 600px) {
+  .ru-table-bar {
+    display: none;
+  }
+  .ru-table-progress {
+    min-width: 0;
+  }
 }

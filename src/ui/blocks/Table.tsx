@@ -7,9 +7,18 @@ import { formatNumber } from "./Metrics";
 type CellTone = Exclude<Tone, "default">;
 type Cell = { value: Scalar; text: string; tone?: CellTone };
 
+function percentOf(column: TableColumn, value: Scalar): number {
+  const max = column.max ?? 100;
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.round((Math.min(max, Math.max(0, numeric)) / max) * 100);
+}
+
 function display(column: TableColumn, value: Scalar): Cell {
   if (value === null || value === "")
     return { value, text: "—", tone: column.tones?.[""] };
+  if (column.format === "progress")
+    return { value, text: `${percentOf(column, value)}%` };
   const text =
     typeof value === "number" && column.format !== "status"
       ? formatNumber(value)
@@ -93,7 +102,7 @@ export function SortableTable({
               const active = sort?.key === column.key;
               const align =
                 column.align ??
-                (column.format === "status"
+                (column.format === "status" || column.format === "progress"
                   ? "left"
                   : numeric[index]
                     ? "right"
@@ -155,7 +164,7 @@ export function SortableTable({
                 const value = row[cell]!;
                 const align =
                   column.align ??
-                  (column.format === "status"
+                  (column.format === "status" || column.format === "progress"
                     ? "left"
                     : numeric[cell]
                       ? "right"
@@ -173,6 +182,27 @@ export function SortableTable({
                       >
                         <i aria-hidden="true" />
                         {value.text}
+                      </span>
+                    ) : column.format === "progress" ? (
+                      <span
+                        className="ru-table-progress"
+                        data-tone={column.tone ?? "accent"}
+                      >
+                        <span
+                          className="ru-table-bar"
+                          role="progressbar"
+                          aria-label={column.label}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={percentOf(column, value.value)}
+                        >
+                          <i
+                            style={{
+                              width: `${percentOf(column, value.value)}%`,
+                            }}
+                          />
+                        </span>
+                        <output>{value.text}</output>
                       </span>
                     ) : (
                       value.text

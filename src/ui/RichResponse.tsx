@@ -595,7 +595,13 @@ function EntityRows({
             aria-label={`Подробнее: ${entity.title}`}
           >
             {entity.image && (
-              <Picture src={entity.image} alt="" className="ru-poster-thumb" />
+              <Picture
+                src={entity.image}
+                alt=""
+                className={`ru-poster-thumb${
+                  entity.thumbShape === "square" ? " ru-poster-square" : ""
+                }`}
+              />
             )}
             <span className="ru-entity-row-meta">
               <span className="ru-eyebrow">{entity.kind}</span>

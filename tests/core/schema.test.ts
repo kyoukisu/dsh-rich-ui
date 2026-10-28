@@ -543,3 +543,65 @@ describe("table formats and filtering", () => {
       expect(() => parseRichSpec(spec(node))).toThrow();
   });
 });
+
+describe("progress columns and thumbnail shape", () => {
+  it("accepts a progress column and a square product thumbnail", () => {
+    const parsed = parseRichSpec({
+      version: 1,
+      entities: [
+        {
+          id: "kettle",
+          kind: "Kettle",
+          title: "Kettle",
+          image: "https://example.org/k.jpg",
+          thumbShape: "square",
+        },
+      ],
+      nodes: [
+        {
+          type: "table",
+          columns: [
+            {
+              key: "done",
+              label: "Done",
+              format: "progress",
+              max: 50,
+              tone: "success",
+            },
+          ],
+          rows: [{ done: 25 }],
+        },
+        { type: "entity-list", entityIds: ["kettle"] },
+      ],
+    });
+    expect(parsed.entities?.[0]?.thumbShape).toBe("square");
+  });
+
+  it("rejects progress options on other formats and unknown shapes", () => {
+    for (const node of [
+      {
+        type: "table",
+        columns: [{ key: "a", label: "A", format: "number", max: 10 }],
+        rows: [],
+      },
+      {
+        type: "table",
+        columns: [{ key: "a", label: "A", format: "text", tone: "success" }],
+        rows: [],
+      },
+      {
+        type: "table",
+        columns: [{ key: "a", label: "A", format: "progress", tone: "purple" }],
+        rows: [],
+      },
+    ])
+      expect(() => parseRichSpec(spec(node))).toThrow();
+    expect(() =>
+      parseRichSpec({
+        version: 1,
+        entities: [{ id: "a", kind: "x", title: "A", thumbShape: "wide" }],
+        nodes: [],
+      }),
+    ).toThrow();
+  });
+});

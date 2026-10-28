@@ -25,5 +25,6 @@ No entry below means accepted visual parity. User-facing quality target remains 
 | P-019 | Intentional | Code languages             | The highlighter covers js/ts, Go, Python, shell, SQL, JSON and CSS; other languages render as plain code                                   | Add a language only together with a tokenizer test                                                                                 |
 
 | P-020 | Open        | Repair is manual           | A rejected block shows the exact error and can send error + source back, but only after an explicit click; no automatic same-turn feedback | Add automatic feedback only if the host exposes a turn hook; keep the click for cost control                                        |
+| P-021 | Fixed       | Row thumbnails             | Every entity row used a 2:3 portrait crop, so landscape product photos lost most of the frame                        | `thumbShape: "square"` for product rows; posters keep 2:3                                                                          |
 
 Severity: safety/data loss = S0, broken main interaction/keyboard = S1, meaningful visual/interaction deviation = S2, minor optical polish = S3. Open items are not silently waived by a green test run. Fixed items still require ongoing regression coverage.

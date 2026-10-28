@@ -432,6 +432,7 @@ export const listing: RichSpec = {
     {
       id: "wk1760",
       kind: "Чайник",
+      thumbShape: "square",
       title: "Bosch TWK 3A011",
       subtitle: "1 382 ₽ · 1,7 л · стекло",
       description: "LED-подсветка, 1850–2200 Вт",
@@ -449,6 +450,7 @@ export const listing: RichSpec = {
     {
       id: "wk1500",
       kind: "Чайник",
+      thumbShape: "square",
       title: "N'OVEEN Kettle 1.7",
       subtitle: "2 459 ₽ · 1,5 л · сенсор",
       description: "Дисплей и регулировка нагрева",
@@ -460,6 +462,7 @@ export const listing: RichSpec = {
     {
       id: "tuvio",
       kind: "Чайник",
+      thumbShape: "square",
       title: "Чайник электрический, 1,7 л",
       subtitle: "4 336 ₽ · 1,7 л",
       description: "Поддержка Алисы",
@@ -546,7 +549,12 @@ export const dashboard: RichSpec = {
                 Ожидание: "muted",
               },
             },
-            { key: "progress", label: "Прогресс", align: "right" },
+            {
+              key: "progress",
+              label: "Прогресс",
+              format: "progress",
+              tone: "success",
+            },
           ],
           rows: [
             {

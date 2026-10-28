@@ -344,7 +344,12 @@ Use this shape when the answer is a status page or a comparison with several kin
               "format": "status",
               "tones": { "Ready": "success", "In progress": "warning" }
             },
-            { "key": "done", "label": "Done", "format": "number" }
+            {
+              "key": "done",
+              "label": "Done",
+              "format": "progress",
+              "tone": "success"
+            }
           ],
           "rows": [
             { "task": "Design", "status": "Ready", "done": 100 },

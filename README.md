@@ -92,8 +92,8 @@ Things worth trying: *"build a budget calculator with three sliders"*, *"show th
 |---|---|
 | Layout | `stack`, `row`, `grid`, `card`, `divider`, `meta` |
 | Text | `text` with inline `code`, **bold** and links; `callout` with optional title; `code` with highlighting, line numbers and copy |
-| Objects | `entity-ref`, `entity-list`, detail panel with gallery, facts, sources, related entities |
-| Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status columns), `chart` (bar / line / area / donut, 1–6 series, units, tooltips), `computed` |
+| Objects | `entity-ref`, ``entity-list` with poster or square row thumbnails, detail panel with gallery, facts, sources, related entities |
+| Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status and progress columns), `chart` (bar / line / area / donut, 1–6 series, units, tooltips), `computed` |
 | Flow | `diagram` with ordered steps, connector labels and branch depth |
 | Media | `image`, `image-group`, gallery lightbox, popover, tooltip |
 | Controls | `input` (text / number / date), `select`, `slider`, `switch`, `checkbox`, `radio`, `segmented`, `tabs` |
@@ -194,7 +194,7 @@ npm ci
 npm run dev            # lab at http://127.0.0.1:4173, HMR, no Harness needed
 npm run build          # typecheck + lab build
 npm run build:plugin   # the two real bundle artifacts
-npm test               # 117 unit, schema and DOM tests
+npm test               # 121 unit, schema and DOM tests
 npm run test:browser   # Playwright desktop + mobile (goldens never auto-update)
 ```
 

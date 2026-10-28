@@ -455,3 +455,51 @@ describe("table formats and filtering", () => {
     );
   });
 });
+
+describe("progress columns and thumbnails", () => {
+  it("renders a progress bar with its numeric state", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "table",
+          columns: [
+            {
+              key: "done",
+              label: "Done",
+              format: "progress",
+              tone: "success",
+            },
+          ],
+          rows: [{ done: 65 }, { done: 120 }],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const bars = host.querySelectorAll('[role="progressbar"]');
+    expect(bars).toHaveLength(2);
+    expect(bars[0]?.getAttribute("aria-valuenow")).toBe("65");
+    expect(bars[1]?.getAttribute("aria-valuenow")).toBe("100");
+    expect(host.querySelector("output")?.textContent).toBe("65%");
+  });
+
+  it("uses a square row thumbnail when the entity asks for it", () => {
+    const spec: RichSpec = {
+      version: 1,
+      entities: [
+        {
+          id: "kettle",
+          kind: "Kettle",
+          title: "Kettle",
+          image: "https://example.org/k.jpg",
+          thumbShape: "square",
+        },
+      ],
+      nodes: [{ type: "entity-list", entityIds: ["kettle"] }],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelector(".ru-poster-thumb")?.className).toContain(
+      "ru-poster-square",
+    );
+  });
+});

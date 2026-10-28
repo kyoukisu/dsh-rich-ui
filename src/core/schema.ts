@@ -54,6 +54,8 @@ export interface Entity {
   related?: string[];
   /** Short highlight under the row, e.g. "Самый доступный". */
   badge?: EntityBadge;
+  /** Row thumbnail shape; posters are 2:3, square suits product photos. */
+  thumbShape?: "poster" | "square";
 }
 export interface NodeBase {
   id?: string;
@@ -223,7 +225,7 @@ export interface TabsNode extends NodeBase {
   stateKey: string;
   tabs: { id: string; label: string; children: RichNode[] }[];
 }
-export type TableFormat = "text" | "number" | "status";
+export type TableFormat = "text" | "number" | "status" | "progress";
 export interface TableColumn {
   key: string;
   label: string;
@@ -232,6 +234,10 @@ export interface TableColumn {
   format?: TableFormat;
   /** For `status`: maps a cell's display string to a semantic tone. */
   tones?: Record<string, Exclude<Tone, "default">>;
+  /** For `progress`: value that fills the bar; defaults to 100. */
+  max?: number;
+  /** For `progress`: bar colour. */
+  tone?: "accent" | "success" | "warning" | "danger" | "info";
 }
 export interface TableNode extends NodeBase {
   type: "table";
@@ -588,6 +594,7 @@ export function parseRichSpec(input: unknown): RichSpec {
           "sources",
           "related",
           "badge",
+          "thumbShape",
         ],
       );
       key(e.id);
@@ -626,6 +633,8 @@ export function parseRichSpec(input: unknown): RichSpec {
             "accent",
           ]);
       }
+      if (e.thumbShape !== undefined)
+        choice(e.thumbShape, ["poster", "square"]);
       if (e.related !== undefined)
         arr(e.related, (r) => {
           key(r);
@@ -895,13 +904,25 @@ export function parseRichSpec(input: unknown): RichSpec {
         const keys = new Set<string>();
         arr(o.columns, (c) => {
           const p = obj(c);
-          fields(p, ["key", "label"], ["align", "format", "tones"]);
+          fields(
+            p,
+            ["key", "label"],
+            ["align", "format", "tones", "max", "tone"],
+          );
           key(p.key);
           str(p.label);
           if (p.align !== undefined)
             choice(p.align, ["left", "right", "center"]);
           if (p.format !== undefined)
-            choice(p.format, ["text", "number", "status"]);
+            choice(p.format, ["text", "number", "status", "progress"]);
+          if (p.max !== undefined) {
+            num(p.max, Number.MIN_VALUE);
+            if (p.format !== "progress") fail("max requires format: progress");
+          }
+          if (p.tone !== undefined) {
+            choice(p.tone, ["accent", "success", "warning", "danger", "info"]);
+            if (p.format !== "progress") fail("tone requires format: progress");
+          }
           if (p.tones !== undefined) {
             if (p.format !== undefined && p.format !== "status")
               fail("tones require format: status");
