@@ -928,6 +928,40 @@
     color-scheme: dark;
   }
 }
+/* Host integration: DeepSeek Harness marks dark mode on <body data-ds-dark-theme>,
+   not with our lab attribute, and exposes its own palette through --dsw-alias-*.
+   Without this block the components would stay light inside a dark harness. */
+body[data-ds-dark-theme] .rich-ui {
+  --ru-bg: var(--dsw-alias-bg-layer-1, #212121);
+  --ru-range-track: color-mix(in srgb, var(--ru-ink) 16%, transparent);
+  --ru-surface: var(--dsw-alias-bg-layer-2, #2b2b2b);
+  --ru-ink: var(--dsw-alias-label-primary, #ececec);
+  --ru-muted: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #ececec) 62%,
+    transparent
+  );
+  --ru-border: var(--dsw-alias-border-l1, #3c3c3c);
+  --ru-accent: var(--dsw-alias-state-business-primary, #6fc5a6);
+  --ru-success: #74c79f;
+  --ru-warning-text: #e0b062;
+  --ru-danger: #f08a80;
+  color-scheme: dark;
+}
+body[data-ds-dark-theme] .rich-ui .ru-code,
+body[data-ds-dark-theme] .rich-ui code {
+  color: var(--ru-ink);
+}
+/* Inside the harness: adopt its palette and body font so a reply does not read
+   as a foreign widget. Layout, spacing and component language stay ours. */
+[data-rich-ui-root] .rich-ui {
+  --ru-bg: var(--dsw-alias-bg-layer-1, #fff);
+  --ru-surface: var(--dsw-alias-bg-layer-2, #f7f7f8);
+  --ru-ink: var(--dsw-alias-label-primary, #171717);
+  --ru-border: var(--dsw-alias-border-l1, #e5e5e5);
+  --ru-accent: var(--dsw-alias-state-business-primary, #23836a);
+  font-family: inherit;
+}
 @media (max-width: 600px) {
   .rich-ui {
     font-size: 14px;
