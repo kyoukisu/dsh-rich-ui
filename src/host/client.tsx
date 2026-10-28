@@ -1,6 +1,7 @@
 import { Component, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { RichResponse } from "../ui/RichResponse";
+import { parseStreamingSpec } from "./partial.ts";
 import { parseRichSpec, type RichSpec } from "../core/schema";
 
 export const name = "@kyoukisu/dsh-rich-ui";
@@ -65,6 +66,8 @@ interface Mount {
   root: Root;
   raw: string;
   hidden: boolean;
+  streaming: boolean;
+  spec: string;
   sessionId?: string;
   failed?: boolean;
 }
@@ -216,32 +219,44 @@ export function installDomRenderer(
       if (!body) continue;
       const mount = mounts.get(source);
       const raw = body.textContent ?? "";
-      if (
-        !isRichFence(source, body, raw) ||
-        source.closest("[data-streaming]")
-      ) {
+      if (!isRichFence(source, body, raw)) {
+        if (mount) remove(source, mount);
+        continue;
+      }
+      // While the model is still writing, show only nodes whose JSON is fully
+      // closed and that validate; the preview stays inert until it settles.
+      const streaming = Boolean(source.closest("[data-streaming]"));
+      const spec = streaming ? parseStreamingSpec(raw) : parseFence(raw);
+      if (!spec) {
         if (mount) remove(source, mount);
         continue;
       }
       const sessionId = viewedSession(ctx);
-      if (mount?.raw === raw && mount.sessionId === sessionId) {
+      const specKey = JSON.stringify(spec);
+      if (
+        mount?.raw === raw &&
+        mount.sessionId === sessionId &&
+        mount.spec === specKey &&
+        mount.streaming === streaming
+      ) {
         // Host reconciliation may remove the foreign sibling or reset hidden.
         if (source.nextSibling !== mount.container)
           source.after(mount.container);
         if (!mount.failed && !source.hidden) source.hidden = true;
         continue;
       }
-      const spec = parseFence(raw);
       if (mount) remove(source, mount);
-      if (!spec) continue; // Malformed source stays visible as the stock code block.
       const container = document.createElement("div");
       container.dataset.richUiRoot = "";
+      if (streaming) container.setAttribute("inert", "");
       const root = createRoot(container);
       const next: Mount = {
         container,
         root,
         raw,
         hidden: source.hidden,
+        streaming,
+        spec: specKey,
         sessionId,
       };
       mounts.set(source, next);
@@ -249,15 +264,18 @@ export function installDomRenderer(
       source.hidden = true;
       root.render(
         createElement(RenderBoundary, {
-          key: raw,
+          key: `${raw}:${streaming}`,
           onFailure: () => {
             next.failed = true;
             source.hidden = next.hidden;
           },
           children: createElement(RichResponse, {
             spec,
-            persistenceKey: fencePersistenceKey(source, sessionId),
-            onAction: actionHandler(ctx, sessionId),
+            // Actions and durable state begin only once the block is complete.
+            persistenceKey: streaming
+              ? undefined
+              : fencePersistenceKey(source, sessionId),
+            onAction: streaming ? undefined : actionHandler(ctx, sessionId),
           }),
         }),
       );

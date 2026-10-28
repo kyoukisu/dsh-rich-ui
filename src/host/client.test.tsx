@@ -235,3 +235,47 @@ describe("live fence label rules", () => {
     expect(document.querySelector("[data-rich-ui-root]")).not.toBeNull();
   });
 });
+
+describe("streaming preview", () => {
+  it("mounts completed nodes inert, then activates when the block settles", async () => {
+    const partial =
+      '{"version":1,"nodes":[{"type":"text","content":"Первый абзац"},{"type":"call';
+    const { row, block, pre } = source(partial, "assistant-step", "Code block");
+    row.dataset.streaming = "true";
+    dispose = installDomRenderer(ctx());
+    await tick();
+    const container = document.querySelector<HTMLElement>(
+      "[data-rich-ui-root]",
+    );
+    expect(container).not.toBeNull();
+    expect(container!.hasAttribute("inert")).toBe(true);
+    expect(container!.textContent).toContain("Первый абзац");
+    expect(block.hidden).toBe(true);
+
+    delete row.dataset.streaming;
+    pre.textContent = JSON.stringify({
+      version: 1,
+      nodes: [
+        { type: "text", content: "Первый абзац" },
+        { type: "text", content: "Второй" },
+      ],
+    });
+    await tick();
+    const settled = document.querySelector<HTMLElement>("[data-rich-ui-root]");
+    expect(settled).not.toBeNull();
+    expect(settled!.hasAttribute("inert")).toBe(false);
+    expect(settled!.textContent).toContain("Второй");
+  });
+  it("keeps the source visible while no complete node exists", async () => {
+    const { row, block } = source(
+      '{"version":1,"nodes":[{"type":"te',
+      "assistant-step",
+      "Code block",
+    );
+    row.dataset.streaming = "true";
+    dispose = installDomRenderer(ctx());
+    await tick();
+    expect(document.querySelector("[data-rich-ui-root]")).toBeNull();
+    expect(block.hidden).toBe(false);
+  });
+});
