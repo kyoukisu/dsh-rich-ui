@@ -14,7 +14,7 @@ const shots = [
     1000,
     async (page) => {
       await page
-        .getByRole("button", { name: "Подробнее: Interstellar" })
+        .locator('.ru-entity-row[aria-label="Подробнее: Interstellar"]')
         .click();
       await page.waitForTimeout(400);
     },
@@ -47,7 +47,7 @@ const shots = [
     844,
     async (page) => {
       await page
-        .getByRole("button", { name: "Подробнее: Interstellar" })
+        .locator('.ru-entity-row[aria-label="Подробнее: Interstellar"]')
         .click();
       await page.waitForTimeout(400);
     },

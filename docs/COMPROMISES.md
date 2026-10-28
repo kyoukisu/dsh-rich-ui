@@ -15,5 +15,7 @@ No entry below means accepted visual parity. User-facing quality target remains 
 | P-009 | Intentional | State privacy | Text and numeric input values not persisted; controlled enums/sliders/switches/tabs use opt-in sessionStorage | Keep privacy default; explicit opt-in for any future drafts |
 | P-010 | Fixed | Wrong modal semantics | Initial desktop panel dimmed/blurred background unlike observed reference | Desktop nonmodal drawer now separate from mobile/explicit modal |
 | P-011 | Fixed | Keyboard and contrast | Browser tests exposed focus loss on related entity navigation and low-contrast inactive tab | Focus restoration regressions and axe gate added |
+| P-012 | Fixed | Monochrome icons | Every row icon rendered one grey tone; the reference uses colour semantically (red failure, muted timeline) | Semantic `tone` token on icons, both themes measured, assertion in browser tests |
+| P-013 | Fixed | Entity vocabulary | Only poster cards existed; reference also uses full-width entity rows with compact posters | `entity-list` node with row layout, keyboard open, shared detail panel |
 
 Severity: safety/data loss = S0, broken main interaction/keyboard = S1, meaningful visual/interaction deviation = S2, minor optical polish = S3. Open items are not silently waived by a green test run. Fixed items still require ongoing regression coverage.
