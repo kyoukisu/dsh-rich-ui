@@ -15,17 +15,17 @@ This is the implementation backlog, not a completed-feature claim.
 - Session/block-keyed storage with content versioning and reset semantics.
 - Rendering unaffected by unrelated React parent updates.
 - Local validation and per-node recoverable errors.
-- Partial streaming parser with completed-subtree validation and cancellation handling.
+- Streaming preview from completed subtrees, inert until the block settles (implemented).
 - Model actions visible, explicit, owned by original session, never implicit input blur sends.
 
 ## Rich reference vocabulary
 
 - Popover, tooltip, segmented controls, date input, checkbox/radio groups.
-- Search/filter/sort tables and entity collections.
+- Sortable tables (implemented); filters and entity search remain open.
 - Image lightbox, accessible carousels, media playback.
 - Sources/citations panel and document navigation with genuine provenance.
 - Writing artifact with explicit edit/copy/export behaviour.
-- SVG/Mermaid and more capable chart engine, preserving typography.
+- Mermaid/ER graphs, scatter plots and a more capable chart engine.
 - Maps through explicitly configured provider and attribution.
 
 ## Mini-app runtime

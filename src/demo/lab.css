@@ -110,7 +110,7 @@ input {
   margin-left: 248px;
 }
 body:has(.ru-drawer) .lab-workspace {
-  margin-right: 490px;
+  margin-right: 520px;
 }
 @media (max-width: 1100px) and (min-width: 601px) {
   body:has(.ru-drawer) .lab-sidebar {

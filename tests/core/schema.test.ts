@@ -386,3 +386,99 @@ describe("callout heading", () => {
     ).toThrow();
   });
 });
+
+describe("dashboard vocabulary", () => {
+  it("accepts stats, progress, status, diagrams and multi-series charts", () => {
+    const parsed = parseRichSpec({
+      version: 1,
+      nodes: [
+        {
+          type: "grid",
+          columns: 3,
+          children: [
+            {
+              type: "stat",
+              label: "Uptime",
+              value: "99,9%",
+              delta: 0.2,
+              icon: "shield-check",
+            },
+            { type: "progress", value: 65, label: "Progress", tone: "success" },
+            { type: "status", label: "Ready", tone: "success" },
+          ],
+        },
+        {
+          type: "chart",
+          kind: "area",
+          unit: "₽",
+          categories: ["Jan", "Feb"],
+          series: [
+            { label: "Revenue", values: [1, 2] },
+            { label: "Cost", values: [1, 1] },
+          ],
+        },
+        {
+          type: "diagram",
+          direction: "vertical",
+          steps: [
+            { id: "a", label: "Start" },
+            { id: "b", label: "End", connector: "next", depth: 1 },
+          ],
+        },
+        {
+          type: "table",
+          sortable: true,
+          caption: "Plan",
+          columns: [{ key: "task", label: "Task", align: "left" }],
+          rows: [{ task: "Design" }],
+        },
+        {
+          type: "code",
+          code: "const x = 1;",
+          language: "ts",
+          title: "Example",
+          lineNumbers: true,
+        },
+      ],
+    });
+    expect(parsed.nodes).toHaveLength(5);
+  });
+
+  it("rejects mismatched series, duplicate steps and malformed dashboard fields", () => {
+    for (const node of [
+      {
+        type: "chart",
+        kind: "line",
+        categories: ["Jan", "Feb"],
+        series: [{ label: "One", values: [1] }],
+      },
+      {
+        type: "chart",
+        kind: "donut",
+        categories: ["A"],
+        series: [{ label: "One", values: [1] }],
+      },
+      {
+        type: "diagram",
+        steps: [
+          { id: "a", label: "A" },
+          { id: "a", label: "B" },
+        ],
+      },
+      { type: "diagram", steps: [] },
+      { type: "diagram", steps: [{ id: "a", label: "A", depth: 3 }] },
+      { type: "stat", label: "No value" },
+      { type: "stat", label: "Tone", value: 1, tone: "muted" },
+      { type: "progress", value: 1, max: 0 },
+      { type: "status", label: "X", tone: "default" },
+      { type: "table", columns: [], rows: [], sortable: "yes" },
+      {
+        type: "table",
+        columns: [{ key: "a", label: "A", align: "top" }],
+        rows: [],
+      },
+      { type: "code", code: "x", lineNumbers: "yes" },
+    ])
+      expect(() => parseRichSpec(spec(node))).toThrow();
+  });
+});

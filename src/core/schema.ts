@@ -1,5 +1,8 @@
 /** Safe JSON-only contract. No HTML, scripts, arbitrary styles or property paths. */
 export type Scalar = string | number | boolean | null;
+/** Semantic colour only. Arbitrary colours would break one of the two themes. */
+export type Tone =
+  "default" | "muted" | "success" | "warning" | "danger" | "info" | "accent";
 export type ExprOp =
   | "add"
   | "sub"
@@ -71,9 +74,50 @@ export interface IconNode extends NodeBase {
   type: "icon";
   name: string;
   size?: number;
-  /** Semantic colour only; arbitrary values are rejected so themes stay legible. */
-  tone?:
-    "default" | "muted" | "success" | "warning" | "danger" | "info" | "accent";
+  tone?: Tone;
+}
+/** KPI card: one number the reader should remember, with optional change. */
+export interface StatNode extends NodeBase {
+  type: "stat";
+  label: string;
+  value: Expr;
+  /** Number is read as a percentage change; a string is shown verbatim. */
+  delta?: Expr;
+  deltaLabel?: string;
+  hint?: string;
+  tone?: Exclude<Tone, "muted" | "info">;
+  icon?: string;
+}
+export interface ProgressNode extends NodeBase {
+  type: "progress";
+  value: Expr;
+  max?: number;
+  label?: string;
+  tone?: Exclude<Tone, "default" | "accent"> | "accent";
+  showValue?: boolean;
+}
+/** Compact state pill, e.g. "Готово" or "В работе". */
+export interface StatusNode extends NodeBase {
+  type: "status";
+  label: string;
+  tone?: Exclude<Tone, "default">;
+}
+export interface DiagramStep {
+  id: string;
+  label: string;
+  detail?: string;
+  tone?: Exclude<Tone, "default">;
+  /** Caption of the arrow that leads into this step. */
+  connector?: string;
+  /** 0 is the main line; 1–2 render as a branch. */
+  depth?: 0 | 1 | 2;
+}
+/** Ordered flow: process, pipeline or architecture. Not a free-form graph editor. */
+export interface DiagramNode extends NodeBase {
+  type: "diagram";
+  steps: DiagramStep[];
+  direction?: "horizontal" | "vertical";
+  caption?: string;
 }
 export interface MetaItem {
   text: string;
@@ -179,15 +223,35 @@ export interface TabsNode extends NodeBase {
   stateKey: string;
   tabs: { id: string; label: string; children: RichNode[] }[];
 }
+export interface TableColumn {
+  key: string;
+  label: string;
+  align?: "left" | "right" | "center";
+}
 export interface TableNode extends NodeBase {
   type: "table";
-  columns: { key: string; label: string }[];
+  columns: TableColumn[];
   rows: Record<string, Expr>[];
+  /** Client-side sorting by column; no model call. */
+  sortable?: boolean;
+  caption?: string;
+  empty?: string;
+}
+export interface ChartSeries {
+  label: string;
+  values: Expr[];
 }
 export interface ChartNode extends NodeBase {
   type: "chart";
-  kind: "bar" | "line" | "donut";
-  data: { label: string; value: Expr }[];
+  kind: "bar" | "line" | "area" | "donut";
+  /** Single-series data, or the slice labels for a donut. */
+  data?: { label: string; value: Expr }[];
+  /** Multi-series mode: one shared category axis plus aligned value arrays. */
+  categories?: string[];
+  series?: ChartSeries[];
+  /** Shown on the value axis and in tooltips, e.g. "₽" or "тыс. ₽". */
+  unit?: string;
+  caption?: string;
 }
 export interface CalloutNode extends NodeBase {
   type: "callout";
@@ -204,6 +268,8 @@ export interface CodeNode extends NodeBase {
   type: "code";
   code: string;
   language?: string;
+  title?: string;
+  lineNumbers?: boolean;
 }
 export type RichNode =
   | CheckboxNode
@@ -214,6 +280,10 @@ export type RichNode =
   | TextNode
   | ContainerNode
   | IconNode
+  | StatNode
+  | ProgressNode
+  | StatusNode
+  | DiagramNode
   | EntityListNode
   | MetaNode
   | ImageNode
@@ -260,6 +330,24 @@ const fail = (message: string): never => {
   throw new RichValidationError(message);
 };
 const forbidden = new Set(["__proto__", "prototype", "constructor"]);
+/** Every tone the icon node accepts; kept as one list so enums cannot drift. */
+const TONES = [
+  "default",
+  "muted",
+  "success",
+  "warning",
+  "danger",
+  "info",
+  "accent",
+] as const;
+const BRIGHT_TONES = [
+  "muted",
+  "success",
+  "warning",
+  "danger",
+  "info",
+  "accent",
+] as const;
 const sensitive =
   /^(?:password|passwd|secret|token|api[_-]?key|access[_-]?token|recovery[_-]?code)$/i;
 export function assertSafeKey(key: string): void {
@@ -601,9 +689,41 @@ export function parseRichSpec(input: unknown): RichSpec {
         str(o.name);
         if (!/^[a-zA-Z][a-zA-Z0-9-]{0,63}$/.test(o.name)) fail("Invalid icon");
         if (o.size !== undefined) num(o.size, 8, 128);
+        if (o.tone !== undefined) choice(o.tone, TONES);
+        break;
+      case "stat":
+        check(
+          ["label", "value"],
+          ["delta", "deltaLabel", "hint", "tone", "icon"],
+        );
+        str(o.label);
+        validateExpr(o.value);
+        if (o.delta !== undefined) validateExpr(o.delta);
+        for (const k of ["deltaLabel", "hint"])
+          if (o[k] !== undefined) str(o[k]);
+        if (o.tone !== undefined)
+          choice(o.tone, ["success", "warning", "danger", "accent"]);
+        if (o.icon !== undefined) {
+          str(o.icon);
+          if (!/^[a-zA-Z][a-zA-Z0-9-]{0,63}$/.test(o.icon))
+            fail("Invalid stat icon");
+        }
+        break;
+      case "progress":
+        check(["value"], ["max", "label", "tone", "showValue"]);
+        validateExpr(o.value);
+        if (o.max !== undefined) num(o.max, Number.MIN_VALUE);
+        if (o.label !== undefined) str(o.label);
+        if (o.tone !== undefined)
+          choice(o.tone, ["success", "warning", "danger", "info", "accent"]);
+        if (o.showValue !== undefined && typeof o.showValue !== "boolean")
+          fail("Expected boolean");
+        break;
+      case "status":
+        check(["label"], ["tone"]);
+        str(o.label);
         if (o.tone !== undefined)
           choice(o.tone, [
-            "default",
             "muted",
             "success",
             "warning",
@@ -612,6 +732,36 @@ export function parseRichSpec(input: unknown): RichSpec {
             "accent",
           ]);
         break;
+      case "diagram": {
+        check(["steps"], ["direction", "caption"]);
+        if (o.direction !== undefined)
+          choice(o.direction, ["horizontal", "vertical"]);
+        if (o.caption !== undefined) str(o.caption);
+        if (!Array.isArray(o.steps) || o.steps.length === 0)
+          fail("Diagram needs steps");
+        if ((o.steps as unknown[]).length > 12) fail("Too many diagram steps");
+        const ids = new Set<string>();
+        arr(o.steps, (value) => {
+          const step = obj(value);
+          fields(
+            step,
+            ["id", "label"],
+            ["detail", "tone", "connector", "depth"],
+          );
+          key(step.id);
+          str(step.label);
+          if (ids.has(step.id as string)) fail("Duplicate diagram step");
+          ids.add(step.id as string);
+          if (step.detail !== undefined) str(step.detail);
+          if (step.tone !== undefined) choice(step.tone, BRIGHT_TONES);
+          if (step.connector !== undefined) str(step.connector);
+          if (step.depth !== undefined) {
+            num(step.depth, 0, 2);
+            if (!Number.isInteger(step.depth)) fail("Depth must be integer");
+          }
+        });
+        break;
+      }
       case "meta": {
         check(["items"]);
         if (!Array.isArray(o.items) || o.items.length === 0)
@@ -730,13 +880,15 @@ export function parseRichSpec(input: unknown): RichSpec {
         break;
       }
       case "table": {
-        check(["columns", "rows"]);
+        check(["columns", "rows"], ["sortable", "caption", "empty"]);
         const keys = new Set<string>();
         arr(o.columns, (c) => {
           const p = obj(c);
-          fields(p, ["key", "label"]);
+          fields(p, ["key", "label"], ["align"]);
           key(p.key);
           str(p.label);
+          if (p.align !== undefined)
+            choice(p.align, ["left", "right", "center"]);
           if (keys.has(p.key as string)) fail("Duplicate column");
           keys.add(p.key as string);
         });
@@ -746,18 +898,49 @@ export function parseRichSpec(input: unknown): RichSpec {
             validateExpr(v);
           }
         });
+        if (o.sortable !== undefined && typeof o.sortable !== "boolean")
+          fail("Expected boolean");
+        if (o.caption !== undefined) str(o.caption);
+        if (o.empty !== undefined) str(o.empty);
         break;
       }
-      case "chart":
-        check(["kind", "data"]);
-        choice(o.kind, ["bar", "line", "donut"]);
-        arr(o.data, (d) => {
-          const p = obj(d);
-          fields(p, ["label", "value"]);
-          str(p.label);
-          validateExpr(p.value);
-        });
+      case "chart": {
+        check(["kind"], ["data", "categories", "series", "unit", "caption"]);
+        choice(o.kind, ["bar", "line", "area", "donut"]);
+        if (o.data === undefined && o.series === undefined)
+          fail("Chart needs data or series");
+        if (o.data !== undefined) {
+          if (!Array.isArray(o.data) || o.data.length === 0)
+            fail("Chart data cannot be empty");
+          arr(o.data, (d) => {
+            const p = obj(d);
+            fields(p, ["label", "value"]);
+            str(p.label);
+            validateExpr(p.value);
+          });
+        }
+        if (o.series !== undefined) {
+          if (o.kind === "donut") fail("Donut uses data only");
+          if (!Array.isArray(o.categories) || o.categories.length === 0)
+            fail("Series needs categories");
+          arr(o.categories, str);
+          const length = (o.categories as unknown[]).length;
+          if (!Array.isArray(o.series) || o.series.length === 0)
+            fail("Series cannot be empty");
+          if ((o.series as unknown[]).length > 6) fail("Too many chart series");
+          arr(o.series, (s) => {
+            const p = obj(s);
+            fields(p, ["label", "values"]);
+            str(p.label);
+            if (!Array.isArray(p.values) || p.values.length !== length)
+              fail("Series length must match categories");
+            (p.values as unknown[]).forEach(validateExpr);
+          });
+        }
+        if (o.unit !== undefined) str(o.unit);
+        if (o.caption !== undefined) str(o.caption);
         break;
+      }
       case "callout":
         check(["content"], ["tone", "title"]);
         if (o.title !== undefined) str(o.title);
@@ -770,9 +953,12 @@ export function parseRichSpec(input: unknown): RichSpec {
         if (o.label !== undefined) str(o.label);
         break;
       case "code":
-        check(["code"], ["language"]);
+        check(["code"], ["language", "title", "lineNumbers"]);
         str(o.code);
         if (o.language !== undefined) str(o.language);
+        if (o.title !== undefined) str(o.title);
+        if (o.lineNumbers !== undefined && typeof o.lineNumbers !== "boolean")
+          fail("Expected boolean");
         break;
       default:
         fail("Unknown node type");

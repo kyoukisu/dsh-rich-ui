@@ -271,3 +271,103 @@ The URLs here are syntax placeholders, not verified photos or research sources. 
   ]
 }
 ```
+
+## Dashboard: metrics, a series chart, a sortable table and a flow
+
+Use this shape when the answer is a status page or a comparison with several kinds of evidence. One chart may share a page with a table, but do not print the same numbers twice just to fill space.
+
+```json
+{
+  "version": 1,
+  "title": "Release status",
+  "nodes": [
+    {
+      "type": "text",
+      "content": "Three numbers, one trend and the work that is left. The table sorts in the browser."
+    },
+    {
+      "type": "grid",
+      "columns": 3,
+      "children": [
+        {
+          "type": "stat",
+          "label": "Availability",
+          "value": "99,9%",
+          "delta": 0.2,
+          "deltaLabel": "vs last week",
+          "icon": "shield-check"
+        },
+        {
+          "type": "stat",
+          "label": "Active users",
+          "value": 12480,
+          "delta": 12.5,
+          "deltaLabel": "this month",
+          "icon": "users"
+        },
+        {
+          "type": "stat",
+          "label": "Open incidents",
+          "value": 4,
+          "delta": -18.2,
+          "tone": "success",
+          "icon": "alert-triangle"
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "kind": "line",
+      "categories": ["Jan", "Feb", "Mar", "Apr"],
+      "series": [
+        { "label": "Revenue", "values": [62, 74, 68, 91] },
+        { "label": "Cost", "values": [41, 44, 47, 52] }
+      ],
+      "unit": "k €",
+      "caption": "Illustrative data, not a financial report."
+    },
+    {
+      "type": "card",
+      "title": "Plan",
+      "children": [
+        {
+          "type": "table",
+          "sortable": true,
+          "caption": "Sort by any column.",
+          "columns": [
+            { "key": "task", "label": "Task" },
+            { "key": "status", "label": "Status" },
+            { "key": "done", "label": "Done", "align": "right" }
+          ],
+          "rows": [
+            { "task": "Design", "status": "Ready", "done": 100 },
+            { "task": "Build", "status": "In progress", "done": 65 }
+          ]
+        },
+        { "type": "progress", "value": 65, "label": "Overall", "tone": "success" },
+        { "type": "status", "label": "Build green", "tone": "success" }
+      ]
+    },
+    {
+      "type": "diagram",
+      "direction": "vertical",
+      "caption": "Request path",
+      "steps": [
+        { "id": "ask", "label": "Request" },
+        {
+          "id": "model",
+          "label": "Model",
+          "detail": "picks structure",
+          "connector": "spec"
+        },
+        {
+          "id": "render",
+          "label": "Renderer",
+          "detail": "validates and mounts",
+          "connector": "RichSpec"
+        }
+      ]
+    }
+  ]
+}
+```

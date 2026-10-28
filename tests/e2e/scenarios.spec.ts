@@ -73,7 +73,19 @@ test("all scenarios have no horizontal overflow or runtime errors in both themes
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  for (const demo of ["technical", "films", "calculator", "configurator"]) {
+  // A viewport shorter than the answer clips an element screenshot under the
+  // sticky lab header, so give every scenario the same tall frame.
+  await page.setViewportSize({
+    width: page.viewportSize()!.width,
+    height: 1900,
+  });
+  for (const demo of [
+    "dashboard",
+    "technical",
+    "films",
+    "calculator",
+    "configurator",
+  ]) {
     for (const theme of ["light", "dark"]) {
       await page.goto(`/?demo=${demo}&theme=${theme}`);
       await expect(page.locator(".rich-ui").first()).toBeVisible();
@@ -82,10 +94,14 @@ test("all scenarios have no horizontal overflow or runtime errors in both themes
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBeTruthy();
-      await expect(page.locator(".lab-answer")).toHaveScreenshot(
-        `${demo}-${theme}.png`,
-        { animations: "disabled", maxDiffPixelRatio: 0.01 },
-      );
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const answer = await page.locator(".lab-answer").boundingBox();
+      expect(answer).not.toBeNull();
+      await expect(page).toHaveScreenshot(`${demo}-${theme}.png`, {
+        clip: answer!,
+        animations: "disabled",
+        maxDiffPixelRatio: 0.01,
+      });
     }
   }
   expect(errors).toEqual([]);
@@ -125,7 +141,13 @@ test("detail respects mobile modal and desktop nonmodal semantics", async ({
   await expect(page.locator(".ru-detail")).toHaveCount(0);
 });
 test("renderer passes automated accessibility checks", async ({ page }) => {
-  for (const demo of ["technical", "films", "calculator", "configurator"]) {
+  for (const demo of [
+    "dashboard",
+    "technical",
+    "films",
+    "calculator",
+    "configurator",
+  ]) {
     await page.goto(`/?demo=${demo}`);
     const results = await new AxeBuilder({ page })
       .include(".lab-answer")
@@ -171,4 +193,39 @@ test("entity rows open the same detail panel and keep focus contract", async ({
   await page.keyboard.press("Escape");
   await expect(page.locator(".ru-detail")).toHaveCount(0);
   await expect(row).toBeFocused();
+});
+
+test("sortable table reorders rows without a model call", async ({ page }) => {
+  await page.goto("/?demo=dashboard");
+  const firstTask = page.locator(".ru-table-wrap tbody tr td").first();
+  await expect(firstTask).toHaveText("Дизайн");
+  await page.locator("th", { hasText: "Прогресс" }).locator("button").click();
+  await expect(firstTask).toHaveText("Тестирование");
+  await expect(page.locator("th", { hasText: "Прогресс" })).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+});
+
+test("chart exposes axes, series legend and a hover readout", async ({
+  page,
+}) => {
+  await page.goto("/?demo=dashboard");
+  await expect(page.locator(".ru-chart .ru-axis-unit")).toHaveText("тыс. ₽");
+  await expect(page.locator(".ru-chart figcaption")).toContainText("Выручка");
+  await page.locator(".ru-chart-hit").nth(3).hover();
+  await expect(page.locator(".ru-chart-tip")).toContainText("Апр");
+  await expect(page.locator(".ru-chart-tip")).toContainText("91 тыс. ₽");
+});
+
+test("diagram steps keep their order and connector labels", async ({
+  page,
+}) => {
+  await page.goto("/?demo=dashboard");
+  const steps = page.locator(".ru-diagram-card strong");
+  await expect(steps).toHaveCount(4);
+  await expect(steps.first()).toHaveText("Запрос");
+  await expect(page.locator(".ru-diagram-edge").first()).toContainText(
+    "описание интерфейса",
+  );
 });

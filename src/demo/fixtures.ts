@@ -80,8 +80,43 @@ export const technical: RichSpec = {
       content: "Отправка тоже должна учитывать отмену",
     },
     {
+      type: "diagram",
+      direction: "horizontal",
+      caption: "Порядок событий в задаче: отмена приходит раньше отправки.",
+      steps: [
+        {
+          id: "worker",
+          label: "Worker",
+          detail: "Sleep(100ms)",
+          connector: "0 мс",
+        },
+        {
+          id: "cancel",
+          label: "Контекст отменён",
+          detail: "consumer выходит",
+          tone: "warning",
+          connector: "10 мс",
+        },
+        {
+          id: "send",
+          label: "Отправка 14",
+          detail: "блокируется навсегда",
+          tone: "danger",
+          connector: "100 мс",
+        },
+        {
+          id: "wait",
+          label: "Coordinator",
+          detail: "ждёт wg.Wait()",
+          tone: "warning",
+        },
+      ],
+    },
+    {
       type: "code",
       language: "go",
+      title: "Отправка с учётом отмены",
+      lineNumbers: true,
       code: "select {\ncase results <- value:\ncase <-ctx.Done():\n    return\n}",
     },
   ],
@@ -437,5 +472,154 @@ export const listing: RichSpec = {
   ],
 };
 
-export const demos = { technical, films, listing, calculator, configurator };
+export const dashboard: RichSpec = {
+  version: 1,
+  title: "Состояние запуска",
+  nodes: [
+    {
+      type: "text",
+      content:
+        "Три метрики, динамика выручки и план работ. Часть данных меняется локально: переключатели и таблица не вызывают модель.",
+    },
+    {
+      type: "grid",
+      columns: 3,
+      children: [
+        {
+          type: "stat",
+          label: "Доступность",
+          value: "98,7%",
+          delta: 0.4,
+          deltaLabel: "к прошлой неделе",
+          icon: "shield-check",
+        },
+        {
+          type: "stat",
+          label: "Активные пользователи",
+          value: 12480,
+          delta: 12.5,
+          deltaLabel: "за месяц",
+          icon: "users",
+        },
+        {
+          type: "stat",
+          label: "Инциденты",
+          value: 4,
+          delta: -18.2,
+          deltaLabel: "меньше, чем в сентябре",
+          tone: "success",
+          icon: "alert-triangle",
+        },
+      ],
+    },
+    {
+      type: "chart",
+      kind: "line",
+      unit: "тыс. ₽",
+      categories: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
+      series: [
+        { label: "Выручка", values: [62, 74, 68, 91, 86, 104] },
+        { label: "Расходы", values: [41, 44, 47, 52, 50, 58] },
+      ],
+      caption: "Демонстрационные данные, не отчётность.",
+    },
+    {
+      type: "card",
+      title: "План запуска",
+      children: [
+        {
+          type: "table",
+          sortable: true,
+          caption: "Нажми на заголовок, чтобы отсортировать.",
+          columns: [
+            { key: "task", label: "Задача" },
+            { key: "owner", label: "Ответственный" },
+            { key: "status", label: "Статус" },
+            { key: "progress", label: "Прогресс", align: "right" },
+          ],
+          rows: [
+            {
+              task: "Дизайн",
+              owner: "Аня",
+              status: "Готово",
+              progress: 100,
+            },
+            {
+              task: "Разработка",
+              owner: "Марк",
+              status: "В работе",
+              progress: 65,
+            },
+            {
+              task: "Тестирование",
+              owner: "Ира",
+              status: "Ожидание",
+              progress: 0,
+            },
+            {
+              task: "Документация",
+              owner: "Лев",
+              status: "В работе",
+              progress: 40,
+            },
+          ],
+        },
+        {
+          type: "row",
+          children: [
+            { type: "status", label: "Сборка зелёная", tone: "success" },
+            { type: "status", label: "Идёт ревью", tone: "warning" },
+            { type: "status", label: "Без блокеров", tone: "muted" },
+          ],
+        },
+      ],
+    },
+    {
+      type: "diagram",
+      direction: "vertical",
+      caption: "Путь запроса до готового ответа.",
+      steps: [
+        {
+          id: "ask",
+          label: "Запрос",
+          detail: "«Собери дашборд»",
+        },
+        {
+          id: "model",
+          label: "Модель",
+          detail: "выбирает структуру и данные",
+          connector: "описание интерфейса",
+        },
+        {
+          id: "render",
+          label: "Рендерер",
+          detail: "проверяет контракт и рисует компоненты",
+          connector: "RichSpec",
+        },
+        {
+          id: "user",
+          label: "Читатель",
+          detail: "меняет значения, не отправляя запрос",
+          tone: "success",
+        },
+      ],
+    },
+    {
+      type: "callout",
+      tone: "info",
+      title: "Границы",
+      content:
+        "Это не произвольный HTML и не мини-приложение. Компоненты, состояние и вычисления ограничены схемой.",
+    },
+  ],
+};
+
+export const demos = {
+  dashboard,
+  technical,
+  films,
+  listing,
+  calculator,
+  configurator,
+};
 export type DemoName = keyof typeof demos;

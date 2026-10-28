@@ -1,83 +1,55 @@
-import React, { useState, useRef, useEffect, useId } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  AlertTriangle,
   ArrowUpRight,
+  Check,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  X,
-  BookOpen,
-  Film,
-  MapPin,
-  ExternalLink,
-  Check,
-  Copy,
-  Info,
-  ShieldCheck,
-  Clock,
-  Lock,
   CircleX,
-  Zap,
-  Search,
+  ExternalLink,
   ImageOff,
-  Package,
-  Wallet,
-  Truck,
-  Tag,
+  Info,
+  X,
 } from "lucide-react";
 import {
   parseRichSpec,
-  type RichSpec,
-  type RichNode,
-  type RichAction,
-  type Scalar,
   type Entity,
   type Expr,
+  type RichAction,
+  type RichNode,
+  type RichSpec,
+  type Scalar,
 } from "../core/schema";
 import { evaluate, getInitialState } from "../core/evaluator";
 import {
+  clearPersistedState,
   loadPersistedState,
   savePersistedState,
-  clearPersistedState,
 } from "./persistence";
-import { Popover, Tooltip, ImageLightbox } from "./primitives";
+import { ImageLightbox, Popover, Tooltip } from "./primitives";
+import { Inline } from "./inline";
+import { resolveIcon } from "./icons";
+import { Chart } from "./blocks/Chart";
+import { CodeBlock } from "./blocks/CodeBlock";
+import {
+  Diagram,
+  Progress,
+  Stat,
+  Status,
+  formatNumber,
+} from "./blocks/Metrics";
+import { SortableTable } from "./blocks/Table";
 import "./rich-ui.css";
-const glyphs: Record<string, React.ComponentType<any>> = {
-  clock: Clock,
-  lock: Lock,
+
+const TONE_ICONS = {
+  success: CheckCircle2,
   error: CircleX,
-  x: X,
-  check: Check,
+  warning: AlertTriangle,
   info: Info,
-  shield: ShieldCheck,
-  "shield-check": ShieldCheck,
-  zap: Zap,
-  search: Search,
-  film: Film,
-  book: BookOpen,
-  "map-pin": MapPin,
-  package: Package,
-  box: Package,
-  wallet: Wallet,
-  truck: Truck,
-  tag: Tag,
-};
-function Inline({ text }: { text: string }) {
-  return (
-    <>
-      {text
-        .split(/(`[^`]+`|\*\*[^*]+\*\*)/g)
-        .map((p, i) =>
-          p.startsWith("`") ? (
-            <code key={i}>{p.slice(1, -1)}</code>
-          ) : p.startsWith("**") ? (
-            <strong key={i}>{p.slice(2, -2)}</strong>
-          ) : (
-            p
-          ),
-        )}
-    </>
-  );
-}
+} as const;
+
 function Picture({
   src,
   alt,
@@ -90,7 +62,7 @@ function Picture({
       role="img"
       aria-label={alt}
     >
-      <ImageOff size={24} />
+      <ImageOff size={22} />
       <span>Изображение недоступно</span>
     </div>
   ) : (
@@ -103,153 +75,16 @@ function Picture({
     />
   );
 }
-function Chart({
-  node,
-  state,
-}: {
-  node: Extract<RichNode, { type: "chart" }>;
-  state: Record<string, Scalar>;
-}) {
-  let values: number[];
-  try {
-    values = node.data.map((d) => Number(evaluate(d.value, state)) || 0);
-  } catch {
-    return (
-      <p role="alert" className="ru-evaluation-error">
-        Не удалось вычислить график.
-      </p>
-    );
-  }
-  const max = Math.max(1, ...values.map(Math.abs));
-  const sum = values.reduce((a, b) => a + Math.max(0, b), 0);
-  let offset = 0;
-  const colors = ["#23836a", "#477cd4", "#ae77b1", "#d29a45"];
-  return (
-    <figure className="ru-chart">
-      <svg
-        viewBox="0 0 640 220"
-        role="img"
-        aria-label={
-          node.kind === "line"
-            ? "Линейный график"
-            : node.kind === "bar"
-              ? "Столбчатый график"
-              : "Круговая диаграмма"
-        }
-      >
-        {node.kind === "donut" ? (
-          values.map((v, i) => {
-            const length = sum ? (Math.max(0, v) / sum) * 100 : 0;
-            const old = offset;
-            offset += length;
-            return (
-              <circle
-                key={i}
-                cx="320"
-                cy="105"
-                r="73"
-                fill="none"
-                stroke={colors[i % colors.length]}
-                strokeWidth="28"
-                pathLength="100"
-                strokeDasharray={`${length} ${100 - length}`}
-                strokeDashoffset={-old}
-                transform="rotate(-90 320 105)"
-              >
-                <title>
-                  {node.data[i].label}: {v}
-                </title>
-              </circle>
-            );
-          })
-        ) : (
-          <>
-            {[0, 1, 2, 3].map((i) => (
-              <g key={i}>
-                <line
-                  x1="42"
-                  y1={20 + i * 48}
-                  x2="620"
-                  y2={20 + i * 48}
-                  stroke="var(--ru-border)"
-                />
-                <text
-                  x="32"
-                  y={24 + i * 48}
-                  textAnchor="end"
-                  className="ru-axis"
-                >
-                  {Math.round(max * (1 - i / 3))}
-                </text>
-              </g>
-            ))}
-            {node.kind === "line" ? (
-              <>
-                <path
-                  d={`M ${values.map((v, i) => `${55 + (i * 550) / Math.max(1, values.length - 1)},${164 - (v / max) * 144}`).join(" L ")}`}
-                  fill="none"
-                  stroke="var(--ru-accent)"
-                  strokeWidth="3"
-                />
-                {values.map((v, i) => (
-                  <circle
-                    key={i}
-                    cx={55 + (i * 550) / Math.max(1, values.length - 1)}
-                    cy={164 - (v / max) * 144}
-                    r="4"
-                    fill="var(--ru-accent)"
-                  >
-                    <title>
-                      {node.data[i].label}: {v}
-                    </title>
-                  </circle>
-                ))}
-              </>
-            ) : (
-              values.map((v, i) => (
-                <rect
-                  key={i}
-                  x={55 + (i * 550) / Math.max(1, values.length)}
-                  y={164 - (Math.max(0, v) / max) * 144}
-                  width={Math.min(50, 450 / Math.max(1, values.length))}
-                  height={(Math.max(0, v) / max) * 144}
-                  rx="4"
-                  fill="var(--ru-accent)"
-                >
-                  <title>
-                    {node.data[i].label}: {v}
-                  </title>
-                </rect>
-              ))
-            )}
-          </>
-        )}
-      </svg>
-      <figcaption>
-        {node.data.map((d, i) => (
-          <span key={i}>
-            <i
-              style={{
-                background:
-                  node.kind === "donut"
-                    ? colors[i % colors.length]
-                    : "var(--ru-accent)",
-              }}
-            />
-            {d.label} <strong>{values[i].toLocaleString("ru-RU")}</strong>
-          </span>
-        ))}
-      </figcaption>
-    </figure>
-  );
-}
+
 export interface RichResponseProps {
   spec: RichSpec;
-  /** Opt-in sessionStorage identity; include owning session and response/block. Inputs never persist. */ persistenceKey?: string;
-  /** Desktop defaults to non-modal fixed drawer; host owns surrounding layout reflow. Mobile uses a modal sheet. */ detailMode?:
-    "drawer" | "modal";
+  /** Opt-in sessionStorage identity; include owning session and response/block. Inputs never persist. */
+  persistenceKey?: string;
+  /** Desktop defaults to non-modal fixed drawer; host owns surrounding layout reflow. Mobile uses a modal sheet. */
+  detailMode?: "drawer" | "modal";
   onAction?: (action: string, payload?: Record<string, unknown>) => void;
 }
+
 export function RichResponse({
   spec: raw,
   onAction,
@@ -275,38 +110,39 @@ export function RichResponse({
     setSelected(null);
   }, [spec, persistenceKey]);
   const ev = (expr: Expr) => evaluate(expr, state);
-  const act = async (a: RichAction) => {
+  const act = async (action: RichAction) => {
     try {
-      switch (a.type) {
+      switch (action.type) {
         case "set":
-          update(a.key, ev(a.value));
+          update(action.key, ev(action.value));
           break;
         case "toggle":
-          update(a.key, !state[a.key]);
+          update(action.key, !state[action.key]);
           break;
         case "reset":
           setState(getInitialState(spec));
           clearPersistedState(persistenceKey);
           break;
         case "open-entity":
-          setSelected(a.entityId);
+          setSelected(action.entityId);
           break;
         case "close-entity":
           setSelected(null);
           break;
         case "copy":
           try {
-            await navigator.clipboard.writeText(String(ev(a.text)));
+            await navigator.clipboard.writeText(String(ev(action.text)));
             setNotice("Скопировано");
           } catch {
             setNotice("Не удалось скопировать");
           }
           break;
         case "open-url":
-          window.open(a.url, "_blank", "noopener,noreferrer");
+          window.open(action.url, "_blank", "noopener,noreferrer");
           break;
         case "send-message":
-          if (onAction) onAction("send-message", { text: String(ev(a.text)) });
+          if (onAction)
+            onAction("send-message", { text: String(ev(action.text)) });
           break;
       }
     } catch {
@@ -358,12 +194,12 @@ export function RichResponse({
                 } as React.CSSProperties
               }
             >
-              {n.title && <h3>{n.title}</h3>}
+              {n.title && <h3 className="ru-section-title">{n.title}</h3>}
               {n.children.map(render)}
             </div>
           );
         case "icon": {
-          const Glyph = glyphs[n.name.toLowerCase()] ?? Info;
+          const Glyph = resolveIcon(n.name) ?? Info;
           return (
             <span
               key={key}
@@ -375,26 +211,37 @@ export function RichResponse({
             </span>
           );
         }
+        case "stat":
+          return (
+            <Stat
+              key={key}
+              node={n}
+              value={ev(n.value)}
+              delta={n.delta === undefined ? undefined : ev(n.delta)}
+            />
+          );
+        case "progress":
+          return <Progress key={key} node={n} value={ev(n.value)} />;
+        case "status":
+          return <Status key={key} node={n} />;
+        case "diagram":
+          return <Diagram key={key} node={n} />;
         case "meta":
           return (
             <div key={key} className="ru-meta">
-              {n.items.map((item, i) => (
-                <span key={i} className="ru-meta-item">
-                  {item.icon && (
-                    <span
-                      className="ru-icon"
-                      data-tone="muted"
-                      aria-hidden="true"
-                    >
-                      {React.createElement(
-                        glyphs[item.icon.toLowerCase()] ?? Info,
-                        { size: 15, strokeWidth: 1.7 },
-                      )}
-                    </span>
-                  )}
-                  {item.text}
-                </span>
-              ))}
+              {n.items.map((item, index) => {
+                const Glyph = item.icon ? resolveIcon(item.icon) : undefined;
+                return (
+                  <span key={index} className="ru-meta-item">
+                    {Glyph && (
+                      <span className="ru-icon" data-tone="muted">
+                        <Glyph size={15} strokeWidth={1.7} />
+                      </span>
+                    )}
+                    {item.text}
+                  </span>
+                );
+              })}
             </div>
           );
         case "entity-list":
@@ -412,10 +259,11 @@ export function RichResponse({
               {n.label && <span>{n.label}</span>}
             </div>
           );
-        case "callout":
+        case "callout": {
+          const Icon = TONE_ICONS[n.tone ?? "info"];
           return (
             <aside key={key} className={`ru-callout ru-${n.tone ?? "info"}`}>
-              <Info size={18} />
+              <Icon size={18} aria-hidden="true" />
               <div>
                 {n.title && (
                   <strong className="ru-callout-title">{n.title}</strong>
@@ -424,17 +272,20 @@ export function RichResponse({
               </div>
             </aside>
           );
-        case "computed":
+        }
+        case "computed": {
+          const value = ev(n.expr);
           return (
             <div key={key} className="ru-computed">
               {n.label && <span>{n.label}</span>}
               <output>
-                {typeof ev(n.expr) === "number"
-                  ? Number(ev(n.expr)).toLocaleString("ru-RU")
-                  : String(ev(n.expr) ?? "")}
+                {typeof value === "number"
+                  ? formatNumber(value)
+                  : String(value ?? "")}
               </output>
             </div>
           );
+        }
         case "button":
           return (
             <button
@@ -459,14 +310,14 @@ export function RichResponse({
                 type={n.inputType ?? "text"}
                 value={String(state[n.stateKey] ?? "")}
                 placeholder={n.placeholder}
-                onChange={(e) =>
+                onChange={(event) =>
                   update(
                     n.stateKey,
                     n.inputType === "number"
-                      ? e.target.value === ""
+                      ? event.target.value === ""
                         ? ""
-                        : Number(e.target.value)
-                      : e.target.value,
+                        : Number(event.target.value)
+                      : event.target.value,
                   )
                 }
               />
@@ -479,18 +330,18 @@ export function RichResponse({
               <select
                 aria-label={n.label ?? n.stateKey}
                 value={n.options.findIndex(
-                  (o) => o.value === state[n.stateKey],
+                  (option) => option.value === state[n.stateKey],
                 )}
-                onChange={(e) =>
+                onChange={(event) =>
                   update(
                     n.stateKey,
-                    n.options[Number(e.target.value)]?.value ?? null,
+                    n.options[Number(event.target.value)]?.value ?? null,
                   )
                 }
               >
-                {n.options.map((o, i) => (
-                  <option key={i} value={i}>
-                    {o.label}
+                {n.options.map((option, index) => (
+                  <option key={index} value={index}>
+                    {option.label}
                   </option>
                 ))}
               </select>
@@ -512,7 +363,9 @@ export function RichResponse({
                 max={n.max}
                 step={n.step ?? 1}
                 value={Number(state[n.stateKey] ?? n.min)}
-                onChange={(e) => update(n.stateKey, Number(e.target.value))}
+                onChange={(event) =>
+                  update(n.stateKey, Number(event.target.value))
+                }
               />
             </label>
           );
@@ -525,7 +378,7 @@ export function RichResponse({
                 type="checkbox"
                 role="switch"
                 checked={Boolean(state[n.stateKey])}
-                onChange={(e) => update(n.stateKey, e.target.checked)}
+                onChange={(event) => update(n.stateKey, event.target.checked)}
               />
             </label>
           );
@@ -535,7 +388,7 @@ export function RichResponse({
               <input
                 type="checkbox"
                 checked={Boolean(state[n.stateKey])}
-                onChange={(e) => update(n.stateKey, e.target.checked)}
+                onChange={(event) => update(n.stateKey, event.target.checked)}
               />
               <span>{n.label}</span>
             </label>
@@ -552,12 +405,12 @@ export function RichResponse({
             >
               {n.label && <legend>{n.label}</legend>}
               <div className="ru-choice-options">
-                {n.options.map((option, i) => (
-                  <label key={i}>
+                {n.options.map((option, index) => (
+                  <label key={index}>
                     <input
                       type="radio"
                       name={name}
-                      value={i}
+                      value={index}
                       checked={current === option.value}
                       onChange={() => update(n.stateKey, option.value)}
                     />
@@ -579,41 +432,41 @@ export function RichResponse({
           return (
             <div key={key}>
               <div className="ru-tabs" role="tablist">
-                {n.tabs.map((t, j) => (
+                {n.tabs.map((tab, index) => (
                   <button
-                    key={t.id}
-                    id={`${uid}-${n.stateKey}-${t.id}`}
+                    key={tab.id}
+                    id={`${uid}-${n.stateKey}-${tab.id}`}
                     role="tab"
-                    aria-selected={current === t.id}
+                    aria-selected={current === tab.id}
                     aria-controls={`${uid}-${n.stateKey}-panel`}
-                    tabIndex={current === t.id ? 0 : -1}
-                    onClick={() => update(n.stateKey, t.id)}
-                    onKeyDown={(e) => {
+                    tabIndex={current === tab.id ? 0 : -1}
+                    onClick={() => update(n.stateKey, tab.id)}
+                    onKeyDown={(event) => {
                       if (
-                        ["ArrowRight", "ArrowLeft", "Home", "End"].includes(
-                          e.key,
+                        !["ArrowRight", "ArrowLeft", "Home", "End"].includes(
+                          event.key,
                         )
-                      ) {
-                        e.preventDefault();
-                        const next =
-                          e.key === "Home"
-                            ? 0
-                            : e.key === "End"
-                              ? n.tabs.length - 1
-                              : (j +
-                                  (e.key === "ArrowRight" ? 1 : -1) +
-                                  n.tabs.length) %
-                                n.tabs.length;
-                        update(n.stateKey, n.tabs[next].id);
-                        (
-                          e.currentTarget.parentElement?.children[
-                            next
-                          ] as HTMLElement
-                        )?.focus();
-                      }
+                      )
+                        return;
+                      event.preventDefault();
+                      const next =
+                        event.key === "Home"
+                          ? 0
+                          : event.key === "End"
+                            ? n.tabs.length - 1
+                            : (index +
+                                (event.key === "ArrowRight" ? 1 : -1) +
+                                n.tabs.length) %
+                              n.tabs.length;
+                      update(n.stateKey, n.tabs[next].id);
+                      (
+                        event.currentTarget.parentElement?.children[
+                          next
+                        ] as HTMLElement
+                      )?.focus();
                     }}
                   >
-                    {t.label}
+                    {tab.label}
                   </button>
                 ))}
               </div>
@@ -623,43 +476,24 @@ export function RichResponse({
                 aria-labelledby={`${uid}-${n.stateKey}-${current}`}
                 className="ru-tabpanel"
               >
-                {n.tabs.find((t) => t.id === current)?.children.map(render)}
+                {n.tabs.find((tab) => tab.id === current)?.children.map(render)}
               </div>
             </div>
           );
         }
         case "table":
-          return (
-            <div key={key} className="ru-table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    {n.columns.map((c) => (
-                      <th key={c.key}>{c.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {n.rows.map((r, j) => (
-                    <tr key={j}>
-                      {n.columns.map((c) => (
-                        <td key={c.key}>
-                          {String(ev(r[c.key] ?? null) ?? "")}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
+          return <SortableTable key={key} node={n} state={state} />;
         case "chart":
           return <Chart key={key} node={n} state={state} />;
         case "code":
           return (
-            <pre key={key} className="ru-code">
-              <code>{n.code}</code>
-            </pre>
+            <CodeBlock
+              key={key}
+              code={n.code}
+              language={n.language}
+              title={n.title}
+              lineNumbers={n.lineNumbers}
+            />
           );
         case "image":
           return (
@@ -671,7 +505,9 @@ export function RichResponse({
         case "carousel":
           return <Carousel key={key}>{n.children.map(render)}</Carousel>;
         case "entity-ref": {
-          const entity = spec.entities?.find((e) => e.id === n.entityId);
+          const entity = spec.entities?.find(
+            (entry) => entry.id === n.entityId,
+          );
           if (!entity) return null;
           return (
             <button
@@ -686,10 +522,12 @@ export function RichResponse({
               <span className="ru-entity-meta">
                 <span className="ru-eyebrow">{entity.kind}</span>
                 <strong>{entity.title}</strong>
-                <span>{entity.subtitle}</span>
-                <span className="ru-entity-description">
-                  {entity.description}
-                </span>
+                {entity.subtitle && <span>{entity.subtitle}</span>}
+                {entity.description && (
+                  <span className="ru-entity-description">
+                    {entity.description}
+                  </span>
+                )}
                 <span className="ru-entity-open">
                   Подробнее <ArrowUpRight size={14} />
                 </span>
@@ -706,7 +544,7 @@ export function RichResponse({
       );
     }
   };
-  const entity = spec.entities?.find((e) => e.id === selected);
+  const entity = spec.entities?.find((entry) => entry.id === selected);
   return (
     <section
       ref={root}
@@ -732,6 +570,7 @@ export function RichResponse({
     </section>
   );
 }
+
 /** Full-width entity rows: compact poster, metadata, chevron. Mirrors the reference layout. */
 function EntityRows({
   node,
@@ -743,8 +582,8 @@ function EntityRows({
   onOpen: (id: string) => void;
 }) {
   const entities = node.entityIds
-    .map((id) => pool.find((e) => e.id === id))
-    .filter((e): e is Entity => Boolean(e));
+    .map((id) => pool.find((entry) => entry.id === id))
+    .filter((entry): entry is Entity => Boolean(entry));
   if (entities.length === 0) return null;
   return (
     <ul className="ru-entity-rows">
@@ -772,7 +611,7 @@ function EntityRows({
                   className="ru-entity-badge"
                   data-tone={entity.badge.tone ?? "success"}
                 >
-                  <Check size={14} aria-hidden="true" />
+                  <Check size={13} aria-hidden="true" />
                   {entity.badge.label}
                 </span>
               )}
@@ -791,6 +630,7 @@ function Carousel({ children }: { children: React.ReactNode }) {
     <div className="ru-carousel">
       <div className="ru-carousel-controls">
         <button
+          type="button"
           aria-label="Предыдущие карточки"
           onClick={() =>
             ref.current?.scrollBy({ left: -330, behavior: "smooth" })
@@ -799,6 +639,7 @@ function Carousel({ children }: { children: React.ReactNode }) {
           <ChevronLeft size={17} />
         </button>
         <button
+          type="button"
           aria-label="Следующие карточки"
           onClick={() =>
             ref.current?.scrollBy({ left: 330, behavior: "smooth" })
@@ -818,6 +659,7 @@ function Carousel({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
 function EntityPanel({
   entity,
   entities,
@@ -914,12 +756,12 @@ function EntityPanel({
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     close.current?.focus();
-    const listener = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
+    const listener = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
         onCloseRef.current();
       }
-      if (e.key === "Tab") {
+      if (event.key === "Tab") {
         const nodes = ref.current?.querySelectorAll<HTMLElement>(
           'button:not(:disabled),a[href],input,select,[tabindex="0"]',
         );
@@ -927,13 +769,13 @@ function EntityPanel({
         const first = nodes[0],
           last = nodes[nodes.length - 1];
         if (!ref.current?.contains(document.activeElement)) {
-          e.preventDefault();
-          (e.shiftKey ? last : first).focus();
-        } else if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
           last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
           first.focus();
         }
       }
@@ -950,12 +792,15 @@ function EntityPanel({
     : entity.image
       ? [entity.image]
       : [];
+  const related = (entity.related ?? [])
+    .map((id) => entities.find((entry) => entry.id === id))
+    .filter((entry): entry is Entity => Boolean(entry));
   return createPortal(
     <div
       className={`rich-ui ru-overlay ${modal ? "ru-modal" : "ru-drawer"}`}
       data-theme={theme}
-      onClick={(e) => {
-        if (modal && e.target === e.currentTarget) onClose();
+      onClick={(event) => {
+        if (modal && event.target === event.currentTarget) onClose();
       }}
     >
       <aside
@@ -965,33 +810,37 @@ function EntityPanel({
         aria-modal={modal ? true : undefined}
         aria-labelledby={title}
       >
+        {modal && <span className="ru-sheet-handle" aria-hidden="true" />}
         <header className="ru-detail-top">
-          <span>{entity.kind}</span>
+          <span className="ru-eyebrow">{entity.kind}</span>
           <button
             ref={close}
+            type="button"
             aria-label="Закрыть подробности"
             onClick={onClose}
           >
-            <X size={20} />
+            <X size={19} />
           </button>
         </header>
         {images.length > 0 && (
           <div className="ru-detail-gallery">
             <Picture
               key={images[photo]}
-              src={images[photo]}
+              src={images[photo]!}
               alt={`${entity.title} — изображение ${photo + 1}`}
+              className="ru-detail-photo"
             />
             {images.length > 1 && (
-              <div className="ru-gallery-switch">
-                {images.map((_, i) => (
+              <div className="ru-thumbs">
+                {images.map((source, index) => (
                   <button
-                    key={i}
-                    aria-label={`Изображение ${i + 1}`}
-                    aria-pressed={photo === i}
-                    onClick={() => setPhoto(i)}
+                    key={source}
+                    type="button"
+                    aria-label={`Изображение ${index + 1}`}
+                    aria-pressed={photo === index}
+                    onClick={() => setPhoto(index)}
                   >
-                    {i + 1}
+                    <Picture src={source} alt="" />
                   </button>
                 ))}
               </div>
@@ -1002,60 +851,84 @@ function EntityPanel({
           <h2 id={title} ref={heading} tabIndex={-1}>
             {entity.title}
           </h2>
-          <p className="ru-muted">{entity.subtitle}</p>
-          <p>{entity.description}</p>
-          {entity.facts && (
-            <dl>
-              {entity.facts.map((f) => (
-                <div key={f.label}>
-                  <dt>{f.label}</dt>
-                  <dd>{String(f.value ?? "—")}</dd>
+          {entity.subtitle && (
+            <p className="ru-detail-subtitle">{entity.subtitle}</p>
+          )}
+          {entity.description && <p>{entity.description}</p>}
+          {entity.badge && (
+            <span
+              className="ru-entity-badge ru-detail-badge"
+              data-tone={entity.badge.tone ?? "success"}
+            >
+              <Check size={13} aria-hidden="true" />
+              {entity.badge.label}
+            </span>
+          )}
+          {entity.facts?.length ? (
+            <dl className="ru-facts">
+              {entity.facts.map((fact) => (
+                <div key={fact.label}>
+                  <dt>{fact.label}</dt>
+                  <dd>
+                    {typeof fact.value === "number"
+                      ? formatNumber(fact.value)
+                      : String(fact.value ?? "—")}
+                  </dd>
                 </div>
               ))}
             </dl>
-          )}
-          {entity.sources?.length && (
+          ) : null}
+          {entity.sources?.length ? (
+            <div className="ru-detail-actions">
+              <a
+                className="ru-button ru-button-primary"
+                href={entity.sources[0]!.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Открыть источник
+                <ArrowUpRight size={15} />
+              </a>
+            </div>
+          ) : null}
+          {entity.sources?.length ? (
             <section>
-              <h3>Источники</h3>
-              {entity.sources.map((s) => (
+              <h3 className="ru-section-title">Источники</h3>
+              {entity.sources.map((source) => (
                 <a
                   className="ru-source"
-                  href={s.url}
+                  href={source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  key={s.url}
+                  key={source.url}
                 >
-                  <ExternalLink size={15} />
+                  <ExternalLink size={15} aria-hidden="true" />
                   <span>
-                    {s.title}
-                    <small>{new URL(s.url).hostname}</small>
+                    {source.title}
+                    <small>{new URL(source.url).hostname}</small>
                   </span>
-                  <ArrowUpRight size={15} />
+                  <ArrowUpRight size={15} aria-hidden="true" />
                 </a>
               ))}
             </section>
-          )}
-          {entity.related?.length && (
+          ) : null}
+          {related.length > 0 && (
             <section>
-              <h3>Связанные объекты</h3>
-              {entity.related.map((id) => {
-                const related = entities.find((e) => e.id === id);
-                return (
-                  related && (
-                    <button
-                      className="ru-related"
-                      key={id}
-                      onClick={() => {
-                        close.current?.focus();
-                        onSelect(id);
-                      }}
-                    >
-                      {related.title}
-                      <ChevronRight size={16} />
-                    </button>
-                  )
-                );
-              })}
+              <h3 className="ru-section-title">Связанные объекты</h3>
+              {related.map((entry) => (
+                <button
+                  type="button"
+                  className="ru-related"
+                  key={entry.id}
+                  onClick={() => {
+                    close.current?.focus();
+                    onSelect(entry.id);
+                  }}
+                >
+                  {entry.title}
+                  <ChevronRight size={16} />
+                </button>
+              ))}
             </section>
           )}
           <p className="ru-provenance">

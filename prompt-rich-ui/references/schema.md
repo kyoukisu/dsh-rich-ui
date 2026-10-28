@@ -10,12 +10,16 @@ Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?:
 
 ## Nodes
 
-- `text`: `{type:"text",content:Expr,variant?:"body"|"title"|"subtitle"|"caption"}`.
+- `text`: `{type:"text",content:Expr,variant?:"body"|"title"|"subtitle"|"caption"}`. Only `` `code` ``, `**bold**` and `[label](https://…)` are interpreted. A link must be an absolute http(s) URL; any other markup stays literal text.
 - Layout: `{type:"stack"|"row"|"grid"|"card",children:Node[],gap?:number,columns?:integer,title?:string}`. Gap 0–128; columns 1–12. The field is `children`, never `items`.
 - `carousel`: `{type:"carousel",children:Node[]}`.
 - `meta`: `{type:"meta",items:[{text:string,icon?:string}]}` — one inline summary strip ("4 модели · От 1 382 ₽ · Доставка 7–18 ноября"). Not for paragraphs.
 - entity `badge`: `{label:string,tone?:"success"|"info"|"warning"|"danger"|"accent"}` — one short highlight under a row, e.g. cheapest or smart-home support. Enum values only.
 - `icon`: `{type:"icon",name:string,size?:number,tone?:"default"|"muted"|"success"|"warning"|"danger"|"info"|"accent"}`. Size 8–128; name starts with a letter and contains only letters/digits/hyphen, up to 64 characters. Use Lucide PascalCase names. No inline SVG, no arbitrary colours: `tone` is a semantic token so both themes stay legible. Use `danger` for failures, `warning` for blocked/at-risk state, `muted` for neutral timeline marks.
+- `stat`: `{type:"stat",label:string,value:Expr,delta?:Expr,deltaLabel?:string,hint?:string,tone?:"success"|"warning"|"danger"|"accent",icon?:string}` — one KPI card: label, large value, optional change. A numeric `delta` is read as a percentage and gets a sign; a string is shown verbatim. Use it for the few numbers the reader should remember, not for every metric in a paragraph.
+- `progress`: `{type:"progress",value:Expr,max?:number,label?:string,tone?:"success"|"warning"|"danger"|"info"|"accent",showValue?:boolean}` — horizontal 0–max bar, default max 100. The renderer clamps values and exposes `aria-valuenow`.
+- `status`: `{type:"status",label:string,tone?:"muted"|"success"|"warning"|"danger"|"info"|"accent"}` — compact state pill ("Готово", "В работе", "Без блокеров"). Not a replacement for a sentence that explains the state.
+- `diagram`: `{type:"diagram",steps:[{id:KEY,label:string,detail?:string,tone?:"muted"|"success"|"warning"|"danger"|"info"|"accent",connector?:string,depth?:0|1|2}],direction?:"horizontal"|"vertical",caption?:string}` — ordered process or architecture flow, 1–12 steps with unique ids. `connector` labels the arrow that leads into that step; `depth` indents a branch. This is a flow, not a free-form graph editor: do not pretend it is Mermaid or accept arbitrary node coordinates.
 - `entity-list`: `{type:"entity-list",entityIds:string[]}` — full-width rows (compact poster, kind, title, subtitle, short description, chevron). Every id must be declared in `entities`. Prefer rows for 2–5 comparable objects; use `carousel` for browsing many posters.
 - `checkbox`: `{type:"checkbox",stateKey:string,label:string}` — boolean consent/selection, distinct from the `switch` toggle.
 - `radio`: `{type:"radio",stateKey:string,label?:string,options:[{label,value}]}` — one choice from a short visible list.
@@ -34,11 +38,11 @@ Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?:
 - `computed`: `{type:"computed",expr:Expr,label?:string}`.
 - `conditional`: `{type:"conditional",when:Expr,children:Node[],elseChildren?:Node[]}`.
 - `tabs`: `{type:"tabs",stateKey:KEY,tabs:{id:KEY,label:string,children:Node[]}[]}`. Tab IDs unique inside the node.
-- `table`: `{type:"table",columns:{key:KEY,label:string}[],rows:Record<KEY,Expr>[]}`. Column keys unique; row fields must refer to listed column keys. A missing cell is allowed. Rows are objects, not positional arrays.
-- `chart`: `{type:"chart",kind:"bar"|"line"|"donut",data:{label:string,value:Expr}[]}`. Singular `bar`, not GenUI `bars`. No series/options passthrough.
+- `table`: `{type:"table",columns:{key:KEY,label:string,align?:"left"|"right"|"center"}[],rows:Record<KEY,Expr>[],sortable?:boolean,caption?:string,empty?:string}`. Column keys unique; row fields must refer to listed column keys. A missing cell shows as "—". Rows are objects, not positional arrays. `sortable` adds local header sorting (no model call); numeric columns right-align automatically. Use a table for comparison, not as a layout grid.
+- `chart`: `{type:"chart",kind:"bar"|"line"|"area"|"donut",data?:{label:string,value:Expr}[],categories?:string[],series?:{label:string,values:Expr[]}[],unit?:string,caption?:string}`. Use `data` for one series or a donut. For 2–6 series use `categories` plus `series`; every `values` array must have exactly the same length as `categories`. Singular `bar`, not GenUI `bars`. `unit` (for example "тыс. ₽") appears on the value axis and in tooltips. No options passthrough, no arbitrary axis math.
 - `callout`: `{type:"callout",content:Expr,tone?:"info"|"success"|"warning"|"error"}`.
 - `divider`: `{type:"divider",label?:string}`.
-- `code`: `{type:"code",code:string,language?:string}`. Displays code as text; never executes it.
+- `code`: `{type:"code",code:string,language?:string,title?:string,lineNumbers?:boolean}`. Displays code as text; never executes it. Common languages get lightweight highlighting; line numbers default on above 12 lines.
 
 ## Actions
 

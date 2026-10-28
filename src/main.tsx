@@ -17,6 +17,7 @@ import "./demo/lab.css";
 import { PrimitiveDemo } from "./demo/PrimitiveDemo";
 type LabDemo = DemoName | "primitives";
 const labels: Record<LabDemo, string> = {
+  dashboard: "Дашборд и метрики",
   technical: "Технический разбор",
   films: "Подборка фильмов",
   listing: "Витрина товаров",
@@ -80,7 +81,7 @@ function App() {
           </button>
           <span>
             Rich responses{" "}
-            <span className="lab-version">0.1 · development</span>
+            <span className="lab-version">0.2 · development</span>
           </span>
           <div className="lab-header-actions">
             <button
@@ -118,7 +119,9 @@ function App() {
                   ? "Покажи, как изменяется капитал при разных сумме, ставке и сроке."
                   : demo === "listing"
                     ? "Сравни чайники с Ozon: цены, объём и что умеют."
-                    : "Собери небольшой конфигуратор с живым предпросмотром."}
+                    : demo === "dashboard"
+                      ? "Собери панель запуска: метрики, график, план работ и схему обработки запроса."
+                      : "Собери небольшой конфигуратор с живым предпросмотром."}
           </div>
           <article className="lab-answer">
             {demo === "primitives" ? (

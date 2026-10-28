@@ -4,7 +4,7 @@
 
 **Answers that behave like an interface, not a wall of Markdown.**
 
-Entity collections with detail panels, calculators that recompute as you drag, charts, forms and tables — rendered inside [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) from a strict JSON contract.
+Entity collections with detail panels, KPI cards, multi-series charts, sortable tables, flow diagrams, calculators that recompute as you drag — rendered inside [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) from a strict JSON contract.
 
 [![stars](https://shieldcn.dev/github/kyoukisu/dsh-rich-ui/stars.svg?variant=branded&size=xs)](https://github.com/kyoukisu/dsh-rich-ui/stargazers)
 [![license](https://shieldcn.dev/github/kyoukisu/dsh-rich-ui/license.svg?variant=branded&size=xs)](LICENSE)
@@ -31,13 +31,28 @@ The renderer is a real React tree behind a strict schema. There is no generated 
 <p align="center">
   <img alt="Film collection reflowed beside an open detail panel with poster, facts and sources" src="docs/images/films-desktop.png" width="860">
   <br>
-  <em>The detail panel opens beside the collection and the answer reflows around it.</em>
+  <em>In the lab the answer reflows beside the open panel; inside Harness the drawer overlays the column.</em>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-desktop-dark.png">
+    <img alt="Dashboard answer with three KPI cards, a two-series line chart, a sortable table and a vertical flow" src="docs/images/dashboard-desktop.png" width="820">
+  </picture>
+  <br>
+  <em>Metrics, a two-series chart with units and hover, a sortable table and an ordered flow — one document.</em>
 </p>
 
 <p align="center">
   <img alt="A calculator with sliders that recompute the result locally" src="docs/images/calculator-dark.png" width="700">
   <br>
   <em>Sliders recompute the number in the browser; the model is not called again.</em>
+</p>
+
+<p align="center">
+  <img alt="The same dashboard on a 390 pixel phone: stacked KPI cards, a readable chart and a four-column table that fits" src="docs/images/dashboard-mobile.png" width="300">
+  <br>
+  <em>390 px: cards stack, the chart gets its own coordinate system, the table still fits.</em>
 </p>
 
 ## Install
@@ -76,14 +91,15 @@ Things worth trying: *"build a budget calculator with three sliders"*, *"show th
 | Group | Nodes |
 |---|---|
 | Layout | `stack`, `row`, `grid`, `card`, `divider`, `meta` |
-| Text | `text` with inline `code` and **bold**, `callout` with optional title, `code` |
+| Text | `text` with inline `code`, **bold** and links; `callout` with optional title; `code` with highlighting, line numbers and copy |
 | Objects | `entity-ref`, `entity-list`, detail panel with gallery, facts, sources, related entities |
-| Data | `table`, `chart` (bar / line / donut), `computed` |
+| Data | `stat` (KPI card), `progress`, `status`, `table` (sortable), `chart` (bar / line / area / donut, 1–6 series, units, tooltips), `computed` |
+| Flow | `diagram` with ordered steps, connector labels and branch depth |
 | Media | `image`, `image-group`, gallery lightbox, popover, tooltip |
 | Controls | `input` (text / number / date), `select`, `slider`, `switch`, `checkbox`, `radio`, `segmented`, `tabs` |
 | Logic | expressions (`add`, `mul`, `round`, comparisons…), `conditional`, local actions, `send-message` |
 
-Icons are a curated Lucide subset with semantic tones (`success`, `warning`, `danger`, `muted`) so colour means something. Light and dark themes follow the host palette and font.
+Roughly 150 Lucide icons resolve by name, with semantic tones (`success`, `warning`, `danger`, `muted`) so colour means something. Light and dark themes follow the host palette and font.
 
 ## The contract in ten lines
 
@@ -149,7 +165,7 @@ flowchart LR
 
 ## Parity with the reference
 
-Measured, not claimed: **12 of 21** reference scenarios reproduced, **3 partial**, **6 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: sortable tables, code highlighting, math, maps, persistent panels, and a detail drawer that reflows the conversation column instead of overlaying it.
+Measured, not claimed: **14 of 27** reference scenarios reproduced, **3 partial**, **10 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: same-turn repair, table filters, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps. Inside Harness the detail panel still overlays the column instead of reflowing it.
 
 Known limitation: the fence label is not preserved by Harness, so an unlabelled block is claimed only when its payload looks like a spec document and passes the strict parser. A `json`-labelled block is never claimed.
 
@@ -168,7 +184,7 @@ npm ci
 npm run dev            # lab at http://127.0.0.1:4173, HMR, no Harness needed
 npm run build          # typecheck + lab build
 npm run build:plugin   # the two real bundle artifacts
-npm test               # 101 unit and DOM tests
+npm test               # 108 unit, schema and DOM tests
 npm run test:browser   # Playwright desktop + mobile (goldens never auto-update)
 ```
 
@@ -180,7 +196,7 @@ docker run --rm --network host --ipc host --user "$(id -u):$(id -g)" \
   mcr.microsoft.com/playwright:v1.64.1-noble npx playwright test
 ```
 
-Scenarios in the lab: `?demo=films`, `listing`, `calculator`, `configurator`, `technical`, `primitives`, plus `&theme=dark`.
+Scenarios in the lab: `?demo=dashboard`, `films`, `listing`, `calculator`, `configurator`, `technical`, `primitives`, plus `&theme=dark`.
 
 Screenshots in this README are captures of that lab, not mockups. Golden images under `tests/` are regression baselines and say nothing about fidelity to another product.
 

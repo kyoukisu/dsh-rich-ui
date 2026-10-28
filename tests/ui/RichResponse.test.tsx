@@ -296,3 +296,95 @@ describe("RichResponse regressions", () => {
     ).toBe("auto");
   });
 });
+
+describe("dashboard vocabulary", () => {
+  it("sorts a table locally and reports the sort direction", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "table",
+          sortable: true,
+          columns: [
+            { key: "name", label: "Name" },
+            { key: "value", label: "Value", align: "right" },
+          ],
+          rows: [
+            { name: "Beta", value: 20 },
+            { name: "Alpha", value: 10 },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const first = () => host.querySelector("tbody tr td")?.textContent;
+    expect(first()).toBe("Beta");
+    const header = Array.from(host.querySelectorAll("th")).find((cell) =>
+      cell.textContent?.includes("Value"),
+    )!;
+    click(header.querySelector("button")!);
+    expect(first()).toBe("Alpha");
+    expect(header.getAttribute("aria-sort")).toBe("ascending");
+    click(header.querySelector("button")!);
+    expect(first()).toBe("Beta");
+    expect(header.getAttribute("aria-sort")).toBe("descending");
+  });
+
+  it("renders charts, diagrams, stats and highlighted code without throwing", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "chart",
+          kind: "line",
+          categories: ["Jan", "Feb"],
+          series: [
+            { label: "Revenue", values: [10, 20] },
+            { label: "Cost", values: [5, 8] },
+          ],
+        },
+        {
+          type: "diagram",
+          steps: [
+            { id: "a", label: "Start" },
+            { id: "b", label: "End", connector: "next" },
+          ],
+        },
+        { type: "stat", label: "Users", value: 12480, delta: 4.2 },
+        { type: "progress", value: 65, label: "Done" },
+        { type: "code", code: "const value = 1;", language: "ts" },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.textContent).toContain("Revenue");
+    expect(host.textContent).toContain("Cost");
+    expect(host.querySelectorAll(".ru-diagram-card")).toHaveLength(2);
+    expect(
+      host
+        .querySelector(".ru-stat-value")
+        ?.textContent?.replace(/\u00a0/g, " "),
+    ).toBe("12 480");
+    expect(
+      host.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow"),
+    ).toBe("65");
+    expect(host.querySelectorAll(".ru-tok-keyword").length).toBeGreaterThan(0);
+  });
+
+  it("keeps a non-http inline link as literal text", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "text",
+          content:
+            "See [x](javascript:alert(1)) and [site](https://example.org).",
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const links = host.querySelectorAll("a");
+    expect(links).toHaveLength(1);
+    expect(links[0]?.getAttribute("href")).toBe("https://example.org");
+    expect(host.textContent).toContain("javascript:alert(1)");
+  });
+});
