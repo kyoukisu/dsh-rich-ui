@@ -50,8 +50,8 @@
     "test:e2e": "playwright test --update-snapshots=none",
     "test:browser": "bash scripts/browser-check.sh --update-snapshots=none",
     "dev:plugin": "vite build --config vite.plugin.config.ts --watch",
-    "format": "prettier --write src tests scripts *.ts *.json *.html prompt-rich-ui README.md",
-    "format:check": "prettier --check src tests scripts *.ts *.json *.html prompt-rich-ui README.md",
+    "format": "prettier --write src tests scripts *.ts *.json *.html",
+    "format:check": "prettier --check src tests scripts *.ts *.json *.html",
     "check": "npm run build && npm run build:plugin && npm test && npm run test:browser"
   },
   "dependencies": {
