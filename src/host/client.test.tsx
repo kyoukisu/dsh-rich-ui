@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
+import { explain } from "../ui/Diagnostic";
 import {
   actionHandler,
   fencePersistenceKey,
   installDomRenderer,
   parseFence,
+  parseFenceResult,
+  repairHandler,
   type ClientContext,
 } from "./client";
 
@@ -66,6 +69,18 @@ afterEach(async () => {
   document.body.replaceChildren();
 });
 
+describe("diagnostic copy", () => {
+  it("explains common validator errors in Russian", () => {
+    expect(explain("Missing value")).toBe(
+      "Не хватает обязательного поля «value».",
+    );
+    expect(explain("Unknown field: colour")).toContain("«colour»");
+    expect(explain("Unknown node type")).toContain("Неизвестный тип");
+    expect(explain("Invalid URL")).toContain("ссылка");
+    expect(explain("weird internal failure")).toContain("не соответствует");
+  });
+});
+
 describe("strict fence input", () => {
   it("accepts schema-valid strict JSON and rejects malformed, unsafe, oversized data", () => {
     expect(parseFence(JSON.stringify(sample))).not.toBeNull();
@@ -78,6 +93,12 @@ describe("strict fence input", () => {
     ]) {
       expect(parseFence(bad)).toBeNull();
     }
+  });
+  it("returns the validator reason for a claimed but rejected document", () => {
+    const result = parseFenceResult('{"version":1,"nodes":[{"type":"text"}]}');
+    expect(result.spec).toBeUndefined();
+    expect(result.error).toContain("content");
+    expect(parseFenceResult(" ".repeat(256001)).error).toContain("256000");
   });
 });
 
@@ -165,27 +186,69 @@ describe("installed-host DOM contract", () => {
     expect(assistant.block.hidden).toBe(true);
     expect(user.block.hidden).toBe(false);
   });
-  it("restores invalid revisions and unmounts removed message roots", async () => {
+  it("replaces a rejected revision with a diagnostic, then recovers on a valid one", async () => {
     const { row, block, pre } = source();
     await act(async () => {
       dispose = installDomRenderer(ctx());
     });
     await tick();
     await act(async () => {
-      pre.textContent = "{";
+      pre.textContent = '{"version":1,"nodes":[{"type":"text"}]}';
     });
     await tick();
-    expect(block.hidden).toBe(false);
-    expect(document.querySelector("[data-rich-ui-root]")).toBeNull();
+    expect(block.hidden).toBe(true);
+    expect(document.querySelector(".ru-diagnostic")).not.toBeNull();
+    expect(
+      document.querySelector(".ru-diagnostic-error")?.textContent,
+    ).toContain("content");
     await act(async () => {
       pre.textContent = JSON.stringify(sample);
     });
     await tick();
+    expect(document.querySelector(".ru-diagnostic")).toBeNull();
+    expect(
+      document.querySelector("[data-rich-ui-root]")?.textContent,
+    ).toContain("Hello rich UI");
     await act(async () => {
       row.remove();
     });
     await tick();
     expect(row.querySelector("[data-rich-ui-root]")).toBeNull();
+  });
+  it("offers one explicit repair send with the error and source", async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
+    const { block } = source(
+      '{"version":1,"nodes":[{"type":"text"}]}',
+      "assistant-step",
+      "rich-ui",
+    );
+    dispose = installDomRenderer(ctx(send));
+    await tick();
+    expect(block.hidden).toBe(true);
+    const button = [...document.querySelectorAll("button")].find((item) =>
+      item.textContent?.includes("Попросить модель исправить"),
+    )!;
+    await act(async () => {
+      button.click();
+    });
+    await tick();
+    expect(send).toHaveBeenCalledTimes(1);
+    const message = send.mock.calls[0]![0] as string;
+    expect(message.startsWith("[rich-ui-repair] ")).toBe(true);
+    expect(message).toContain("content");
+    expect(message).toContain('"source"');
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+  });
+  it("keeps an unfinished malformed stream as native code", async () => {
+    const { row, block } = source("{", "assistant-step", "rich-ui");
+    row.dataset.streaming = "true";
+    dispose = installDomRenderer(ctx());
+    await tick();
+    expect(document.querySelector(".ru-diagnostic")).toBeNull();
+    expect(block.hidden).toBe(false);
+  });
+  it("sends no repair without a captured session", () => {
+    expect(repairHandler(ctx(), undefined, "x", "{}")).toBeUndefined();
   });
   it("sends an action through the captured scoped conversation, not current UI routing", async () => {
     const send = vi.fn().mockResolvedValue(undefined);

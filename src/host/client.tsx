@@ -1,6 +1,7 @@
 import { Component, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { RichResponse } from "../ui/RichResponse";
+import { Diagnostic } from "../ui/Diagnostic";
 import { parseStreamingSpec } from "./partial.ts";
 import { parseRichSpec, type RichSpec } from "../core/schema";
 
@@ -26,9 +27,15 @@ const surfaces = ".md-code-block, .code-block, .code-block-small";
 const own = "[data-rich-ui-root]";
 const maxSourceLength = 256_000;
 
-/** Strict JSON only: no eval, repair, executable payloads or partial rendering. */
-export function parseFence(raw: string): RichSpec | null {
-  if (raw.length > maxSourceLength) return null;
+export type FenceResult =
+  { spec: RichSpec; error?: undefined } | { spec?: undefined; error: string };
+
+/** Strict JSON only: no eval, repair, executable payloads or partial rendering.
+ * The rejection reason is returned verbatim so the UI can explain it and the
+ * reader can send it back to the model. */
+export function parseFenceResult(raw: string): FenceResult {
+  if (raw.length > maxSourceLength)
+    return { error: `Документ длиннее ${maxSourceLength} символов` };
   try {
     const value: unknown = JSON.parse(raw, (key, item: unknown) => {
       if (key === "__proto__" || key === "constructor" || key === "prototype") {
@@ -36,10 +43,15 @@ export function parseFence(raw: string): RichSpec | null {
       }
       return item;
     });
-    return parseRichSpec(value);
-  } catch {
-    return null;
+    return { spec: parseRichSpec(value) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { error: message.slice(0, 500) };
   }
+}
+
+export function parseFence(raw: string): RichSpec | null {
+  return parseFenceResult(raw).spec ?? null;
 }
 
 class RenderBoundary extends Component<
@@ -68,6 +80,8 @@ interface Mount {
   hidden: boolean;
   streaming: boolean;
   spec: string;
+  mode: "rich" | "diagnostic";
+  error?: string;
   sessionId?: string;
   failed?: boolean;
 }
@@ -181,6 +195,43 @@ export function actionHandler(
   };
 }
 
+const REPAIR_SOURCE_LIMIT = 12_000;
+
+/** One explicit click sends the validator error and the rejected source back to
+ * the captured session. No payload is logged and nothing is sent automatically. */
+export function repairHandler(
+  ctx: ClientContext,
+  sessionId: string | undefined,
+  error: string,
+  source: string,
+): (() => void) | undefined {
+  if (!sessionId) return undefined;
+  const conversation = ctx.sessions.scope(sessionId)?.get("conversation") as
+    { send?: (text: string) => Promise<unknown> } | undefined;
+  const send = conversation?.send;
+  if (!send) return undefined;
+  const truncated = source.length > REPAIR_SOURCE_LIMIT;
+  const clipped = truncated
+    ? `${source.slice(0, REPAIR_SOURCE_LIMIT)}\n…[truncated]`
+    : source;
+  let text: string;
+  try {
+    text = `[rich-ui-repair] ${JSON.stringify({
+      error: error.slice(0, 500),
+      source: clipped,
+      truncated,
+    })}`;
+  } catch {
+    return undefined;
+  }
+  if (text.length > 32_000) return undefined;
+  return () => {
+    void send(text).catch(() =>
+      console.warn("[rich-ui] Repair delivery failed"),
+    );
+  };
+}
+
 /** DOM channel follows the stock genui technique; no host/root slot replacement. */
 export function installDomRenderer(
   ctx: ClientContext,
@@ -226,18 +277,28 @@ export function installDomRenderer(
       // While the model is still writing, show only nodes whose JSON is fully
       // closed and that validate; the preview stays inert until it settles.
       const streaming = Boolean(source.closest("[data-streaming]"));
-      const spec = streaming ? parseStreamingSpec(raw) : parseFence(raw);
-      if (!spec) {
+      let spec: RichSpec | null = null;
+      let error: string | undefined;
+      if (streaming) spec = parseStreamingSpec(raw);
+      else {
+        const result = parseFenceResult(raw);
+        spec = result.spec ?? null;
+        error = result.error;
+      }
+      // An unfinished stream stays native code: the model may still close it.
+      if (!spec && streaming) {
         if (mount) remove(source, mount);
         continue;
       }
       const sessionId = viewedSession(ctx);
-      const specKey = JSON.stringify(spec);
+      const mode: Mount["mode"] = spec ? "rich" : "diagnostic";
+      const specKey = spec ? JSON.stringify(spec) : `diagnostic:${error}`;
       if (
         mount?.raw === raw &&
         mount.sessionId === sessionId &&
         mount.spec === specKey &&
-        mount.streaming === streaming
+        mount.streaming === streaming &&
+        mount.mode === mode
       ) {
         // Host reconciliation may remove the foreign sibling or reset hidden.
         if (source.nextSibling !== mount.container)
@@ -257,28 +318,41 @@ export function installDomRenderer(
         hidden: source.hidden,
         streaming,
         spec: specKey,
+        mode,
+        error,
         sessionId,
       };
       mounts.set(source, next);
       source.after(container);
       source.hidden = true;
-      root.render(
-        createElement(RenderBoundary, {
-          key: `${raw}:${streaming}`,
-          onFailure: () => {
-            next.failed = true;
-            source.hidden = next.hidden;
-          },
-          children: createElement(RichResponse, {
-            spec,
-            // Actions and durable state begin only once the block is complete.
-            persistenceKey: streaming
-              ? undefined
-              : fencePersistenceKey(source, sessionId),
-            onAction: streaming ? undefined : actionHandler(ctx, sessionId),
+      if (spec) {
+        root.render(
+          createElement(RenderBoundary, {
+            key: `${raw}:${streaming}`,
+            onFailure: () => {
+              next.failed = true;
+              source.hidden = next.hidden;
+            },
+            children: createElement(RichResponse, {
+              spec,
+              // Actions and durable state begin only once the block is complete.
+              persistenceKey: streaming
+                ? undefined
+                : fencePersistenceKey(source, sessionId),
+              onAction: streaming ? undefined : actionHandler(ctx, sessionId),
+            }),
           }),
-        }),
-      );
+        );
+      } else {
+        const reason = error ?? "Invalid document";
+        root.render(
+          createElement(Diagnostic, {
+            error: reason,
+            source: raw,
+            onRepair: repairHandler(ctx, sessionId, reason, raw),
+          }),
+        );
+      }
     }
   };
   const observer = new MutationObserver((records) => {

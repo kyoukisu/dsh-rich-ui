@@ -85,6 +85,7 @@ test("all scenarios have no horizontal overflow or runtime errors in both themes
     "films",
     "calculator",
     "configurator",
+    "diagnostic",
   ]) {
     for (const theme of ["light", "dark"]) {
       await page.goto(`/?demo=${demo}&theme=${theme}`);
@@ -147,6 +148,7 @@ test("renderer passes automated accessibility checks", async ({ page }) => {
     "films",
     "calculator",
     "configurator",
+    "diagnostic",
   ]) {
     await page.goto(`/?demo=${demo}`);
     const results = await new AxeBuilder({ page })
@@ -246,4 +248,22 @@ test("table filters rows locally and renders semantic status tones", async ({
   await expect(
     page.locator('.ru-status-pill[data-tone="success"]').first(),
   ).toHaveText("Готово");
+});
+
+test("rejected block explains the error and reveals its source", async ({
+  page,
+}) => {
+  await page.goto("/?demo=diagnostic");
+  await expect(page.locator(".ru-diagnostic")).toBeVisible();
+  await expect(page.locator(".ru-diagnostic-summary")).toHaveText(
+    "Не хватает обязательного поля «value».",
+  );
+  await expect(page.locator(".ru-diagnostic-error")).toContainText(
+    "Missing value",
+  );
+  await page.getByText("Показать исходный JSON").click();
+  await expect(page.locator(".ru-diagnostic pre")).toContainText('"stat"');
+  await expect(
+    page.getByRole("button", { name: "Попросить модель исправить" }),
+  ).toBeEnabled();
 });

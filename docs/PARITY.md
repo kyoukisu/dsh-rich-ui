@@ -30,7 +30,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Process / architecture flow                                           | Covered | `diagram`; ordered steps, connector labels, mobile reflow                         |
 | Syntax highlighting with copy                                         | Covered | `technical`; tokenizer for js/ts, Go, Python, shell, SQL, JSON, CSS                |
 | Support-matrix style table                                            | Covered | `table` inside `card`                                                             |
-| Same-turn repair: invalid fence returns diagnostics to the model      | Missing | no host hook; invalid blocks stay as code                                         |
+| Same-turn repair: invalid fence returns diagnostics to the model      | Partial | diagnostic card with the exact error and a one-click repair message; no automatic turn hook |
 | Panel that reflows the conversation column                            | Partial | the lab reflows; the DSH adapter overlays a fixed drawer                          |
 | Citations attached to prose                                           | Partial | sources live in the entity panel, not inline                                      |
 | Inline entity chip inside a sentence                                  | Partial | only block-level `entity-ref`                                                     |
@@ -44,7 +44,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Persistent panel / canvas across turns                                 | Missing | not implemented                                                                    |
 | Mini-apps with isolated runtime                                       | Missing | deliberately out of scope                                                          |
 
-Coverage: **15 / 27** scenarios covered, **3 partial**, **9 missing**.
+Coverage: **15 / 27** scenarios covered, **4 partial**, **8 missing**.
 
 ## Visual deviations (known, not yet fixed)
 
@@ -67,7 +67,7 @@ Coverage: **15 / 27** scenarios covered, **3 partial**, **9 missing**.
 
 Ordered by effect on daily use:
 
-1. Same-turn validation feedback, so a rejected block can be repaired without a second user message.
+1. Close the repair loop automatically when the host exposes a turn hook; today the reader presses one button.
 2. Panel that participates in host layout instead of covering content.
 3. Inline citations and entity chips inside prose.
 4. Scatter and richer chart options.

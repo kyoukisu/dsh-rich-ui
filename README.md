@@ -150,7 +150,7 @@ flowchart LR
 
 - **Node half** registers one always-on system-prompt section with the whole contract and the absolute path of the reference files. No skill, no tool call: the model can answer on the first attempt, and opens references only after a rejected block.
 - **Browser half** validates the fence and mounts into a plugin-owned root. While the model is still writing, closed nodes render in an inert preview and become interactive when the block settles.
-- Malformed documents are never repaired: they stay visible as code, which is also how you can tell the model got a field wrong.
+- Malformed documents are never repaired silently: a claimed block shows a diagnostic card with the exact error, the rejected JSON and a one-click request for a corrected block. Unfinished streams stay code until the model closes them.
 
 ## Safety
 
@@ -165,13 +165,23 @@ flowchart LR
 
 ## Parity with the reference
 
-Measured, not claimed: **15 of 27** reference scenarios reproduced, **3 partial**, **9 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: same-turn repair, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps. Inside Harness the detail panel still overlays the column instead of reflowing it.
+Measured, not claimed: **15 of 27** reference scenarios reproduced, **4 partial**, **8 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: automatic same-turn repair, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps. Inside Harness the detail panel still overlays the column instead of reflowing it.
 
 Known limitation: the fence label is not preserved by Harness, so an unlabelled block is claimed only when its payload looks like a spec document and passes the strict parser. A `json`-labelled block is never claimed.
 
 ## Troubleshooting
 
-**The block stayed as code.** The JSON did not pass the schema — usually an unknown field (`title` inside a node that has none, or `items` from another plugin's syntax). Ask the model to resend the whole block; nothing was silently changed.
+**The block stayed as code.** The JSON did not pass the schema — usually an unknown field (`title` inside a node that has none, or `items` from another plugin's syntax). A claimed fence now shows the exact error, the rejected source and a button that sends both back to the model for a corrected block. Nothing is repaired or executed silently.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagnostic-dark.png">
+    <img alt="Diagnostic card: rich block not parsed, missing value, copy error and ask the model to fix" src="docs/images/diagnostic-light.png" width="820">
+  </picture>
+  <br>
+  <em>A rejected block explains itself and offers a one-click repair request instead of raw JSON.</em>
+</p>
+
 
 **Images show a placeholder.** The URL is wrong, blocked by the remote host, or not `http(s)`. Ozon/WB CDNs reject hotlinks; use a permitted source or your own media host.
 
@@ -184,7 +194,7 @@ npm ci
 npm run dev            # lab at http://127.0.0.1:4173, HMR, no Harness needed
 npm run build          # typecheck + lab build
 npm run build:plugin   # the two real bundle artifacts
-npm test               # 112 unit, schema and DOM tests
+npm test               # 117 unit, schema and DOM tests
 npm run test:browser   # Playwright desktop + mobile (goldens never auto-update)
 ```
 

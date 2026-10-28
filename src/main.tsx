@@ -15,7 +15,8 @@ import { RichResponse } from "./ui/RichResponse";
 import { demos, type DemoName } from "./demo/fixtures";
 import "./demo/lab.css";
 import { PrimitiveDemo } from "./demo/PrimitiveDemo";
-type LabDemo = DemoName | "primitives";
+import { DiagnosticDemo } from "./demo/DiagnosticDemo";
+type LabDemo = DemoName | "primitives" | "diagnostic";
 const labels: Record<LabDemo, string> = {
   dashboard: "Дашборд и метрики",
   technical: "Технический разбор",
@@ -24,6 +25,7 @@ const labels: Record<LabDemo, string> = {
   calculator: "Локальные вычисления",
   configurator: "Реактивная форма",
   primitives: "Подсказки и галерея",
+  diagnostic: "Ошибка контракта",
 };
 function App() {
   const initial = new URLSearchParams(location.search);
@@ -121,11 +123,15 @@ function App() {
                     ? "Сравни чайники с Ozon: цены, объём и что умеют."
                     : demo === "dashboard"
                       ? "Собери панель запуска: метрики, график, план работ и схему обработки запроса."
-                      : "Собери небольшой конфигуратор с живым предпросмотром."}
+                      : demo === "diagnostic"
+                        ? "Почему блок не отрисовался и что теперь делать?"
+                        : "Собери небольшой конфигуратор с живым предпросмотром."}
           </div>
           <article className="lab-answer">
             {demo === "primitives" ? (
               <PrimitiveDemo key={revision} />
+            ) : demo === "diagnostic" ? (
+              <DiagnosticDemo />
             ) : (
               <RichResponse
                 key={`${demo}-${revision}`}
