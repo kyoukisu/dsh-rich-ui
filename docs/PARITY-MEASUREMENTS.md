@@ -4,17 +4,17 @@ Produced by `scripts/parity.mjs` inside the pinned browser container at 1440×10
 
 This is **our current rendering**, not the ChatGPT reference. It exists so that any visual change is measurable and so reference comparison can cite concrete numbers instead of impressions.
 
-| Property | Desktop 1440 | Mobile 390 |
-|---|---|---|
-| Content column width | 760 px | 354 px |
-| Heading | 25 px / 650 / lh 31.25 / ls −0.875 | 23 px / 650 / lh 28.75 |
-| Body | 15 px / lh 24.75 (1.65) | 14 px / lh 23.1 |
-| Card padding / radius / border | 22 px / 16 px / 1 px `rgb(229,229,229)` | 18 px / 13 px / 1 px |
-| Card shadow | none | none |
-| Row gap | 12 px | 12 px |
-| Icon | 19 px, stroke 1.7, color `rgb(107,107,107)` | same |
-| Inline code | 14.1 px, radius 4 px, padding 2×5 | 13.16 px |
-| Horizontal document overflow | none | none |
+| Property                       | Desktop 1440                                | Mobile 390             |
+| ------------------------------ | ------------------------------------------- | ---------------------- |
+| Content column width           | 760 px                                      | 354 px                 |
+| Heading                        | 25 px / 650 / lh 31.25 / ls −0.875          | 23 px / 650 / lh 28.75 |
+| Body                           | 15 px / lh 24.75 (1.65)                     | 14 px / lh 23.1        |
+| Card padding / radius / border | 22 px / 16 px / 1 px `rgb(229,229,229)`     | 18 px / 13 px / 1 px   |
+| Card shadow                    | none                                        | none                   |
+| Row gap                        | 12 px                                       | 12 px                  |
+| Icon                           | 19 px, stroke 1.7, color `rgb(107,107,107)` | same                   |
+| Inline code                    | 14.1 px, radius 4 px, padding 2×5           | 13.16 px               |
+| Horizontal document overflow   | none                                        | none                   |
 
 ## Findings
 
