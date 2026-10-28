@@ -248,3 +248,84 @@ describe("safe schema", () => {
     expect(() => validateExpr(expr)).toThrow(/budget/);
   });
 });
+
+describe("semantic icon colour and entity rows", () => {
+  it("accepts only token tones", () => {
+    expect(
+      parseRichSpec(spec({ type: "icon", name: "clock", tone: "warning" })),
+    ).toBeTruthy();
+    for (const tone of ["#ff0000", "red", "", null, 12])
+      expect(() =>
+        parseRichSpec(spec({ type: "icon", name: "clock", tone })),
+      ).toThrow();
+  });
+  it("validates entity lists against declared entities", () => {
+    const entities = [{ id: "a", kind: "Фильм", title: "A" }];
+    expect(
+      parseRichSpec({
+        version: 1,
+        entities,
+        nodes: [{ type: "entity-list", entityIds: ["a"] }],
+      }),
+    ).toBeTruthy();
+    expect(() =>
+      parseRichSpec({
+        version: 1,
+        entities,
+        nodes: [{ type: "entity-list", entityIds: ["missing"] }],
+      }),
+    ).toThrow(/Unknown entity/);
+    expect(() =>
+      parseRichSpec(spec({ type: "entity-list", entityIds: [] })),
+    ).toThrow();
+    expect(() =>
+      parseRichSpec({
+        version: 1,
+        entities,
+        nodes: [{ type: "entity-list", entityIds: "a" }],
+      }),
+    ).toThrow();
+  });
+  it("validates checkbox, radio and segmented controls", () => {
+    expect(
+      parseRichSpec(
+        spec({ type: "checkbox", stateKey: "ok", label: "Согласен" }),
+      ),
+    ).toBeTruthy();
+    expect(
+      parseRichSpec(
+        spec({
+          type: "radio",
+          stateKey: "size",
+          label: "Размер",
+          options: [{ label: "S", value: 1 }],
+        }),
+      ),
+    ).toBeTruthy();
+    expect(
+      parseRichSpec(
+        spec({
+          type: "segmented",
+          stateKey: "view",
+          options: [{ label: "A", value: "a" }],
+        }),
+      ),
+    ).toBeTruthy();
+    expect(
+      parseRichSpec(
+        spec({ type: "input", stateKey: "when", inputType: "date" }),
+      ),
+    ).toBeTruthy();
+    for (const bad of [
+      { type: "checkbox", stateKey: "ok" },
+      { type: "radio", stateKey: "x", options: [] },
+      {
+        type: "segmented",
+        stateKey: "x",
+        options: [{ label: "A", value: null }],
+      },
+      { type: "input", stateKey: "d", inputType: "datetime-local" },
+    ])
+      expect(() => parseRichSpec(spec(bad))).toThrow();
+  });
+});

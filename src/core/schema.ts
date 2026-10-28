@@ -65,6 +65,14 @@ export interface IconNode extends NodeBase {
   type: "icon";
   name: string;
   size?: number;
+  /** Semantic colour only; arbitrary values are rejected so themes stay legible. */
+  tone?:
+    "default" | "muted" | "success" | "warning" | "danger" | "info" | "accent";
+}
+export interface EntityListNode extends NodeBase {
+  type: "entity-list";
+  /** Ordered references to declared entities; rendered as full-width rows. */
+  entityIds: string[];
 }
 export interface ImageNode extends NodeBase {
   type: "image";
@@ -108,10 +116,21 @@ export interface InputNode extends NodeBase {
   stateKey: string;
   label?: string;
   placeholder?: string;
-  inputType?: "text" | "number";
+  inputType?: "text" | "number" | "date";
 }
 export interface SelectNode extends NodeBase {
   type: "select";
+  stateKey: string;
+  label?: string;
+  options: { label: string; value: Scalar }[];
+}
+export interface CheckboxNode extends NodeBase {
+  type: "checkbox";
+  stateKey: string;
+  label: string;
+}
+export interface RadioNode extends NodeBase {
+  type: "radio" | "segmented";
   stateKey: string;
   label?: string;
   options: { label: string; value: Scalar }[];
@@ -170,12 +189,15 @@ export interface CodeNode extends NodeBase {
   language?: string;
 }
 export type RichNode =
+  | CheckboxNode
+  | RadioNode
   | PopoverNode
   | TooltipNode
   | ImageGroupNode
   | TextNode
   | ContainerNode
   | IconNode
+  | EntityListNode
   | ImageNode
   | CarouselNode
   | EntityRefNode
@@ -543,11 +565,31 @@ export function parseRichSpec(input: unknown): RichSpec {
         arr(o.children, node);
         break;
       case "icon":
-        check(["name"], ["size"]);
+        check(["name"], ["size", "tone"]);
         str(o.name);
         if (!/^[a-zA-Z][a-zA-Z0-9-]{0,63}$/.test(o.name)) fail("Invalid icon");
         if (o.size !== undefined) num(o.size, 8, 128);
+        if (o.tone !== undefined)
+          choice(o.tone, [
+            "default",
+            "muted",
+            "success",
+            "warning",
+            "danger",
+            "info",
+            "accent",
+          ]);
         break;
+      case "entity-list": {
+        check(["entityIds"]);
+        if (!Array.isArray(o.entityIds) || o.entityIds.length === 0)
+          fail("Entity list cannot be empty");
+        arr(o.entityIds, (value) => {
+          key(value);
+          refs.push(value as string);
+        });
+        break;
+      }
       case "image":
         check(["src", "alt"], ["caption"]);
         url(o.src);
@@ -574,17 +616,28 @@ export function parseRichSpec(input: unknown): RichSpec {
         key(o.stateKey);
         if (o.label !== undefined) str(o.label);
         if (o.placeholder !== undefined) str(o.placeholder);
-        if (o.inputType !== undefined) choice(o.inputType, ["text", "number"]);
+        if (o.inputType !== undefined)
+          choice(o.inputType, ["text", "number", "date"]);
         break;
+      case "checkbox":
+        check(["stateKey", "label"]);
+        key(o.stateKey);
+        str(o.label);
+        break;
+      case "radio":
+      case "segmented":
       case "select":
         check(["stateKey", "options"], ["label"]);
         key(o.stateKey);
         if (o.label !== undefined) str(o.label);
+        if (!Array.isArray(o.options) || o.options.length === 0)
+          fail("Options cannot be empty");
         arr(o.options, (x) => {
           const p = obj(x);
           fields(p, ["label", "value"]);
           str(p.label);
           scalar(p.value);
+          if (p.value === null) fail("Option value cannot be null");
         });
         break;
       case "slider":

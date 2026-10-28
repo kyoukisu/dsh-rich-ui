@@ -13,7 +13,12 @@ Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?:
 - `text`: `{type:"text",content:Expr,variant?:"body"|"title"|"subtitle"|"caption"}`.
 - Layout: `{type:"stack"|"row"|"grid"|"card",children:Node[],gap?:number,columns?:integer,title?:string}`. Gap 0–128; columns 1–12. The field is `children`, never `items`.
 - `carousel`: `{type:"carousel",children:Node[]}`.
-- `icon`: `{type:"icon",name:string,size?:number}`. Size 8–128; name starts with a letter and contains only letters/digits/hyphen, up to 64 characters. Use Lucide PascalCase names. No inline SVG.
+- `icon`: `{type:"icon",name:string,size?:number,tone?:"default"|"muted"|"success"|"warning"|"danger"|"info"|"accent"}`. Size 8–128; name starts with a letter and contains only letters/digits/hyphen, up to 64 characters. Use Lucide PascalCase names. No inline SVG, no arbitrary colours: `tone` is a semantic token so both themes stay legible. Use `danger` for failures, `warning` for blocked/at-risk state, `muted` for neutral timeline marks.
+- `entity-list`: `{type:"entity-list",entityIds:string[]}` — full-width rows (compact poster, kind, title, subtitle, short description, chevron). Every id must be declared in `entities`. Prefer rows for 2–5 comparable objects; use `carousel` for browsing many posters.
+- `checkbox`: `{type:"checkbox",stateKey:string,label:string}` — boolean consent/selection, distinct from the `switch` toggle.
+- `radio`: `{type:"radio",stateKey:string,label?:string,options:[{label,value}]}` — one choice from a short visible list.
+- `segmented`: `{type:"segmented",stateKey:string,label?:string,options:[{label,value}]}` — same contract as `radio`, rendered as a segmented control for 2–4 short options.
+- `input` with `inputType:"date"` accepts an ISO `YYYY-MM-DD` value; date and text values are never persisted.
 - `image`: `{type:"image",src:URL,alt:string,caption?:string}`.
 - `image-group`: `{type:"image-group",src:URL[],alt:string,label?:string}`. The `src` field is an array, unlike image; no `images`, `children` or caption field.
 - `popover`: `{type:"popover",label:string,children:Node[]}`. Local disclosure for supplemental content; no action or stateKey required.

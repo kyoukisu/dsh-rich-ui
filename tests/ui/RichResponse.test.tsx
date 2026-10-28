@@ -167,7 +167,7 @@ describe("RichResponse regressions", () => {
     );
     expect(document.activeElement).toBe(document.querySelector(".ru-source"));
   });
-  it("defaults desktop to a non-modal drawer without locking background or trapping focus", () => {
+  it("defaults desktop to a non-modal drawer: no lock, no trap, Escape closes", () => {
     const spec: RichSpec = {
       version: 1,
       nodes: [{ type: "entity-ref", entityId: "one" }],
@@ -181,7 +181,9 @@ describe("RichResponse regressions", () => {
     expect(panel).not.toBeNull();
     expect(panel.hasAttribute("aria-modal")).toBe(false);
     expect(document.body.style.overflow).toBe("");
-    expect(document.activeElement).toBe(opener);
+    // A drawer that never takes focus leaves Escape dead, so the caret moves
+    // into the panel without locking the page or trapping Tab.
+    expect(panel.contains(document.activeElement)).toBe(true);
     const tab = new KeyboardEvent("keydown", {
       key: "Tab",
       bubbles: true,
@@ -194,14 +196,8 @@ describe("RichResponse regressions", () => {
         new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
       ),
     );
-    expect(document.querySelector('[role="complementary"]')).not.toBeNull();
-    (panel.querySelector("button") as HTMLElement).focus();
-    act(() =>
-      document.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-      ),
-    );
     expect(document.querySelector('[role="complementary"]')).toBeNull();
+    expect(document.activeElement).toBe(opener);
   });
   it("keeps Escape operational after related entity navigation removes the focused button", () => {
     const spec: RichSpec = {

@@ -356,14 +356,25 @@ export function RichResponse({
         case "icon": {
           const Glyph = glyphs[n.name.toLowerCase()] ?? Info;
           return (
-            <Glyph
+            <span
               key={key}
-              size={n.size ?? 19}
-              strokeWidth={1.7}
+              className="ru-icon"
+              data-tone={n.tone ?? "default"}
               aria-hidden="true"
-            />
+            >
+              <Glyph size={n.size ?? 19} strokeWidth={1.7} />
+            </span>
           );
         }
+        case "entity-list":
+          return (
+            <EntityRows
+              key={key}
+              node={n}
+              entities={spec.entities ?? []}
+              onOpen={setSelected}
+            />
+          );
         case "divider":
           return (
             <div key={key} className="ru-divider">
@@ -484,6 +495,45 @@ export function RichResponse({
               />
             </label>
           );
+        case "checkbox":
+          return (
+            <label key={key} className="ru-checkbox">
+              <input
+                type="checkbox"
+                checked={Boolean(state[n.stateKey])}
+                onChange={(e) => update(n.stateKey, e.target.checked)}
+              />
+              <span>{n.label}</span>
+            </label>
+          );
+        case "radio":
+        case "segmented": {
+          const current = state[n.stateKey];
+          const name = `${uid}-${n.stateKey}`;
+          return (
+            <fieldset
+              key={key}
+              className={`ru-choice ru-${n.type}`}
+              aria-label={n.label}
+            >
+              {n.label && <legend>{n.label}</legend>}
+              <div className="ru-choice-options">
+                {n.options.map((option, i) => (
+                  <label key={i}>
+                    <input
+                      type="radio"
+                      name={name}
+                      value={i}
+                      checked={current === option.value}
+                      onChange={() => update(n.stateKey, option.value)}
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          );
+        }
         case "conditional":
           return (
             <React.Fragment key={key}>
@@ -648,6 +698,50 @@ export function RichResponse({
     </section>
   );
 }
+/** Full-width entity rows: compact poster, metadata, chevron. Mirrors the reference layout. */
+function EntityRows({
+  node,
+  entities: pool,
+  onOpen,
+}: {
+  node: Extract<RichNode, { type: "entity-list" }>;
+  entities: Entity[];
+  onOpen: (id: string) => void;
+}) {
+  const entities = node.entityIds
+    .map((id) => pool.find((e) => e.id === id))
+    .filter((e): e is Entity => Boolean(e));
+  if (entities.length === 0) return null;
+  return (
+    <ul className="ru-entity-rows">
+      {entities.map((entity) => (
+        <li key={entity.id}>
+          <button
+            className="ru-entity-row"
+            onClick={() => onOpen(entity.id)}
+            aria-label={`Подробнее: ${entity.title}`}
+          >
+            {entity.image && (
+              <Picture src={entity.image} alt="" className="ru-poster-thumb" />
+            )}
+            <span className="ru-entity-row-meta">
+              <span className="ru-eyebrow">{entity.kind}</span>
+              <strong>{entity.title}</strong>
+              {entity.subtitle && <span>{entity.subtitle}</span>}
+              {entity.description && (
+                <span className="ru-entity-row-description">
+                  {entity.description}
+                </span>
+              )}
+            </span>
+            <ChevronRight size={18} aria-hidden="true" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Carousel({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   return (
@@ -698,6 +792,7 @@ function EntityPanel({
 }) {
   const ref = useRef<HTMLElement>(null);
   const close = useRef<HTMLButtonElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   const [photo, setPhoto] = useState(0);
   const [mobile, setMobile] = useState(
     () =>
@@ -744,6 +839,11 @@ function EntityPanel({
   React.useLayoutEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
     const panel = ref.current;
+    // A drawer that never takes focus leaves Escape dead: move the caret into
+    // the panel without trapping Tab, so the surface is announced and closable.
+    if (!modal && panel && !panel.contains(document.activeElement)) {
+      heading.current?.focus({ preventScroll: true });
+    }
     return () => {
       if (
         !modal &&
@@ -856,7 +956,9 @@ function EntityPanel({
           </div>
         )}
         <div className="ru-detail-body">
-          <h2 id={title}>{entity.title}</h2>
+          <h2 id={title} ref={heading} tabIndex={-1}>
+            {entity.title}
+          </h2>
           <p className="ru-muted">{entity.subtitle}</p>
           <p>{entity.description}</p>
           {entity.facts && (

@@ -17,7 +17,7 @@ export const technical: RichSpec = {
         {
           type: "row",
           children: [
-            { type: "icon", name: "clock" },
+            { type: "icon", name: "clock", tone: "muted" },
             {
               type: "text",
               content: "0 мс — worker получает `7` и начинает `Sleep(100ms)`",
@@ -27,7 +27,7 @@ export const technical: RichSpec = {
         {
           type: "row",
           children: [
-            { type: "icon", name: "error" },
+            { type: "icon", name: "error", tone: "danger" },
             {
               type: "text",
               content: "~10 мс — контекст отменяется, consumer выходит",
@@ -37,7 +37,7 @@ export const technical: RichSpec = {
         {
           type: "row",
           children: [
-            { type: "icon", name: "clock" },
+            { type: "icon", name: "clock", tone: "muted" },
             {
               type: "text",
               content: "~100 мс — worker просыпается и отправляет `14`",
@@ -48,7 +48,7 @@ export const technical: RichSpec = {
         {
           type: "row",
           children: [
-            { type: "icon", name: "lock" },
+            { type: "icon", name: "lock", tone: "warning" },
             {
               type: "text",
               content: "**Worker:** заблокирован на `results <- value`",
@@ -58,14 +58,14 @@ export const technical: RichSpec = {
         {
           type: "row",
           children: [
-            { type: "icon", name: "lock" },
+            { type: "icon", name: "lock", tone: "warning" },
             { type: "text", content: "**Coordinator:** ждёт `wg.Wait()`" },
           ],
         },
         {
           type: "row",
           children: [
-            { type: "icon", name: "x" },
+            { type: "icon", name: "x", tone: "danger" },
             {
               type: "text",
               content: "`close(results)` никогда не выполняется",
@@ -171,6 +171,10 @@ export const films: RichSpec = {
       type: "text",
       content:
         "Четыре разных настроения: большое путешествие, контакт с неизвестным, инженерное выживание и космическая эпопея. Открой карточку — подробности останутся рядом с подборкой.",
+    },
+    {
+      type: "entity-list",
+      entityIds: ["interstellar", "arrival"],
     },
     {
       type: "carousel",

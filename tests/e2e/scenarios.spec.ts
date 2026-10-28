@@ -13,7 +13,9 @@ test("film detail panel opens, navigates related entity, and restores focus", as
   page,
 }) => {
   await page.goto("/?demo=films");
-  const card = page.getByRole("button", { name: "Подробнее: Interstellar" });
+  const card = page.locator(
+    ".ru-entity-card[aria-label='Подробнее: Interstellar']",
+  );
   await card.click();
   const dialog = page.locator(".ru-detail");
   await expect(dialog).toBeVisible();
@@ -93,7 +95,9 @@ test("detail respects mobile modal and desktop nonmodal semantics", async ({
   isMobile,
 }) => {
   await page.goto("/?demo=films");
-  await page.getByRole("button", { name: "Подробнее: Interstellar" }).click();
+  await page
+    .locator(".ru-entity-card[aria-label='Подробнее: Interstellar']")
+    .click();
   if (isMobile) {
     await expect(
       page.getByRole("button", { name: "Закрыть подробности" }),
@@ -135,4 +139,36 @@ test("renderer passes automated accessibility checks", async ({ page }) => {
       })),
     ).toEqual([]);
   }
+});
+test("icons carry semantic colour, not one grey tone", async ({ page }) => {
+  await page.goto("/?demo=technical&theme=light");
+  const colors = await page.$$eval(".ru-icon", (els) =>
+    els.map((el) => getComputedStyle(el).color),
+  );
+  expect(new Set(colors).size).toBeGreaterThanOrEqual(3);
+  const danger = await page
+    .locator(".ru-icon[data-tone=danger]")
+    .first()
+    .evaluate((el) => getComputedStyle(el).color);
+  const muted = await page
+    .locator(".ru-icon[data-tone=muted]")
+    .first()
+    .evaluate((el) => getComputedStyle(el).color);
+  expect(danger).not.toBe(muted);
+});
+test("entity rows open the same detail panel and keep focus contract", async ({
+  page,
+}) => {
+  await page.goto("/?demo=films");
+  const row = page.locator(".ru-entity-row[aria-label='Подробнее: Arrival']");
+  await row.click();
+  await expect(page.locator(".ru-detail")).toBeVisible();
+  await expect(
+    page
+      .locator(".ru-detail")
+      .getByRole("heading", { name: "Arrival", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".ru-detail")).toHaveCount(0);
+  await expect(row).toBeFocused();
 });
