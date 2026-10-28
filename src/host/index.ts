@@ -15,7 +15,7 @@ interface HostContext {
 const SKILL_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
   // Source src/host and emitted lib/host share the same two-level package root.
-  "../../skills/rich-ui",
+  "../../prompt-rich-ui",
 );
 const PROMPT_PATH = resolve(SKILL_DIR, "prompt.md");
 

@@ -1,15 +1,24 @@
 {
   "name": "@kyoukisu/dsh-rich-ui",
   "version": "0.1.0",
-  "private": true,
-  "type": "module",
+  "description": "Reference-driven rich responses for DeepSeek Harness: entities with detail panels, local calculators, streaming previews and a strict JSON contract",
   "license": "MIT",
+  "type": "module",
+  "private": false,
   "main": "lib/host/index.js",
   "exports": {
     ".": "./lib/host/index.js",
     "./client": "./lib/host/client.js",
     "./package.json": "./package.json"
   },
+  "files": [
+    "lib/host/index.js",
+    "lib/host/client.js",
+    "cordis.patch.yml",
+    "prompt-rich-ui",
+    "README.md",
+    "LICENSE"
+  ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -19,17 +28,30 @@
       "platform": "web"
     }
   },
-  "description": "Reference-driven rich responses for DeepSeek Harness",
+  "engines": {
+    "dsh": "^0.2.0-rc.1 || ^0.2.1-rc.1",
+    "node": ">=22.19.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kyoukisu/dsh-rich-ui.git"
+  },
+  "homepage": "https://github.com/kyoukisu/dsh-rich-ui#readme",
+  "bugs": {
+    "url": "https://github.com/kyoukisu/dsh-rich-ui/issues"
+  },
+  "keywords": ["dsh", "deepseek-harness", "plugin", "generative-ui", "rich-ui"],
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "build": "tsc --noEmit && vite build",
     "build:plugin": "vite build --config vite.plugin.config.ts --mode host-node && vite build --config vite.plugin.config.ts",
+    "prepare": "npm run build:plugin",
     "test": "vitest run tests/core tests/ui src/host",
     "test:e2e": "playwright test --update-snapshots=none",
     "test:browser": "bash scripts/browser-check.sh --update-snapshots=none",
     "dev:plugin": "vite build --config vite.plugin.config.ts --watch",
-    "format": "prettier --write src tests scripts *.ts *.json *.html",
-    "format:check": "prettier --check src tests scripts *.ts *.json *.html",
+    "format": "prettier --write src tests scripts *.ts *.json *.html prompt-rich-ui README.md",
+    "format:check": "prettier --check src tests scripts *.ts *.json *.html prompt-rich-ui README.md",
     "check": "npm run build && npm run build:plugin && npm test && npm run test:browser"
   },
   "dependencies": {
