@@ -28,10 +28,12 @@ A model can describe a comparison, but a wall of Markdown makes the reader do th
 
 The renderer is a real React tree behind a strict schema. There is no generated HTML, no `eval`, no shell access, and no page-level JavaScript from the model. Local controls recompute in the browser; the model is only called again when the reader explicitly asks.
 
-<div align="center">
-  <img alt="Film collection with an open detail panel: posters, facts and sources" src="docs/images/films-desktop.png" width="420">
-  <img alt="A calculator with sliders that recompute the result locally" src="docs/images/calculator-dark.png" width="420">
-</div>
+<table>
+  <tr>
+    <td width="50%"><img alt="Film collection with an open detail panel: posters, facts and sources" src="docs/images/films-desktop.png"></td>
+    <td width="50%"><img alt="A calculator with sliders that recompute the result locally" src="docs/images/calculator-dark.png"></td>
+  </tr>
+</table>
 
 ## Install
 
