@@ -1,0 +1,134 @@
+.ru-primitive-demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.ru-primitive-popover,
+.ru-primitive-tooltip,
+.ru-primitive-gallery {
+  position: relative;
+  display: inline-block;
+  color: inherit;
+  font: inherit;
+}
+.ru-primitive-trigger,
+.ru-primitive-lightbox button {
+  font: inherit;
+  color: inherit;
+  background: var(--ru-primitive-surface, Canvas);
+  border: 1px solid var(--ru-primitive-border, GrayText);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  cursor: pointer;
+}
+.ru-primitive-trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ru-primitive-popover-panel {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: calc(100% + 0.4rem);
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  min-width: min(15rem, 80vw);
+  max-width: min(26rem, 85vw);
+  max-height: 65dvh;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--ru-primitive-border, GrayText);
+  border-radius: 0.65rem;
+  background: var(--ru-primitive-surface, Canvas);
+  color: var(--ru-primitive-ink, CanvasText);
+  box-shadow: 0 0.5rem 1.5rem #0002;
+}
+.ru-primitive-tooltip-text {
+  position: absolute;
+  z-index: 30;
+  inset-block-end: 100%;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(20rem, 80vw);
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.35rem;
+  background: var(--ru-primitive-tooltip-bg, #202020);
+  color: var(--ru-primitive-tooltip-ink, #fff);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.ru-primitive-lightbox {
+  box-sizing: border-box;
+  width: min(64rem, 94vw);
+  max-width: 94vw;
+  max-height: 94dvh;
+  padding: 1rem;
+  border: 1px solid var(--ru-primitive-border, GrayText);
+  border-radius: 0.85rem;
+  background: var(--ru-primitive-surface, Canvas);
+  color: var(--ru-primitive-ink, CanvasText);
+}
+.ru-primitive-lightbox::backdrop {
+  background: #000a;
+}
+.ru-primitive-lightbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.ru-primitive-lightbox-header h2 {
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.ru-primitive-lightbox-header button {
+  flex-shrink: 0;
+}
+.ru-primitive-lightbox-image {
+  display: grid;
+  place-items: center;
+  min-height: 8rem;
+  margin-block: 1rem;
+}
+.ru-primitive-lightbox-image img {
+  display: block;
+  max-width: 100%;
+  max-height: 68dvh;
+  object-fit: contain;
+}
+.ru-primitive-lightbox-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+.ru-primitive-trigger:focus-visible,
+.ru-primitive-lightbox button:focus-visible,
+.ru-primitive-popover-panel:focus-visible {
+  outline: 2px solid Highlight;
+  outline-offset: 3px;
+}
+@media (prefers-color-scheme: dark) {
+  .ru-primitive-lightbox,
+  .ru-primitive-popover-panel,
+  .ru-primitive-trigger {
+    color-scheme: dark;
+  }
+}
+[data-theme="dark"] .ru-primitive-gallery,
+[data-theme="dark"] .ru-primitive-popover {
+  --ru-primitive-surface: #252525;
+  --ru-primitive-ink: #eee;
+  --ru-primitive-border: #666;
+}
+[data-theme="light"] .ru-primitive-gallery,
+[data-theme="light"] .ru-primitive-popover {
+  --ru-primitive-surface: #fff;
+  --ru-primitive-ink: #202020;
+  --ru-primitive-border: #888;
+}

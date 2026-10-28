@@ -19,6 +19,12 @@ This adapter therefore follows genui's existing DOM technique, but claims **only
 
 Input is strict JSON, capped at 256,000 characters, rejecting pollution keys; `parseRichSpec` then enforces the shared schema. No `eval`, HTML parsing, structural JSON repair or arbitrary component imports. React render failures restore the source block. The renderer receives `(action: string, payload?: Record<string, unknown>) => void`; callbacks serialize `[rich-ui-action] {"action":…, "payload":…}` and send through `ctx.sessions.scope(capturedSessionId).get('conversation').send`. They do not look up a new active session at click time. Oversized actions/payloads are dropped, payloads are never logged, and no callback is supplied when the session is unavailable.
 
+### Model contract and native skill discovery
+
+The Node half includes a compact always-on structured-output section: choose UI only when helpful, exact root shape, local-first interactions and explicit model actions. It optionally registers `skills/rich-ui/SKILL.md` through `ctx.inject(['skills'], ...)` and `skills.registerProvider`, using the same bundled rank 600, invocation metadata and directory resource base as installed genui. Missing skills service does not park the fence plugin. The provider reads frontmatter description from the packaged skill as the sole catalog source and returns its body separately.
+
+The English skill links a complete field reference and six examples (including exact popover, tooltip and image-group contracts); examples were parsed with the actual current `parseRichSpec`. It distinguishes ordinary prose, rich-ui and dsh-ui, explains entities, local expressions, allowed actions and side effects, and never asks the model to emit arbitrary executable code. A new Node process is required to activate this registration; rebuilding a browser bundle alone does not activate Node changes. Published packages must include `skills/**` (including references). No additional runtime package dependencies are required beyond Node builtins. No rich-ui validation tool is registered; GenUI validation tools cannot validate this schema.
+
 ## Package/build contract
 
 The package owner must configure these fields (the adapter task does not edit the manifest):
@@ -85,7 +91,7 @@ dsh --profile web --patch "$PLUGIN_ROOT/cordis.patch.yml" --host 127.0.0.1 --por
 
 `HOST_ROOT` records provenance; the installed `dsh` executable already selects this store. If `dsh --version` changes, recheck the API before claiming compatibility. `--dump-config` initializes shipped profiles according to the inspected CLI boot contract. The symlink + explicit overlay avoid package-manager lifecycle scripts or profile dependency installation. If port 3189 is occupied, use another unused loopback port; never kill the existing listener. In an agent, run only the final command as a managed background job and record its job ID; stop that job, not a service unit. Treat `$TEST_ROOT` as evidence; do not delete it blindly.
 
-Open **http://127.0.0.1:3189/**, not the production GUI. Check `/plugins/@kyoukisu/dsh-rich-ui` is served and the module ID appears in the boot graph. In a fresh test session, ask the configured test model to output exactly:
+Open **http://127.0.0.1:3189/**, not the production GUI. Check the module ID appears in `window.__DSH_BOOT__` and fetch its exact advertised revision-bound combo URL (for example `/plugins/??@kyoukisu/dsh-rich-ui/client.js&rev=<boot-revision>`). Bare `/plugins/@kyoukisu/dsh-rich-ui` or unversioned URLs return 404 by design. In a fresh test session, ask the configured test model to output exactly:
 
 ````text
 ```rich-ui
@@ -95,12 +101,26 @@ Open **http://127.0.0.1:3189/**, not the production GUI. Check `/plugins/@kyouki
 
 If no provider is configured, a manually injected stock-shaped DOM fixture proves discovery/rendering, **not** model/session delivery. Do not copy production credentials merely to finish a smoke test. A complete real-host acceptance checks: rich UI rendered; `[data-rich-ui-root]` exists beside hidden source; malformed JSON stays visible as code; `dsh-ui` and ordinary code remain unchanged; click returns a scoped `[rich-ui-action]` message; refresh/history replay renders again; plugin unload restores original source. Record which checks actually ran.
 
+## Rapid rebuilds against the isolated host
+
+For browser-only work run `npx vite build --config vite.plugin.config.ts --watch` as its own managed background job. This builds the actual host CJS/module-loader artifact, not the standalone demo. The inspected shipped `dsh-client-hmr` polls artifact stat metadata and invokes `clientModules.rebuilt(id)`, replacing immutable bytes and publishing a new graph revision. This was observed on the running isolated host: after rebuilding, the package's advertised revision changed without restarting the host. The browser HMR receiver is present; refresh the isolated URL and verify its advertised revision and served artifact if automatic replacement does not occur. Do not promise hot updates merely because a Vite demo dev server is running.
+
+If a different host lacks `dsh-client-hmr` or the advertised revision stays unchanged, stop and start **only the isolated managed host job**, retaining its isolated environment. Node-half changes need that isolated process restart; browser artifact polling does not re-run the Node plugin. Production service restarts are neither necessary nor authorized.
+
+## Verification performed during implementation
+
+TypeScript check, both real plugin builds, seven jsdom adapter tests and one actual-built-bundle VM module-loader test passed. Tests cover strict parsing, real React mounting, streaming settlement, malformed revisions, removed rows, unload restoration and captured-session action routing. A fresh isolated DSH home was booted on loopback port 3189; its GUI loaded successfully in a disposable browser; its boot graph contained this package; its revision-bound module endpoint returned 200 and included the exact built artifact. No production profile/service was changed.
+
+The parent-owned isolated host was then tested using `scripts/host-smoke.mjs` in the Playwright Docker image. The script reads the isolated Netscape cookie jar created by authenticated curl from the disposable launch URL; it never logs auth data. It loads the real host/browser module graph and injects only a stock-shaped assistant DOM fixture. Actual plugin mounting, local switch click plus computed output, malformed JSON fallback, ordinary-code preservation and not claiming dsh-ui all passed. Evidence is `.cache/isolated-host/host-smoke.json` and `host-smoke.png` (scratch, not source). Run with `docker run --rm --network host --ipc=host -v "$PWD:/work" -w /work mcr.microsoft.com/playwright:v1.64.1-noble node scripts/host-smoke.mjs` while the isolated host is running.
+
+A model/session history replay and model-action round trip remain **unproven**: the fresh profile has no model credentials. The fixture is injected DOM, not a stored transcript or a model response. No action delivery is simulated or asserted. Unload restoration is covered by jsdom tests, not a live plugin unload. The isolated host process lifecycle belongs to the task supervisor.
+
 ## Limits
 
 - This is a compatibility adapter against observed DOM, not a stable public fence API. Changed labels/classes/assistant markers fail closed to raw code; the integration must be revalidated on host upgrades.
 - Only the main viewed session is resolved (`retainedBy.mainView`), mirroring installed genui. Multi-pane/embedded transcript rendering is not guaranteed; no session means local UI only. A later provider disappearance can drop an action.
-- Partial JSON is not rendered while streaming. Local interactive state belongs to the React renderer; adapter remounts on source revisions and does not add durable session state.
-- Node instructions mention the schema but do not provide a complete schema-teaching skill, validation tool, tool-result renderer, panel dock, or model self-repair loop.
+- Partial JSON is not rendered while streaming. The adapter opts into the renderer's safe sessionStorage persistence using owning session + nearest stable chat anchor/node/flow key + **row-local** code-block ordinal. The renderer owns canonical spec hashing/versioning and excludes text input values. Without a stable host anchor the fallback is session + content hash/length: identical unanchored blocks in one session share state, and the compact non-cryptographic hash is not a security identity. Multi-tab durability is not provided.
+- A complete schema-teaching skill and compact Node instructions are included, but no rich-ui validation tool, tool-result renderer, panel dock, or model self-repair loop is installed.
 - `conversation.send` queues a normal user message, not an RPC transaction. It can fail or trigger model costs. The adapter logs failure without the payload; no delivery retry or acknowledgement UI is implemented.
 - Only the fresh test home is isolated by these commands; this is not a process/filesystem security sandbox. Run in a container separately if untrusted plugin code needs containment.
 - Unit DOM tests and build checks are not a live-host acceptance. A running real-host session/action round trip must be reported separately.
