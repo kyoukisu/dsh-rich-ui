@@ -1,6 +1,6 @@
 # What we borrowed from the Codex prompt
 
-Source: leaked Codex instructions, `OpenAI/Codex/old/gpt-5.2-codex.md` in
+Sources: leaked Codex instructions, `OpenAI/Codex/gpt-6.1-sol.md` and `OpenAI/Codex/old/gpt-5.2-codex.md` in
 [asgeirtj/system_prompts_leaks](https://github.com/asgeirtj/system_prompts_leaks/blob/main/OpenAI/Codex/old/gpt-5.2-codex.md),
 checked 2026-10-28. Codex has no rich-UI component language, so the useful part is
 not component syntax — it is the **restraint and formatting discipline** around output.
@@ -22,6 +22,22 @@ not component syntax — it is the **restraint and formatting discipline** aroun
   structural nodes instead.
 - Codex has no notion of local interaction, so nothing about state or actions was
   transferable.
+
+## From gpt-6.1-sol: the visualization policy
+
+Checked 2026-10-29. Codex has a "Visualizations" section that decides *when* a visual is warranted, and it is stricter than "explain visually":
+
+| Codex rule | Adopted? |
+|---|---|
+| Use a visualization when it helps, without waiting for an explicit request | Yes — the trigger now names the cases: comparison, change over time, cause/effect, reader-adjustable value |
+| Prefer interactive when explaining how something works or how it changes | Yes |
+| Tables for mappings and comparisons | Yes — `table` |
+| Mermaid for small static engineering diagrams | Not applicable yet: no diagram node |
+| Publication-ready plots → standalone artifact, not inline | Not adopted: our charts are inline by design |
+| Usually skip visuals for a single fact, one-step action, simple edit, basic instruction | Yes — stated explicitly |
+| Markdown image syntax for media, absolute paths for local files | Not adopted: `image` takes http(s) only; local paths are not served by the renderer |
+
+The important shift: Codex does not say "always visualize". It says the subject must benefit from structure. Our contract said the same less precisely; the wording now matches.
 
 ## Consequence
 

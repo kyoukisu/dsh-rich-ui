@@ -559,12 +559,14 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  border: 1px solid var(--ru-border);
+  border: 1px solid color-mix(in srgb, var(--ru-ink) 14%, transparent);
   border-radius: 14px;
+  /* Paint the surface: without it host text can show through the row block. */
+  background: var(--ru-bg);
   overflow: hidden;
 }
 .ru-entity-rows > li + li {
-  border-top: 1px solid var(--ru-border);
+  border-top: 1px solid color-mix(in srgb, var(--ru-ink) 12%, transparent);
 }
 .ru-entity-row {
   display: flex;
@@ -614,18 +616,21 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
+  gap: 4px 8px;
   font-size: 12px;
+  line-height: 1.5;
   color: var(--ru-muted);
 }
 .ru-meta-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  /* One chip stays on one line; wrapping happens between chips, not inside. */
+  white-space: nowrap;
 }
 .ru-meta-item + .ru-meta-item::before {
   content: "·";
-  margin-right: 4px;
+  margin-right: 2px;
   color: var(--ru-muted);
 }
 .ru-entity-badge {

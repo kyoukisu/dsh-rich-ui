@@ -40,7 +40,7 @@ The host relays an explicit click as a user message beginning `[rich-ui-action]`
 
 Inside `text` nodes only two inline marks are rendered: `` `code` `` and `**bold**`. Headings, links, lists and markdown tables written inside a text node appear as literal characters — use `card` titles, `table`, `entity-list` and `meta` instead. Keep the composition flat: no card inside a card, and do not present the same data twice (a chart and a table of identical numbers is duplication).
 
-Structure is not decoration. When the answer is one short fact, a paragraph beats any block; when it is a ranked comparison, numbers or something the reader will change, the block carries information prose cannot.
+Structure is not decoration. Reach for a block when it makes the answer easier to understand: comparing options, showing how something changes, explaining cause and effect, or when the reader will change a value themselves. Skip it for a single fact, a one-step action, a simple instruction, or anything already clear in a short paragraph. Visuals are never required by the subject alone: a short precise answer is the better outcome when the structure adds nothing.
 
 Check exact fields against the reference, valid entity targets, finite numeric values, operation arities, initialized state and sensible ranges. Keep documents comfortably below the host's 256,000-character source cap and parser budgets. Keep ordinary code as a `code` node, not executable content. Ensure controls have clear labels and images have alt text. Cite the actual information sources inside entities or surrounding prose. A malformed/unsupported block should be corrected as a complete new block, not excused as a working UI.
 
