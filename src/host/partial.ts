@@ -65,7 +65,10 @@ function tryJson(raw: string, from: number, to: number): unknown {
 }
 
 /** Elements of an array that are already closed; the trailing one is dropped. */
-function completeElements(raw: string, open: number): { items: unknown[]; complete: boolean } {
+function completeElements(
+  raw: string,
+  open: number,
+): { items: unknown[]; complete: boolean } {
   const items: unknown[] = [];
   let index = skipSpace(raw, open + 1);
   for (;;) {
@@ -105,7 +108,10 @@ export function scanPrefix(raw: string): Scan {
       result.nodes = items;
       if (!complete) return result;
       // An array closed but the root may continue (e.g. entities after nodes).
-      const after = skipSpace(text, valueEnd(text, index) === -1 ? text.length : valueEnd(text, index));
+      const after = skipSpace(
+        text,
+        valueEnd(text, index) === -1 ? text.length : valueEnd(text, index),
+      );
       if (after >= text.length) return result;
       index = after;
     } else if (key === "entities" && text[index] === "[") {
@@ -140,7 +146,12 @@ export function scanPrefix(raw: string): Scan {
  */
 export function parseStreamingSpec(raw: string): RichSpec | null {
   const scan = scanPrefix(raw);
-  if (scan.version !== 1 || !Array.isArray(scan.nodes) || scan.nodes.length === 0) return null;
+  if (
+    scan.version !== 1 ||
+    !Array.isArray(scan.nodes) ||
+    scan.nodes.length === 0
+  )
+    return null;
   const entities = Array.isArray(scan.entities) ? scan.entities : [];
   const kept: RichNode[] = [];
   for (const node of scan.nodes) {

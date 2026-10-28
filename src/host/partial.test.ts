@@ -4,7 +4,9 @@ import { parseStreamingSpec, scanPrefix } from "./partial.ts";
 const doc = {
   version: 1,
   title: "Поток",
-  entities: [{ id: "a", kind: "Фильм", title: "A", image: "https://example.org/a.jpg" }],
+  entities: [
+    { id: "a", kind: "Фильм", title: "A", image: "https://example.org/a.jpg" },
+  ],
   nodes: [
     { type: "text", content: "Первый абзац" },
     { type: "entity-list", entityIds: ["a"] },
@@ -35,7 +37,9 @@ describe("streaming prefix", () => {
         { type: "text", content: "later" },
       ],
     });
-    expect(parseStreamingSpec(broken)?.nodes).toEqual([{ type: "text", content: "ok" }]);
+    expect(parseStreamingSpec(broken)?.nodes).toEqual([
+      { type: "text", content: "ok" },
+    ]);
   });
   it("withholds entities that follow the nodes until their array closes", () => {
     const ordered = JSON.stringify({

@@ -40,7 +40,13 @@
   "bugs": {
     "url": "https://github.com/kyoukisu/dsh-rich-ui/issues"
   },
-  "keywords": ["dsh", "deepseek-harness", "plugin", "generative-ui", "rich-ui"],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "generative-ui",
+    "rich-ui"
+  ],
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "build": "tsc --noEmit && vite build",
