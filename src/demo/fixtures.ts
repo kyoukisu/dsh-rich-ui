@@ -369,7 +369,7 @@ export const configurator: RichSpec = {
 
 export const listing: RichSpec = {
   version: 1,
-  title: "Чайники на Ozon",
+  title: "Электрические чайники",
   nodes: [
     {
       type: "text",
@@ -379,7 +379,7 @@ export const listing: RichSpec = {
     {
       type: "meta",
       items: [
-        { icon: "package", text: "4 модели" },
+        { icon: "package", text: "3 модели" },
         { icon: "wallet", text: "От 1 382 ₽" },
         { icon: "truck", text: "Доставка 7–18 ноября" },
       ],
@@ -390,39 +390,47 @@ export const listing: RichSpec = {
       tone: "info",
       title: "Демонстрация",
       content:
-        "Цены и наличие условные; постеры заменены нейтральными изображениями.",
+        "Цены условные. Фотографии — Wikimedia Commons, свободная лицензия; это не снимки конкретных лотов.",
     },
   ],
   entities: [
     {
       id: "wk1760",
       kind: "Чайник",
-      title: "Weissgauff WK 1760 EcoGlass",
+      title: "Bosch TWK 3A011",
       subtitle: "1 382 ₽ · 1,7 л · стекло",
       description: "LED-подсветка, 1850–2200 Вт",
       badge: { label: "Самый доступный", tone: "success" },
-      image: "https://picsum.photos/seed/kettle-a/220/300",
+      image:
+        "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/2023_Czajnik_elektryczny_Bosch_%281%29.jpg/500px-2023_Czajnik_elektryczny_Bosch_%281%29.jpg",
       facts: [{ label: "Объём", value: "1,7 л" }],
-      sources: [{ title: "Ozon", url: "https://www.ozon.ru/" }],
+      sources: [
+        {
+          title: "Фото · Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:2023_Czajnik_elektryczny_Bosch_%281%29.jpg",
+        },
+      ],
     },
     {
       id: "wk1500",
       kind: "Чайник",
-      title: "Weissgauff WK 1500 DT Touch",
+      title: "N'OVEEN Kettle 1.7",
       subtitle: "2 459 ₽ · 1,5 л · сенсор",
       description: "Дисплей и регулировка нагрева",
-      image: "https://picsum.photos/seed/kettle-b/220/300",
+      image:
+        "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/2023_Czajnik_elektryczny_N%27OVEEN.jpg/500px-2023_Czajnik_elektryczny_N%27OVEEN.jpg",
       facts: [{ label: "Объём", value: "1,5 л" }],
       sources: [{ title: "Ozon", url: "https://www.ozon.ru/" }],
     },
     {
       id: "tuvio",
       kind: "Чайник",
-      title: "Tuvio STRIX",
+      title: "Чайник электрический, 1,7 л",
       subtitle: "4 336 ₽ · 1,7 л",
       description: "Поддержка Алисы",
       badge: { label: "Умный дом", tone: "info" },
-      image: "https://picsum.photos/seed/kettle-c/220/300",
+      image:
+        "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Electric_kettle_-_%D0%AD%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D1%87%D0%B0%D0%B9%D0%BD%D0%B8%D0%BA.JPG/500px-Electric_kettle_-_%D0%AD%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D1%87%D0%B0%D0%B9%D0%BD%D0%B8%D0%BA.JPG",
       facts: [{ label: "Объём", value: "1,7 л" }],
       sources: [{ title: "Ozon", url: "https://www.ozon.ru/" }],
     },
