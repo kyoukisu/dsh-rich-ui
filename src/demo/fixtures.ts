@@ -687,6 +687,7 @@ export const pool: RichSpec = {
 };
 
 
+
 export const demos = {
   dashboard,
   technical,

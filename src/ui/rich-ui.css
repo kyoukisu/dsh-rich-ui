@@ -1230,7 +1230,13 @@ body[data-ds-dark-theme] .rich-ui {
   width: 100%;
   height: auto;
   display: block;
-  overflow: visible;
+  overflow: hidden;
+}
+.ru-chart-unit {
+  margin: 0 0 2px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--ru-faint);
 }
 .ru-axis {
   fill: var(--ru-muted);

@@ -174,6 +174,9 @@ export function Chart({
 
   return (
     <figure className="ru-chart" aria-label={description}>
+      {node.kind !== "donut" && node.unit ? (
+        <div className="ru-chart-unit">{node.unit}</div>
+      ) : null}
       <div className="ru-chart-canvas">
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={description}>
           {node.kind === "donut" ? (
@@ -187,16 +190,6 @@ export function Chart({
             />
           ) : (
             <>
-              {node.unit && (
-                <text
-                  x={M.left - 10}
-                  y={M.top - 7}
-                  textAnchor="end"
-                  className="ru-axis ru-axis-unit"
-                >
-                  {node.unit}
-                </text>
-              )}
               {ticks.map((tick) => (
                 <g key={tick}>
                   <line
