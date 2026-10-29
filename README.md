@@ -10,6 +10,7 @@ Entity collections with detail panels, KPI cards, multi-series charts, sortable 
 [![license](https://shieldcn.dev/github/kyoukisu/dsh-rich-ui/license.svg?variant=branded&size=xs)](LICENSE)
 [![last commit](https://shieldcn.dev/github/kyoukisu/dsh-rich-ui/last-commit.svg?variant=branded&size=xs)](https://github.com/kyoukisu/dsh-rich-ui/commits/main)
 ![DSH](https://shieldcn.dev/badge/DSH-0.2.x-1f6feb.svg?variant=branded&size=xs)
+[![npm](https://img.shields.io/npm/v/@kyoukisu/dsh-rich-ui?label=npm&color=cb3837)](https://www.npmjs.com/package/@kyoukisu/dsh-rich-ui)
 
 [Live demo](https://rich-ui.beako.best/) · [Install](#install) · [Quick start](#quick-start) · [Contract](prompt-rich-ui/prompt.md) · [Parity](docs/PARITY.md) · [Safety](#safety)
 
@@ -70,7 +71,7 @@ The renderer is a real React tree behind a strict schema. There is no generated 
 Requires DeepSeek Harness `0.2.x` and Node `22.19+`. No NixOS change, no patched Harness.
 
 ```sh
-dsh plugin --profile web add github:kyoukisu/dsh-rich-ui
+dsh plugin --profile web add @kyoukisu/dsh-rich-ui
 systemctl --user restart deepseek-harness   # or restart however your Harness runs
 ```
 
@@ -81,6 +82,8 @@ git clone https://github.com/kyoukisu/dsh-rich-ui && cd dsh-rich-ui
 npm ci && npm run build:plugin
 dsh plugin --profile web add link:$PWD
 ```
+
+Unreleased commits: `dsh plugin --profile web add github:kyoukisu/dsh-rich-ui`.
 
 The plugin registers itself as a bundle; the fence language is `rich-ui`.
 
