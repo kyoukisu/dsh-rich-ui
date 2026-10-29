@@ -125,18 +125,18 @@ Roughly 150 Lucide icons resolve by name, with semantic tones (`success`, `warni
 <summary>Entities, tables, charts and actions — one complete document</summary>
 
 ```json
-{"version":1,"title":"Кино на вечер",
- "entities":[{"id":"a","kind":"Фильм","title":"Arrival","subtitle":"2016 · фантастика",
+{"version":1,"title":"Films for tonight",
+ "entities":[{"id":"a","kind":"Film","title":"Arrival","subtitle":"2016 · science fiction",
    "image":"https://example.org/poster.jpg",
-   "facts":[{"label":"Режиссёр","value":"Дени Вильнёв"}],
+   "facts":[{"label":"Director","value":"Denis Villeneuve"}],
    "sources":[{"title":"TMDB","url":"https://www.themoviedb.org/movie/329865-arrival"}],
-   "badge":{"label":"Выбор редакции","tone":"success"}}],
+   "badge":{"label":"Editors' pick","tone":"success"}}],
  "nodes":[
-  {"type":"meta","items":[{"icon":"film","text":"3 фильма"},{"icon":"clock","text":"2 часа"}]},
+  {"type":"meta","items":[{"icon":"film","text":"3 films"},{"icon":"clock","text":"2 hours"}]},
   {"type":"entity-list","entityIds":["a"]},
-  {"type":"table","columns":[{"key":"k","label":"Что"},{"key":"v","label":"Сколько"}],
-   "rows":[{"k":"Сеансов","v":3}]},
-  {"type":"chart","kind":"bar","data":[{"label":"Пн","value":2},{"label":"Вт","value":5}]}]}
+  {"type":"table","columns":[{"key":"k","label":"What"},{"key":"v","label":"How many"}],
+   "rows":[{"k":"Screenings","v":3}]},
+  {"type":"chart","kind":"bar","data":[{"label":"Mon","value":2},{"label":"Tue","value":5}]}]}
 ```
 
 </details>
