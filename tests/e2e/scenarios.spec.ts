@@ -283,3 +283,11 @@ test("progress columns expose values and product rows use square thumbnails", as
   expect(Math.round(box!.width)).toBe(56);
   expect(Math.round(box!.height)).toBe(56);
 });
+
+test("inline entity chips open the shared detail surface", async ({ page }) => {
+  await page.goto("/?demo=films");
+  const chip = page.getByRole("button", { name: "Открыть: Interstellar" });
+  await expect(chip).toBeVisible();
+  await chip.click();
+  await expect(page.locator(".ru-detail h2")).toHaveText("Interstellar");
+});

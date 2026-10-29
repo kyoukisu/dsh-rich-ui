@@ -2164,3 +2164,33 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
 .ru-entity-tab .ru-detail-body h2 {
   font-size: 22px;
 }
+
+/* Inline entity chip: a reference inside a sentence, not a card. */
+.ru-inline-entity {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  margin: 0 1px;
+  padding: 0 6px;
+  border: 1px solid var(--ru-border);
+  border-radius: 6px;
+  background: var(--ru-surface);
+  color: var(--ru-ink);
+  font: inherit;
+  font-size: 0.94em;
+  line-height: 1.55;
+  text-decoration: none;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+button.ru-inline-entity {
+  cursor: pointer;
+}
+button.ru-inline-entity:hover {
+  border-color: var(--ru-border-strong);
+  background: var(--ru-surface-2);
+}
+.ru-inline-entity svg {
+  opacity: 0.55;
+  flex-shrink: 0;
+}

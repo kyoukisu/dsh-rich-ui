@@ -280,10 +280,18 @@ Use this shape when the answer is a status page or a comparison with several kin
 {
   "version": 1,
   "title": "Release status",
+  "entities": [
+    {
+      "id": "interstellar",
+      "kind": "Film",
+      "title": "Interstellar",
+      "description": "Replace with verified content."
+    }
+  ],
   "nodes": [
     {
       "type": "text",
-      "content": "Three numbers, one trend and the work that is left. The table sorts in the browser."
+      "content": "Three numbers, one trend and the work that is left. Start with [[interstellar]] or sort the table in the browser."
     },
     {
       "type": "grid",

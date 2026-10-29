@@ -42,7 +42,7 @@ When a rich-ui block fails the schema, the reader sees a diagnostic card with th
 
 ## Before sending
 
-Inside `text` nodes only three inline marks are rendered: `` `code` ``, `**bold**` and `[label](https://…)`. Headings, lists and markdown tables written inside a text node appear as literal characters — use `card` titles, `table`, `entity-list` and `meta` instead. A link must be absolute http(s); anything else stays text. Keep the composition flat: no card inside a card, and do not present the same data twice (a chart and a table of identical numbers is duplication).
+Inside `text` nodes four inline marks are rendered: `` `code` ``, `**bold**`, `[label](https://…)` and `[[entityId]]`. A chip opens that declared entity in the host's entity surface. Headings, lists and markdown tables written inside a text node appear as literal characters — use `card` titles, `table`, `entity-list` and `meta` instead. A link must be absolute http(s), and `[[entityId]]` must name an entity declared in the same document; anything else stays text. Keep the composition flat: no card inside a card, and do not present the same data twice (a chart and a table of identical numbers is duplication).
 
 Structure is not decoration. Reach for a block when it makes the answer easier to understand: comparing options, showing how something changes, explaining cause and effect, or when the reader will change a value themselves. Skip it for a single fact, a one-step action, a simple instruction, or anything already clear in a short paragraph. Visuals are never required by the subject alone: a short precise answer is the better outcome when the structure adds nothing.
 

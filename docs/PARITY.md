@@ -33,7 +33,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Same-turn repair: invalid fence returns diagnostics to the model      | Partial | diagnostic card with the exact error and a one-click repair message; no automatic turn hook |
 | Panel that reflows the conversation column                            | Covered | native right-column tab in Harness; isolated host showed a 647px column, related navigation and axe clean; drawer fallback |
 | Citations attached to prose                                           | Partial | sources live in the entity panel, not inline                                      |
-| Inline entity chip inside a sentence                                  | Partial | only block-level `entity-ref`                                                     |
+| Inline entity chip inside a sentence                                  | Covered | `[[entityId]]` in text resolves a declared entity and opens the same host surface; unknown ids stay text |
 | Filterable tables                                                     | Covered | `dashboard`; local substring filter, visible count and a no-results row           |
 | Scatter plot                                                          | Missing | bar, line, area and donut only                                                    |
 | Mermaid / ER / sequence diagrams                                      | Missing | `diagram` is an ordered flow, not a graph layout engine                           |
@@ -44,7 +44,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Persistent panel / canvas across turns                                 | Missing | not implemented                                                                    |
 | Mini-apps with isolated runtime                                       | Missing | deliberately out of scope                                                          |
 
-Coverage: **16 / 27** scenarios covered, **3 partial**, **8 missing**.
+Coverage: **17 / 27** scenarios covered, **2 partial**, **8 missing**.
 
 ## Visual deviations (known, not yet fixed)
 
@@ -66,7 +66,7 @@ Coverage: **16 / 27** scenarios covered, **3 partial**, **8 missing**.
 Ordered by effect on daily use:
 
 1. Close the repair loop automatically when the host exposes a turn hook; today the reader presses one button.
-2. Inline citations and entity chips inside prose.
+2. Inline citations inside prose.
 3. Scatter and richer chart options.
 4. Math, media nodes, artifacts and maps.
 5. Provider-backed entity data with provenance and empty/error states.

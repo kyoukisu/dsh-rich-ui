@@ -530,3 +530,37 @@ describe("host entity surface", () => {
     expect(document.querySelector('[role="complementary"]')).not.toBeNull();
   });
 });
+
+describe("inline entity chips", () => {
+  const spec: RichSpec = {
+    version: 1,
+    entities: [{ id: "one", kind: "test", title: "One" }],
+    nodes: [
+      {
+        type: "text",
+        content: "Start with [[one]], compare [[missing]] and read later.",
+      },
+    ],
+  };
+
+  it("opens a declared entity from a sentence and keeps unknown ids literal", () => {
+    const open = vi.fn(() => true);
+    act(() => root.render(<RichResponse spec={spec} onOpenEntity={open} />));
+    const chip = host.querySelector<HTMLButtonElement>(
+      'button[aria-label="Открыть: One"]',
+    )!;
+    expect(chip.textContent).toContain("One");
+    click(chip);
+    expect(open).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "one" }),
+      expect.any(Array),
+    );
+    expect(host.textContent).toContain("[[missing]]");
+  });
+
+  it("falls back to the local drawer when no host surface is provided", () => {
+    act(() => root.render(<RichResponse spec={spec} />));
+    click(host.querySelector("button.ru-inline-entity")!);
+    expect(document.querySelector(".ru-detail h2")?.textContent).toBe("One");
+  });
+});

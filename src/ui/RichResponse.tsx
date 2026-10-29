@@ -162,7 +162,11 @@ export function RichResponse({
         case "text":
           return (
             <div key={key} className={`ru-text ru-${n.variant ?? "body"}`}>
-              <Inline text={String(ev(n.content) ?? "")} />
+              <Inline
+                text={String(ev(n.content) ?? "")}
+                entities={spec.entities}
+                onEntity={openEntity}
+              />
             </div>
           );
         case "row":
@@ -256,7 +260,11 @@ export function RichResponse({
                 {n.title && (
                   <strong className="ru-callout-title">{n.title}</strong>
                 )}
-                <Inline text={String(ev(n.content) ?? "")} />
+                <Inline
+                  text={String(ev(n.content) ?? "")}
+                  entities={spec.entities}
+                  onEntity={openEntity}
+                />
               </div>
             </aside>
           );

@@ -97,7 +97,7 @@ Things worth trying: *"build a budget calculator with three sliders"*, *"show th
 | Group | Nodes |
 |---|---|
 | Layout | `stack`, `row`, `grid`, `card`, `divider`, `meta` |
-| Text | `text` with inline `code`, **bold** and links; `callout` with optional title; `code` with highlighting, line numbers and copy |
+| Text | `text` with inline `code`, **bold**, links and `[[entityId]]` chips; `callout` with optional title; `code` with highlighting, line numbers and copy |
 | Objects | `entity-ref`, ``entity-list` with poster or square row thumbnails; entity details dock in the native right column or fall back to an in-page drawer |
 | Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status and progress columns), `chart` (bar / line / area / donut, 1–6 series, units, tooltips), `computed` |
 | Flow | `diagram` with ordered steps, connector labels and branch depth |
@@ -171,7 +171,7 @@ flowchart LR
 
 ## Parity with the reference
 
-Measured, not claimed: **16 of 27** reference scenarios reproduced, **3 partial**, **8 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: automatic same-turn repair, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps.
+Measured, not claimed: **17 of 27** reference scenarios reproduced, **2 partial**, **8 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: automatic same-turn repair, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps.
 
 Known limitation: the fence label is not preserved by Harness, so an unlabelled block is claimed only when its payload looks like a spec document and passes the strict parser. A `json`-labelled block is never claimed.
 

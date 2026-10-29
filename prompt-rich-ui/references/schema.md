@@ -10,7 +10,7 @@ Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?:
 
 ## Nodes
 
-- `text`: `{type:"text",content:Expr,variant?:"body"|"title"|"subtitle"|"caption"}`. Only `` `code` ``, `**bold**` and `[label](https://…)` are interpreted. A link must be an absolute http(s) URL; any other markup stays literal text.
+- `text`: `{type:"text",content:Expr,variant?:"body"|"title"|"subtitle"|"caption"}`. Only `` `code` ``, `**bold**`, `[label](https://…)` and `[[entityId]]` are interpreted. A link must be an absolute http(s) URL; `[[entityId]]` opens a declared entity and unknown ids stay literal. Any other markup stays literal text.
 - Layout: `{type:"stack"|"row"|"grid"|"card",children:Node[],gap?:number,columns?:integer,title?:string}`. Gap 0–128; columns 1–12. The field is `children`, never `items`.
 - `carousel`: `{type:"carousel",children:Node[]}`.
 - `meta`: `{type:"meta",items:[{text:string,icon?:string}]}` — one inline summary strip ("4 модели · От 1 382 ₽ · Доставка 7–18 ноября"). Not for paragraphs.
