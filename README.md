@@ -11,7 +11,7 @@ Entity collections with detail panels, KPI cards, multi-series charts, sortable 
 [![last commit](https://shieldcn.dev/github/kyoukisu/dsh-rich-ui/last-commit.svg?variant=branded&size=xs)](https://github.com/kyoukisu/dsh-rich-ui/commits/main)
 ![DSH](https://shieldcn.dev/badge/DSH-0.2.x-1f6feb.svg?variant=branded&size=xs)
 
-[Install](#install) · [Quick start](#quick-start) · [Contract](prompt-rich-ui/prompt.md) · [Parity](docs/PARITY.md) · [Safety](#safety)
+[Live demo](https://rich-ui.beako.best/) · [Install](#install) · [Quick start](#quick-start) · [Contract](prompt-rich-ui/prompt.md) · [Parity](docs/PARITY.md) · [Safety](#safety)
 
 </div>
 
@@ -60,6 +60,10 @@ The renderer is a real React tree behind a strict schema. There is no generated 
   <br>
   <em>390 px: cards stack, the chart gets its own coordinate system, the table still fits.</em>
 </p>
+
+## Live demo
+
+**[rich-ui.beako.best](https://rich-ui.beako.best/)** — the real renderer in laboratory conditions, no install. Scenarios: dashboard, films, listing, calculator, configurator, technical breakdown and the rejected-block diagnostic; add `&theme=dark` for the dark theme. Demo data is illustrative.
 
 ## Install
 
