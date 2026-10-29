@@ -245,4 +245,22 @@ describe("ImageLightbox", () => {
     render(null);
     expect(HTMLDialogElement.prototype.close).toHaveBeenCalledTimes(2);
   });
+
+  it("keeps the same image element while paging the gallery", () => {
+    act(() =>
+      root.render(
+        <ImageLightbox
+          src={["https://example.org/a.png", "https://example.org/b.png"]}
+          alt="Gallery"
+        />,
+      ),
+    );
+    click(host.querySelector("button")!);
+    const first = document.querySelector("dialog img")!;
+    click(document.querySelector('[aria-label="Next image"]')!);
+    const second = document.querySelector("dialog img")!;
+    expect(second).toBe(first);
+    expect(second.getAttribute("src")).toBe("https://example.org/b.png");
+  });
+
 });

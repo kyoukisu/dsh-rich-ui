@@ -400,27 +400,29 @@ export function Chart({
             : null}
         {node.caption && <p className="ru-chart-caption">{node.caption}</p>}
       </figcaption>
-      <table className="ru-sr-only">
-        <caption>{description}</caption>
-        <thead>
-          <tr>
-            <th>Category</th>
-            {series.map((entry) => (
-              <th key={entry.label}>{entry.label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {categories.map((label, index) => (
-            <tr key={label}>
-              <th>{label}</th>
+      <div className="ru-sr-only">
+        <table>
+          <caption>{description}</caption>
+          <thead>
+            <tr>
+              <th>Category</th>
               {series.map((entry) => (
-                <td key={entry.label}>{entry.values[index] ?? 0}</td>
+                <th key={entry.label}>{entry.label}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {categories.map((label, index) => (
+              <tr key={label}>
+                <th>{label}</th>
+                {series.map((entry) => (
+                  <td key={entry.label}>{entry.values[index] ?? 0}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

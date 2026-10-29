@@ -177,6 +177,13 @@ export function ImageLightbox({
     setFailed(false);
   }, [current, src[current]]);
   useEffect(() => {
+    if (!open || src.length < 2) return;
+    for (const step of [1, -1]) {
+      const near = new Image();
+      near.src = src[(current + step + src.length) % src.length]!;
+    }
+  }, [open, current, src]);
+  useEffect(() => {
     if (!open) return;
     const node = dialog.current!;
     node.showModal();
@@ -288,7 +295,6 @@ export function ImageLightbox({
               <p role="status">Image unavailable</p>
             ) : (
               <img
-                key={src[current]}
                 src={src[current]}
                 alt={alt}
                 onError={() => setFailed(true)}

@@ -27,6 +27,28 @@ const button = (text: string) =>
   )!;
 const division = { op: "div" as const, args: [1, 0] };
 describe("RichResponse regressions", () => {
+  it("keeps the chart data table hidden inside a clipped wrapper", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "chart",
+          kind: "line",
+          categories: ["Jan", "Feb"],
+          series: [{ label: "Revenue", values: [1, 2] }],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelector("table.ru-sr-only")).toBeNull();
+    const wrapper = host.querySelector(".ru-chart .ru-sr-only");
+    expect(wrapper).not.toBeNull();
+    expect(wrapper!.querySelector("table")).not.toBeNull();
+    expect(wrapper!.querySelector("caption")?.textContent).toBe(
+      "Line chart: 2 categories",
+    );
+  });
+
   it("draws stack layers with member chips and a caption", () => {
     const spec: RichSpec = {
       version: 1,

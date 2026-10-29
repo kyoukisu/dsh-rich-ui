@@ -1,6 +1,14 @@
 * {
   box-sizing: border-box;
 }
+html,
+body {
+  background: #fff;
+}
+html:has(.lab[data-theme="dark"]),
+body:has(.lab[data-theme="dark"]) {
+  background: #212121;
+}
 body {
   margin: 0;
   font-family:
