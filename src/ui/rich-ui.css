@@ -11,6 +11,7 @@
   --ru-ink-soft: #3a3a3a;
   --ru-muted: #6b6b6b;
   --ru-faint: #6e6e6e;
+  --ru-caption-ink: #5c5c60;
   --ru-border: #e4e4e6;
   --ru-border-strong: #d3d3d6;
   --ru-grid: #ededee;
@@ -82,6 +83,7 @@
   --ru-chart-4: #e2b977;
   --ru-chart-5: #e58e86;
   --ru-chart-6: #82cbc5;
+  --ru-caption-ink: #b8b8ba;
   --ru-code-bg: #1b1b1c;
   --ru-code-ink: #e6e6e6;
   --ru-code-keyword: #d99ad9;
@@ -291,7 +293,7 @@ body[data-ds-dark-theme] .rich-ui {
 .ru-caption {
   font-size: 12.5px;
   line-height: 1.55;
-  color: var(--ru-muted);
+  color: var(--ru-caption-ink);
 }
 .rich-ui code {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
