@@ -8,8 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleX,
-  ExternalLink,
-  ImageOff,
   Info,
   X,
 } from "lucide-react";
@@ -30,6 +28,8 @@ import {
 } from "./persistence";
 import { ImageLightbox, Popover, Tooltip } from "./primitives";
 import { Inline } from "./inline";
+import { EntityDetails } from "./EntityDetails";
+import { Picture } from "./Picture";
 import { resolveIcon } from "./icons";
 import { Chart } from "./blocks/Chart";
 import { CodeBlock } from "./blocks/CodeBlock";
@@ -50,44 +50,24 @@ const TONE_ICONS = {
   info: Info,
 } as const;
 
-function Picture({
-  src,
-  alt,
-  ...props
-}: React.ImgHTMLAttributes<HTMLImageElement>) {
-  const [failedSrc, setFailedSrc] = useState<string>();
-  return failedSrc === src ? (
-    <div
-      className={`ru-image-fallback ${props.className ?? ""}`}
-      role="img"
-      aria-label={alt}
-    >
-      <ImageOff size={22} />
-      <span>Изображение недоступно</span>
-    </div>
-  ) : (
-    <img
-      {...props}
-      src={src}
-      alt={alt}
-      loading="lazy"
-      onError={() => setFailedSrc(src)}
-    />
-  );
-}
-
 export interface RichResponseProps {
   spec: RichSpec;
   /** Opt-in sessionStorage identity; include owning session and response/block. Inputs never persist. */
   persistenceKey?: string;
   /** Desktop defaults to non-modal fixed drawer; host owns surrounding layout reflow. Mobile uses a modal sheet. */
   detailMode?: "drawer" | "modal";
+  /**
+   * Preferred entity surface. Return true when the host opened it; false keeps
+   * the in-page drawer, so a host without a right sidebar still works.
+   */
+  onOpenEntity?: (entity: Entity, entities: Entity[]) => boolean;
   onAction?: (action: string, payload?: Record<string, unknown>) => void;
 }
 
 export function RichResponse({
   spec: raw,
   onAction,
+  onOpenEntity,
   persistenceKey,
   detailMode = "drawer",
 }: RichResponseProps) {
@@ -110,6 +90,14 @@ export function RichResponse({
     setSelected(null);
   }, [spec, persistenceKey]);
   const ev = (expr: Expr) => evaluate(expr, state);
+  const openEntity = React.useCallback(
+    (id: string) => {
+      const entity = spec.entities?.find((entry) => entry.id === id);
+      if (entity && onOpenEntity?.(entity, spec.entities ?? [])) return;
+      setSelected(id);
+    },
+    [spec, onOpenEntity],
+  );
   const act = async (action: RichAction) => {
     try {
       switch (action.type) {
@@ -124,7 +112,7 @@ export function RichResponse({
           clearPersistedState(persistenceKey);
           break;
         case "open-entity":
-          setSelected(action.entityId);
+          openEntity(action.entityId);
           break;
         case "close-entity":
           setSelected(null);
@@ -250,7 +238,7 @@ export function RichResponse({
               key={key}
               node={n}
               entities={spec.entities ?? []}
-              onOpen={setSelected}
+              onOpen={openEntity}
             />
           );
         case "divider":
@@ -513,7 +501,7 @@ export function RichResponse({
             <button
               key={key}
               className="ru-entity-card"
-              onClick={() => setSelected(entity.id)}
+              onClick={() => openEntity(entity.id)}
               aria-label={`Подробнее: ${entity.title}`}
             >
               {entity.image && (
@@ -684,7 +672,6 @@ function EntityPanel({
   const ref = useRef<HTMLElement>(null);
   const close = useRef<HTMLButtonElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const [photo, setPhoto] = useState(0);
   const [mobile, setMobile] = useState(
     () =>
       typeof window.matchMedia === "function" &&
@@ -724,9 +711,6 @@ function EntityPanel({
     }
     return () => observer.disconnect();
   }, [themeSource]);
-  useEffect(() => {
-    setPhoto(0);
-  }, [entity.id]);
   React.useLayoutEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
     const panel = ref.current;
@@ -793,14 +777,6 @@ function EntityPanel({
       if (previous?.isConnected) previous.focus();
     };
   }, [modal]);
-  const images = entity.images?.length
-    ? entity.images
-    : entity.image
-      ? [entity.image]
-      : [];
-  const related = (entity.related ?? [])
-    .map((id) => entities.find((entry) => entry.id === id))
-    .filter((entry): entry is Entity => Boolean(entry));
   return createPortal(
     <div
       className={`rich-ui ru-overlay ${modal ? "ru-modal" : "ru-drawer"}`}
@@ -828,120 +804,16 @@ function EntityPanel({
             <X size={19} />
           </button>
         </header>
-        {images.length > 0 && (
-          <div className="ru-detail-gallery">
-            <Picture
-              key={images[photo]}
-              src={images[photo]!}
-              alt={`${entity.title} — изображение ${photo + 1}`}
-              className="ru-detail-photo"
-            />
-            {images.length > 1 && (
-              <div className="ru-thumbs">
-                {images.map((source, index) => (
-                  <button
-                    key={source}
-                    type="button"
-                    aria-label={`Изображение ${index + 1}`}
-                    aria-pressed={photo === index}
-                    onClick={() => setPhoto(index)}
-                  >
-                    <Picture src={source} alt="" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        <div className="ru-detail-body">
-          <h2 id={title} ref={heading} tabIndex={-1}>
-            {entity.title}
-          </h2>
-          {entity.subtitle && (
-            <p className="ru-detail-subtitle">{entity.subtitle}</p>
-          )}
-          {entity.description && <p>{entity.description}</p>}
-          {entity.badge && (
-            <span
-              className="ru-entity-badge ru-detail-badge"
-              data-tone={entity.badge.tone ?? "success"}
-            >
-              <Check size={13} aria-hidden="true" />
-              {entity.badge.label}
-            </span>
-          )}
-          {entity.facts?.length ? (
-            <dl className="ru-facts">
-              {entity.facts.map((fact) => (
-                <div key={fact.label}>
-                  <dt>{fact.label}</dt>
-                  <dd>
-                    {typeof fact.value === "number"
-                      ? formatNumber(fact.value)
-                      : String(fact.value ?? "—")}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
-          {entity.sources?.length ? (
-            <div className="ru-detail-actions">
-              <a
-                className="ru-button ru-button-primary"
-                href={entity.sources[0]!.url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Открыть источник
-                <ArrowUpRight size={15} />
-              </a>
-            </div>
-          ) : null}
-          {entity.sources?.length ? (
-            <section>
-              <h3 className="ru-section-title">Источники</h3>
-              {entity.sources.map((source) => (
-                <a
-                  className="ru-source"
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  key={source.url}
-                >
-                  <ExternalLink size={15} aria-hidden="true" />
-                  <span>
-                    {source.title}
-                    <small>{new URL(source.url).hostname}</small>
-                  </span>
-                  <ArrowUpRight size={15} aria-hidden="true" />
-                </a>
-              ))}
-            </section>
-          ) : null}
-          {related.length > 0 && (
-            <section>
-              <h3 className="ru-section-title">Связанные объекты</h3>
-              {related.map((entry) => (
-                <button
-                  type="button"
-                  className="ru-related"
-                  key={entry.id}
-                  onClick={() => {
-                    close.current?.focus();
-                    onSelect(entry.id);
-                  }}
-                >
-                  {entry.title}
-                  <ChevronRight size={16} />
-                </button>
-              ))}
-            </section>
-          )}
-          <p className="ru-provenance">
-            Сведения из указанных источников. Демонстрационные данные не
-            являются актуальным предложением.
-          </p>
-        </div>
+        <EntityDetails
+          entity={entity}
+          entities={entities}
+          titleId={title}
+          titleRef={heading}
+          onSelect={(id) => {
+            close.current?.focus();
+            onSelect(id);
+          }}
+        />
       </aside>
     </div>,
     document.body,

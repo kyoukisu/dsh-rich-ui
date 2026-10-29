@@ -1803,6 +1803,12 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
 .ru-source:last-of-type {
   border-bottom: 0;
 }
+.rich-ui .ru-source {
+  text-decoration: none;
+}
+.rich-ui .ru-source:hover {
+  text-decoration: underline;
+}
 .ru-source > span {
   flex: 1;
   min-width: 0;
@@ -2138,4 +2144,23 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   .ru-table-progress {
     min-width: 0;
   }
+}
+
+/* Native right-sidebar tab: the column makes room, so no overlay or scrim. */
+.ru-entity-tab {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  background: var(--ru-bg);
+  color: var(--ru-ink);
+  font-family: inherit;
+}
+.ru-entity-tab .ru-detail-gallery {
+  padding: 12px 14px 10px;
+}
+.ru-entity-tab .ru-detail-body {
+  padding: 16px 18px 28px;
+}
+.ru-entity-tab .ru-detail-body h2 {
+  font-size: 22px;
 }

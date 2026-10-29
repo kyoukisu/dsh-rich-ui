@@ -31,7 +31,13 @@ The renderer is a real React tree behind a strict schema. There is no generated 
 <p align="center">
   <img alt="Film collection reflowed beside an open detail panel with poster, facts and sources" src="docs/images/films-desktop.png" width="860">
   <br>
-  <em>In the lab the answer reflows beside the open panel; inside Harness the drawer overlays the column.</em>
+  <em>In the lab the answer reflows beside the open panel; in Harness the same entity opens in the native right column (next figure).</em>
+</p>
+
+<p align="center">
+  <img alt="Entity details docked in the Harness native right column: tab chip, poster gallery, facts, primary source and related entity" src="docs/images/native-panel.png" width="430">
+  <br>
+  <em>Inside Harness the entity is a native right-column tab: the conversation narrows instead of being covered. Verified in an isolated host; hosts without the column keep the in-page drawer.</em>
 </p>
 
 <p align="center">
@@ -92,7 +98,7 @@ Things worth trying: *"build a budget calculator with three sliders"*, *"show th
 |---|---|
 | Layout | `stack`, `row`, `grid`, `card`, `divider`, `meta` |
 | Text | `text` with inline `code`, **bold** and links; `callout` with optional title; `code` with highlighting, line numbers and copy |
-| Objects | `entity-ref`, ``entity-list` with poster or square row thumbnails, detail panel with gallery, facts, sources, related entities |
+| Objects | `entity-ref`, ``entity-list` with poster or square row thumbnails; entity details dock in the native right column or fall back to an in-page drawer |
 | Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status and progress columns), `chart` (bar / line / area / donut, 1–6 series, units, tooltips), `computed` |
 | Flow | `diagram` with ordered steps, connector labels and branch depth |
 | Media | `image`, `image-group`, gallery lightbox, popover, tooltip |
@@ -165,7 +171,7 @@ flowchart LR
 
 ## Parity with the reference
 
-Measured, not claimed: **15 of 27** reference scenarios reproduced, **4 partial**, **8 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: automatic same-turn repair, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps. Inside Harness the detail panel still overlays the column instead of reflowing it.
+Measured, not claimed: **16 of 27** reference scenarios reproduced, **3 partial**, **8 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: automatic same-turn repair, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps.
 
 Known limitation: the fence label is not preserved by Harness, so an unlabelled block is claimed only when its payload looks like a spec document and passes the strict parser. A `json`-labelled block is never claimed.
 

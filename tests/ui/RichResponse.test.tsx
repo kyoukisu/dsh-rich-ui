@@ -503,3 +503,30 @@ describe("progress columns and thumbnails", () => {
     );
   });
 });
+
+describe("host entity surface", () => {
+  const spec: RichSpec = {
+    version: 1,
+    nodes: [{ type: "entity-ref", entityId: "one" }],
+    entities: [{ id: "one", kind: "test", title: "One" }],
+  };
+
+  it("hands the entity to the host and opens no local drawer", () => {
+    const open = vi.fn(() => true);
+    act(() => root.render(<RichResponse spec={spec} onOpenEntity={open} />));
+    click(button("One"));
+    expect(open).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "one" }),
+      expect.any(Array),
+    );
+    expect(document.querySelector('[role="complementary"]')).toBeNull();
+  });
+
+  it("keeps the local drawer when the host declines", () => {
+    const open = vi.fn(() => false);
+    act(() => root.render(<RichResponse spec={spec} onOpenEntity={open} />));
+    click(button("One"));
+    expect(open).toHaveBeenCalled();
+    expect(document.querySelector('[role="complementary"]')).not.toBeNull();
+  });
+});

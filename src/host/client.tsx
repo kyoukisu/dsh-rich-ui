@@ -2,6 +2,7 @@ import { Component, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { RichResponse } from "../ui/RichResponse";
 import { Diagnostic } from "../ui/Diagnostic";
+import { installEntityTab, openEntityInSidebar } from "./entity-tab";
 import { parseStreamingSpec } from "./partial.ts";
 import { parseRichSpec, type RichSpec } from "../core/schema";
 
@@ -17,6 +18,15 @@ export interface ClientContext {
     };
     scope(id: string): { get(key: string): unknown } | undefined;
   };
+  /** Native right column; absent on hosts without it, which keeps the drawer. */
+  sidebarRight?: {
+    openTab(kind: string, options?: { params?: unknown }): void;
+  };
+  /** Dynamic service lookup, used to wait for the optional right column. */
+  inject?(
+    names: string[],
+    callback: (injected: { get(name: string): unknown }) => void,
+  ): (() => void) | void;
 }
 export type ActionHandler = (
   action: string,
@@ -236,6 +246,7 @@ export function repairHandler(
 export function installDomRenderer(
   ctx: ClientContext,
   scope: HTMLElement = document.body,
+  getSidebar?: () => ClientContext["sidebarRight"],
 ): () => void {
   const mounts = new Map<HTMLElement, Mount>();
   let disposed = false;
@@ -340,6 +351,14 @@ export function installDomRenderer(
                 ? undefined
                 : fencePersistenceKey(source, sessionId),
               onAction: streaming ? undefined : actionHandler(ctx, sessionId),
+              onOpenEntity: streaming
+                ? undefined
+                : (entity, entities) =>
+                    openEntityInSidebar(
+                      { sidebarRight: getSidebar?.() },
+                      entity,
+                      entities,
+                    ),
             }),
           }),
         );
@@ -387,5 +406,40 @@ export function installDomRenderer(
 }
 
 export function apply(ctx: ClientContext): () => void {
-  return installDomRenderer(ctx);
+  const services: { sidebar?: ClientContext["sidebarRight"] } = {};
+  const seat = ctx.inject?.(["sidebarRight"], (injected) => {
+    services.sidebar = injected.get("sidebarRight") as
+      ClientContext["sidebarRight"] | undefined;
+  });
+  let tab = () => {};
+  // Slots are optional: a host without them keeps the in-page drawer.
+  const seatSlots = ctx.inject?.(["slots"], (injected) => {
+    const slots = injected.get("slots") as
+      Parameters<typeof installEntityTab>[0]["slots"] | undefined;
+    if (!slots) return;
+    tab();
+    try {
+      tab = installEntityTab(
+        {
+          inject: (names, callback) =>
+            ctx.inject ? ctx.inject(names, callback) : undefined,
+          slots,
+        },
+        () => services.sidebar,
+      );
+    } catch (error) {
+      console.warn("[rich-ui] right sidebar unavailable", error);
+    }
+  });
+  const dispose = installDomRenderer(
+    ctx,
+    document.body,
+    () => services.sidebar,
+  );
+  return () => {
+    seat?.();
+    seatSlots?.();
+    tab();
+    dispose();
+  };
 }
