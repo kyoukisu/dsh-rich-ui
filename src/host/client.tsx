@@ -45,7 +45,7 @@ export type FenceResult =
  * reader can send it back to the model. */
 export function parseFenceResult(raw: string): FenceResult {
   if (raw.length > maxSourceLength)
-    return { error: `Документ длиннее ${maxSourceLength} символов` };
+    return { error: `Document is longer than ${maxSourceLength} characters` };
   try {
     const value: unknown = JSON.parse(raw, (key, item: unknown) => {
       if (key === "__proto__" || key === "constructor" || key === "prototype") {

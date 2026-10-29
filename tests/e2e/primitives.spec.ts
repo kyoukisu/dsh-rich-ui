@@ -4,58 +4,58 @@ test.describe("primitives browser QA", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/?demo=primitives");
     await expect(
-      page.getByRole("region", { name: "Интерактивные примитивы" }),
+      page.getByRole("region", { name: "Interactive primitives" }),
     ).toBeVisible();
   });
 
   test("primitives popover focuses content and closes on Escape, outside pointer and Tab-away", async ({
     page,
   }) => {
-    const trigger = page.getByRole("button", { name: "Открыть настройки" });
+    const trigger = page.getByRole("button", { name: "Open settings" });
     await trigger.focus();
     await page.keyboard.press("Enter");
-    const panel = page.getByRole("region", { name: "Открыть настройки" });
+    const panel = page.getByRole("region", { name: "Open settings" });
     await expect(panel).toBeVisible();
     await expect(
-      page.getByRole("textbox", { name: "Название заметки" }),
+      page.getByRole("textbox", { name: "Note title" }),
     ).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(panel).toHaveCount(0);
     await expect(trigger).toBeFocused();
     await trigger.click();
-    await page.getByRole("button", { name: "Внешняя кнопка" }).click();
+    await page.getByRole("button", { name: "Outside button" }).click();
     await expect(panel).toHaveCount(0);
     await trigger.click();
     await page.keyboard.press("Tab");
     await expect(
-      page.getByRole("button", { name: "Сохранить локально" }),
+      page.getByRole("button", { name: "Save locally" }),
     ).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(panel).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Справка о примитивах" }),
+      page.getByRole("button", { name: "Primitives help" }),
     ).toBeFocused();
   });
 
   test("primitives tooltip has a real description on keyboard focus and Escape does not move focus", async ({
     page,
   }) => {
-    const help = page.getByRole("button", { name: "Справка о примитивах" });
+    const help = page.getByRole("button", { name: "Primitives help" });
     await help.focus();
     const tooltip = page.getByRole("tooltip");
     await expect(tooltip).toHaveText(
-      "Подсказка доступна при наведении и фокусе",
+      "The hint appears on hover and on focus",
     );
     await expect(help).toHaveAccessibleDescription(
-      "Подсказка доступна при наведении и фокусе",
+      "The hint appears on hover and on focus",
     );
     await page.keyboard.press("Escape");
     await expect(tooltip).toHaveCount(0);
     await expect(help).toBeFocused();
-    await page.getByRole("button", { name: "Внешняя кнопка" }).focus();
+    await page.getByRole("button", { name: "Outside button" }).focus();
     await help.focus();
     await expect(tooltip).toBeVisible();
-    await page.getByRole("button", { name: "Внешняя кнопка" }).focus();
+    await page.getByRole("button", { name: "Outside button" }).focus();
     await help.hover();
     await expect(tooltip).toBeVisible();
     await tooltip.hover();
@@ -68,30 +68,30 @@ test.describe("primitives browser QA", () => {
     page,
   }) => {
     const trigger = page.getByRole("button", {
-      name: "Открыть учебную галерею",
+      name: "Open the practice gallery",
     });
     // Role queries exclude the native modal's inert background; use a DOM locator for this negative focus probe.
     const outside = page
       .locator("button")
-      .filter({ hasText: /^Внешняя кнопка$/ });
+      .filter({ hasText: /^Outside button$/ });
     await trigger.click();
-    const dialog = page.getByRole("dialog", { name: "Учебная галерея" });
+    const dialog = page.getByRole("dialog", { name: "Practice gallery" });
     await expect(dialog).toBeVisible();
     expect(await dialog.evaluate((element) => element.matches(":modal"))).toBe(
       true,
     );
-    const close = page.getByRole("button", { name: "Закрыть галерею" });
+    const close = page.getByRole("button", { name: "Close gallery" });
     await expect(close).toBeFocused();
     // Native modal inertness rejects programmatic focus outside its top-layer subtree.
     await outside.evaluate((element: HTMLElement) => element.focus());
     await expect(close).toBeFocused();
     await page.keyboard.press("Shift+Tab");
     await expect(
-      page.getByRole("button", { name: "Следующее изображение" }),
+      page.getByRole("button", { name: "Next image" }),
     ).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(close).toBeFocused();
-    const image = dialog.getByRole("img", { name: "Учебная галерея" });
+    const image = dialog.getByRole("img", { name: "Practice gallery" });
     await expect
       .poll(() =>
         image.evaluate(
@@ -121,10 +121,10 @@ test.describe("primitives browser QA", () => {
     for (const theme of ["light", "dark"]) {
       await page.goto(`/?demo=primitives&theme=${theme}`);
       const trigger = page.getByRole("button", {
-        name: "Открыть учебную галерею",
+        name: "Open the practice gallery",
       });
       await trigger.click();
-      const dialog = page.getByRole("dialog", { name: "Учебная галерея" });
+      const dialog = page.getByRole("dialog", { name: "Practice gallery" });
       await expect(dialog).toBeVisible();
       const geometry = await dialog.boundingBox();
       const viewport = page.viewportSize()!;

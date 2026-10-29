@@ -260,7 +260,7 @@ describe("semantic icon colour and entity rows", () => {
       ).toThrow();
   });
   it("validates entity lists against declared entities", () => {
-    const entities = [{ id: "a", kind: "Фильм", title: "A" }];
+    const entities = [{ id: "a", kind: "Film", title: "A" }];
     expect(
       parseRichSpec({
         version: 1,
@@ -289,7 +289,7 @@ describe("semantic icon colour and entity rows", () => {
   it("validates checkbox, radio and segmented controls", () => {
     expect(
       parseRichSpec(
-        spec({ type: "checkbox", stateKey: "ok", label: "Согласен" }),
+        spec({ type: "checkbox", stateKey: "ok", label: "Agree" }),
       ),
     ).toBeTruthy();
     expect(
@@ -297,7 +297,7 @@ describe("semantic icon colour and entity rows", () => {
         spec({
           type: "radio",
           stateKey: "size",
-          label: "Размер",
+          label: "Size",
           options: [{ label: "S", value: 1 }],
         }),
       ),
@@ -337,13 +337,13 @@ describe("commerce presentation", () => {
       entities: [
         {
           id: "a",
-          kind: "Чайник",
+          kind: "Kettle",
           title: "A",
-          badge: { label: "Хит", tone: "success" },
+          badge: { label: "Popular", tone: "success" },
         },
       ],
       nodes: [
-        { type: "meta", items: [{ icon: "package", text: "4 модели" }] },
+        { type: "meta", items: [{ icon: "package", text: "4 models" }] },
         { type: "entity-list", entityIds: ["a"] },
       ],
     };
@@ -379,7 +379,7 @@ describe("commerce presentation", () => {
 describe("callout heading", () => {
   it("accepts an optional title and still rejects unknown fields", () => {
     expect(
-      parseRichSpec(spec({ type: "callout", content: "x", title: "Итог" })),
+      parseRichSpec(spec({ type: "callout", content: "x", title: "Summary" })),
     ).toBeTruthy();
     expect(() =>
       parseRichSpec(spec({ type: "callout", content: "x", subtitle: "y" })),

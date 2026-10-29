@@ -14,7 +14,7 @@ test("film detail panel opens, navigates related entity, and restores focus", as
 }) => {
   await page.goto("/?demo=films");
   const card = page.locator(
-    ".ru-entity-card[aria-label='Подробнее: Interstellar']",
+    ".ru-entity-card[aria-label='Details: Interstellar']",
   );
   await card.click();
   const dialog = page.locator(".ru-detail");
@@ -22,9 +22,9 @@ test("film detail panel opens, navigates related entity, and restores focus", as
   await expect(
     dialog.getByRole("heading", { name: "Interstellar", exact: true }),
   ).toBeVisible();
-  await dialog.getByRole("button", { name: "Изображение 2" }).click();
+  await dialog.getByRole("button", { name: "Image 2" }).click();
   await expect(
-    dialog.getByRole("button", { name: "Изображение 2" }),
+    dialog.getByRole("button", { name: "Image 2" }),
   ).toHaveAttribute("aria-pressed", "true");
   await dialog.getByRole("button", { name: "Arrival", exact: true }).click();
   await expect(
@@ -38,34 +38,34 @@ test("calculator computes immediately and reset restores defaults", async ({
   page,
 }) => {
   await page.goto("/?demo=calculator");
-  await expect(page.locator(".ru-computed output")).toHaveText(/70\s?246/);
-  const rate = page.getByRole("slider", { name: "Годовая доходность, %" });
+  await expect(page.locator(".ru-computed output")).toHaveText(/70,246/);
+  const rate = page.getByRole("slider", { name: "Annual return, %" });
   await rate.fill("0");
-  await expect(page.locator(".ru-computed output")).toHaveText(/50\s?000/);
-  await page.getByRole("button", { name: "Сбросить параметры" }).click();
+  await expect(page.locator(".ru-computed output")).toHaveText(/50,000/);
+  await page.getByRole("button", { name: "Reset parameters" }).click();
   await expect(rate).toHaveValue("12");
-  await expect(page.locator(".ru-computed output")).toHaveText(/70\s?246/);
+  await expect(page.locator(".ru-computed output")).toHaveText(/70,246/);
 });
 test("configurator updates text, conditional chart, tabs and notification locally", async ({
   page,
 }) => {
   await page.goto("/?demo=configurator");
   await page
-    .getByRole("textbox", { name: "Название проекта" })
-    .fill("Новая система");
-  await expect(page.locator(".ru-title")).toHaveText("Новая система");
+    .getByRole("textbox", { name: "Project name" })
+    .fill("New system");
+  await expect(page.locator(".ru-title")).toHaveText("New system");
   await expect(
-    page.getByRole("img", { name: "Линейный график" }),
+    page.getByRole("img", { name: "Line chart" }),
   ).toBeVisible();
-  await page.getByRole("switch", { name: "Включить аналитику" }).uncheck();
-  await expect(page.getByRole("img", { name: "Линейный график" })).toHaveCount(
+  await page.getByRole("switch", { name: "Enable analytics" }).uncheck();
+  await expect(page.getByRole("img", { name: "Line chart" })).toHaveCount(
     0,
   );
-  await page.getByRole("tab", { name: "Таблица" }).click();
+  await page.getByRole("tab", { name: "Table" }).click();
   await expect(page.getByRole("table")).toBeVisible();
-  await page.getByRole("switch", { name: "Показывать уведомления" }).check();
+  await page.getByRole("switch", { name: "Show notifications" }).check();
   await expect(
-    page.getByText("Уведомления включены в предварительном просмотре."),
+    page.getByText("Notifications are on in the preview."),
   ).toBeVisible();
 });
 test("all scenarios have no horizontal overflow or runtime errors in both themes", async ({
@@ -113,11 +113,11 @@ test("detail respects mobile modal and desktop nonmodal semantics", async ({
 }) => {
   await page.goto("/?demo=films");
   await page
-    .locator(".ru-entity-card[aria-label='Подробнее: Interstellar']")
+    .locator(".ru-entity-card[aria-label='Details: Interstellar']")
     .click();
   if (isMobile) {
     await expect(
-      page.getByRole("button", { name: "Закрыть подробности" }),
+      page.getByRole("button", { name: "Close details" }),
     ).toBeFocused();
     await expect(page.getByRole("dialog")).toHaveAttribute(
       "aria-modal",
@@ -135,10 +135,10 @@ test("detail respects mobile modal and desktop nonmodal semantics", async ({
       "true",
     );
     await expect(
-      page.getByRole("button", { name: "Переключить тему" }),
+      page.getByRole("button", { name: "Toggle theme" }),
     ).toBeEnabled();
   }
-  await page.getByRole("button", { name: "Закрыть подробности" }).click();
+  await page.getByRole("button", { name: "Close details" }).click();
   await expect(page.locator(".ru-detail")).toHaveCount(0);
 });
 test("renderer passes automated accessibility checks", async ({ page }) => {
@@ -184,7 +184,7 @@ test("entity rows open the same detail panel and keep focus contract", async ({
   page,
 }) => {
   await page.goto("/?demo=films");
-  const row = page.locator(".ru-entity-row[aria-label='Подробнее: Arrival']");
+  const row = page.locator(".ru-entity-row[aria-label='Details: Arrival']");
   await row.click();
   await expect(page.locator(".ru-detail")).toBeVisible();
   await expect(
@@ -200,10 +200,10 @@ test("entity rows open the same detail panel and keep focus contract", async ({
 test("sortable table reorders rows without a model call", async ({ page }) => {
   await page.goto("/?demo=dashboard");
   const firstTask = page.locator(".ru-table-wrap tbody tr td").first();
-  await expect(firstTask).toHaveText("Дизайн");
-  await page.locator("th", { hasText: "Прогресс" }).locator("button").click();
-  await expect(firstTask).toHaveText("Тестирование");
-  await expect(page.locator("th", { hasText: "Прогресс" })).toHaveAttribute(
+  await expect(firstTask).toHaveText("Design");
+  await page.locator("th", { hasText: "Progress" }).locator("button").click();
+  await expect(firstTask).toHaveText("Testing");
+  await expect(page.locator("th", { hasText: "Progress" })).toHaveAttribute(
     "aria-sort",
     "ascending",
   );
@@ -213,11 +213,11 @@ test("chart exposes axes, series legend and a hover readout", async ({
   page,
 }) => {
   await page.goto("/?demo=dashboard");
-  await expect(page.locator(".ru-chart .ru-axis-unit")).toHaveText("тыс. ₽");
-  await expect(page.locator(".ru-chart figcaption")).toContainText("Выручка");
+  await expect(page.locator(".ru-chart .ru-axis-unit")).toHaveText("$k");
+  await expect(page.locator(".ru-chart figcaption")).toContainText("Revenue");
   await page.locator(".ru-chart-hit").nth(3).hover();
-  await expect(page.locator(".ru-chart-tip")).toContainText("Апр");
-  await expect(page.locator(".ru-chart-tip")).toContainText("91 тыс. ₽");
+  await expect(page.locator(".ru-chart-tip")).toContainText("Apr");
+  await expect(page.locator(".ru-chart-tip")).toContainText("91");
 });
 
 test("diagram steps keep their order and connector labels", async ({
@@ -226,9 +226,9 @@ test("diagram steps keep their order and connector labels", async ({
   await page.goto("/?demo=dashboard");
   const steps = page.locator(".ru-diagram-card strong");
   await expect(steps).toHaveCount(4);
-  await expect(steps.first()).toHaveText("Запрос");
+  await expect(steps.first()).toHaveText("Request");
   await expect(page.locator(".ru-diagram-edge").first()).toContainText(
-    "описание интерфейса",
+    "interface description",
   );
 });
 
@@ -236,18 +236,18 @@ test("table filters rows locally and renders semantic status tones", async ({
   page,
 }) => {
   await page.goto("/?demo=dashboard");
-  const filter = page.getByRole("searchbox", { name: "Фильтр по таблице" });
-  await filter.fill("Разработка");
+  const filter = page.getByRole("searchbox", { name: "Filter the table" });
+  await filter.fill("Development");
   await expect(page.locator(".ru-table-wrap tbody tr")).toHaveCount(1);
-  await expect(page.locator(".ru-table-wrap tbody tr")).toContainText("Марк");
-  await expect(page.locator(".ru-table-count")).toHaveText("1 из 4");
-  await filter.fill("нет такой задачи");
-  await expect(page.locator(".ru-table-none")).toHaveText("Ничего не найдено");
+  await expect(page.locator(".ru-table-wrap tbody tr")).toContainText("Mark");
+  await expect(page.locator(".ru-table-count")).toHaveText("1 of 4");
+  await filter.fill("no such task");
+  await expect(page.locator(".ru-table-none")).toHaveText("Nothing found");
   await filter.fill("");
   await expect(page.locator(".ru-table-wrap tbody tr")).toHaveCount(4);
   await expect(
     page.locator('.ru-status-pill[data-tone="success"]').first(),
-  ).toHaveText("Готово");
+  ).toHaveText("Done");
 });
 
 test("rejected block explains the error and reveals its source", async ({
@@ -256,15 +256,15 @@ test("rejected block explains the error and reveals its source", async ({
   await page.goto("/?demo=diagnostic");
   await expect(page.locator(".ru-diagnostic")).toBeVisible();
   await expect(page.locator(".ru-diagnostic-summary")).toHaveText(
-    "Не хватает обязательного поля «value».",
+    'Missing required field "value".',
   );
   await expect(page.locator(".ru-diagnostic-error")).toContainText(
     "Missing value",
   );
-  await page.getByText("Показать исходный JSON").click();
+  await page.getByText("Show the source JSON").click();
   await expect(page.locator(".ru-diagnostic pre")).toContainText('"stat"');
   await expect(
-    page.getByRole("button", { name: "Попросить модель исправить" }),
+    page.getByRole("button", { name: "Ask the model to fix" }),
   ).toBeEnabled();
 });
 
@@ -286,7 +286,7 @@ test("progress columns expose values and product rows use square thumbnails", as
 
 test("inline entity chips open the shared detail surface", async ({ page }) => {
   await page.goto("/?demo=films");
-  const chip = page.getByRole("button", { name: "Открыть: Interstellar" });
+  const chip = page.getByRole("button", { name: "Open: Interstellar" });
   await expect(chip).toBeVisible();
   await chip.click();
   await expect(page.locator(".ru-detail h2")).toHaveText("Interstellar");
@@ -295,7 +295,7 @@ test("inline entity chips open the shared detail surface", async ({ page }) => {
 test("popover controls follow the page theme, not the OS", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto("/?demo=primitives&theme=light");
-  await page.getByRole("button", { name: "Открыть настройки" }).click();
+  await page.getByRole("button", { name: "Open settings" }).click();
   const panel = page.locator(".ru-primitive-popover-panel");
   await expect(panel).toBeVisible();
   expect(await panel.evaluate((el) => getComputedStyle(el).colorScheme)).toBe(
@@ -310,7 +310,7 @@ test("popover controls follow the page theme, not the OS", async ({ page }) => {
   );
 
   await page.goto("/?demo=primitives&theme=dark");
-  await page.getByRole("button", { name: "Открыть настройки" }).click();
+  await page.getByRole("button", { name: "Open settings" }).click();
   expect(
     await page
       .locator(".ru-primitive-popover-panel")

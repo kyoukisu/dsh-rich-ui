@@ -52,7 +52,7 @@ export interface Entity {
   facts?: { label: string; value: Scalar }[];
   sources?: { title: string; url: string }[];
   related?: string[];
-  /** Short highlight under the row, e.g. "Самый доступный". */
+  /** Short highlight under the row, e.g. "Cheapest". */
   badge?: EntityBadge;
   /** Row thumbnail shape; posters are 2:3, square suits product photos. */
   thumbShape?: "poster" | "square";
@@ -98,7 +98,7 @@ export interface ProgressNode extends NodeBase {
   tone?: Exclude<Tone, "default" | "accent"> | "accent";
   showValue?: boolean;
 }
-/** Compact state pill, e.g. "Готово" or "В работе". */
+/** Compact state pill, e.g. "Done" or "In progress". */
 export interface StatusNode extends NodeBase {
   type: "status";
   label: string;
@@ -125,7 +125,7 @@ export interface MetaItem {
   text: string;
   icon?: string;
 }
-/** Compact inline summary strip: "4 модели · От 1 382 ₽ · Доставка 7–18 ноября". */
+/** Compact inline summary strip: "4 models · From $15 · Delivery Nov 7–18". */
 export interface MetaNode extends NodeBase {
   type: "meta";
   items: MetaItem[];
@@ -263,7 +263,7 @@ export interface ChartNode extends NodeBase {
   /** Multi-series mode: one shared category axis plus aligned value arrays. */
   categories?: string[];
   series?: ChartSeries[];
-  /** Shown on the value axis and in tooltips, e.g. "₽" or "тыс. ₽". */
+  /** Shown on the value axis and in tooltips, e.g. "$" or "$k". */
   unit?: string;
   caption?: string;
 }

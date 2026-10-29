@@ -3,16 +3,16 @@ const state = (key: string): Expr => ({ state: key });
 const op = (op: string, ...args: Expr[]): Expr => ({ op, args }) as Expr;
 export const technical: RichSpec = {
   version: 1,
-  title: "Почему задача зависает",
+  title: "Why the task hangs",
   nodes: [
     {
       type: "text",
       content:
-        "Контекст отменён, но worker всё ещё пытается отправить результат. Получатель уже завершил работу.",
+        "The context is cancelled, but the worker still tries to send its result. The receiver has already finished.",
     },
     {
       type: "card",
-      title: "Что происходит в задаче",
+      title: "What happens in the task",
       children: [
         {
           type: "row",
@@ -20,7 +20,7 @@ export const technical: RichSpec = {
             { type: "icon", name: "clock", tone: "muted" },
             {
               type: "text",
-              content: "0 мс — worker получает `7` и начинает `Sleep(100ms)`",
+              content: "0 ms — worker receives `7` and starts `Sleep(100ms)`",
             },
           ],
         },
@@ -30,7 +30,7 @@ export const technical: RichSpec = {
             { type: "icon", name: "error", tone: "danger" },
             {
               type: "text",
-              content: "~10 мс — контекст отменяется, consumer выходит",
+              content: "~10 ms — the context is cancelled, the consumer exits",
             },
           ],
         },
@@ -40,7 +40,7 @@ export const technical: RichSpec = {
             { type: "icon", name: "clock", tone: "muted" },
             {
               type: "text",
-              content: "~100 мс — worker просыпается и отправляет `14`",
+              content: "~100 ms — the worker wakes up and sends `14`",
             },
           ],
         },
@@ -51,7 +51,7 @@ export const technical: RichSpec = {
             { type: "icon", name: "lock", tone: "warning" },
             {
               type: "text",
-              content: "**Worker:** заблокирован на `results <- value`",
+              content: "**Worker:** blocked on `results <- value`",
             },
           ],
         },
@@ -59,7 +59,7 @@ export const technical: RichSpec = {
           type: "row",
           children: [
             { type: "icon", name: "lock", tone: "warning" },
-            { type: "text", content: "**Coordinator:** ждёт `wg.Wait()`" },
+            { type: "text", content: "**Coordinator:** waits on `wg.Wait()`" },
           ],
         },
         {
@@ -68,7 +68,7 @@ export const technical: RichSpec = {
             { type: "icon", name: "x", tone: "danger" },
             {
               type: "text",
-              content: "`close(results)` никогда не выполняется",
+              content: "`close(results)` never runs",
             },
           ],
         },
@@ -77,37 +77,37 @@ export const technical: RichSpec = {
     {
       type: "text",
       variant: "subtitle",
-      content: "Отправка тоже должна учитывать отмену",
+      content: "Sending must respect cancellation too",
     },
     {
       type: "diagram",
       direction: "horizontal",
-      caption: "Порядок событий в задаче: отмена приходит раньше отправки.",
+      caption: "Event order in the task: cancellation arrives before the send.",
       steps: [
         {
           id: "worker",
           label: "Worker",
           detail: "Sleep(100ms)",
-          connector: "0 мс",
+          connector: "0 ms",
         },
         {
           id: "cancel",
-          label: "Контекст отменён",
-          detail: "consumer выходит",
+          label: "Context cancelled",
+          detail: "the consumer exits",
           tone: "warning",
-          connector: "10 мс",
+          connector: "10 ms",
         },
         {
           id: "send",
-          label: "Отправка 14",
-          detail: "блокируется навсегда",
+          label: "Send 14",
+          detail: "blocks forever",
           tone: "danger",
-          connector: "100 мс",
+          connector: "100 ms",
         },
         {
           id: "wait",
           label: "Coordinator",
-          detail: "ждёт wg.Wait()",
+          detail: "waiting on wg.Wait()",
           tone: "warning",
         },
       ],
@@ -115,7 +115,7 @@ export const technical: RichSpec = {
     {
       type: "code",
       language: "go",
-      title: "Отправка с учётом отмены",
+      title: "Sending with cancellation",
       lineNumbers: true,
       code: "select {\ncase results <- value:\ncase <-ctx.Done():\n    return\n}",
     },
@@ -123,28 +123,28 @@ export const technical: RichSpec = {
 };
 export const films: RichSpec = {
   version: 1,
-  title: "Когда хочется хорошей научной фантастики",
+  title: "When you feel like some good science fiction",
   entities: [
     {
       id: "interstellar",
-      kind: "Фильм",
+      kind: "Film",
       title: "Interstellar",
-      subtitle: "2014 · Научная фантастика · 169 мин",
+      subtitle: "2014 · Science fiction · 169 min",
       description:
-        "Экспедиция за пределы Солнечной системы, время и связь между близкими. Для вечера, когда хочется большого путешествия и сильной эмоции.",
+        "An expedition beyond the Solar System, time, and the bond between people. For an evening when you want a grand journey and to feel something.",
       image: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
       images: [
         "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
         "https://image.tmdb.org/t/p/w780/xJHokMbljvjADYdit5fK5VQsXEG.jpg",
       ],
       facts: [
-        { label: "Режиссёр", value: "Кристофер Нолан" },
-        { label: "Год", value: 2014 },
-        { label: "Длительность", value: "169 минут" },
+        { label: "Director", value: "Christopher Nolan" },
+        { label: "Year", value: 2014 },
+        { label: "Runtime", value: "169 min" },
       ],
       sources: [
         {
-          title: "Карточка фильма · TMDB",
+          title: "Movie page · TMDB",
           url: "https://www.themoviedb.org/movie/157336-interstellar",
         },
       ],
@@ -152,19 +152,19 @@ export const films: RichSpec = {
     },
     {
       id: "arrival",
-      kind: "Фильм",
+      kind: "Film",
       title: "Arrival",
-      subtitle: "2016 · Научная фантастика · 116 мин",
+      subtitle: "2016 · Science fiction · 116 min",
       description:
-        "Лингвист пытается понять язык прибывших на Землю существ. Тихая, собранная история о восприятии и выборе.",
+        "A linguist tries to understand the language of the visitors who came to Earth. A quiet, focused story about perception and choice.",
       image: "https://image.tmdb.org/t/p/w500/x2FJsf1ElAgr63Y3PNPtJrcmpoe.jpg",
       facts: [
-        { label: "Режиссёр", value: "Дени Вильнёв" },
-        { label: "Год", value: 2016 },
+        { label: "Director", value: "Denis Villeneuve" },
+        { label: "Year", value: 2016 },
       ],
       sources: [
         {
-          title: "Карточка фильма · TMDB",
+          title: "Movie page · TMDB",
           url: "https://www.themoviedb.org/movie/329865-arrival",
         },
       ],
@@ -172,30 +172,30 @@ export const films: RichSpec = {
     },
     {
       id: "martian",
-      kind: "Фильм",
+      kind: "Film",
       title: "The Martian",
-      subtitle: "2015 · Приключения · 144 мин",
+      subtitle: "2015 · Adventure · 144 min",
       description:
-        "Один человек на Марсе, инженерная смекалка и много упрямства. Более светлая история о том, как решать невозможные задачи.",
+        "One man on Mars, engineering ingenuity, and a lot of stubbornness. A lighter story about solving impossible problems.",
       image: "https://image.tmdb.org/t/p/w500/3ndAx3weG6KDkJIRMCi5vXX6Dyb.jpg",
       sources: [
         {
-          title: "Карточка фильма · TMDB",
+          title: "Movie page · TMDB",
           url: "https://www.themoviedb.org/movie/286217-the-martian",
         },
       ],
     },
     {
       id: "dune",
-      kind: "Фильм",
+      kind: "Film",
       title: "Dune: Part Two",
-      subtitle: "2024 · Научная фантастика · 167 мин",
+      subtitle: "2024 · Science fiction · 167 min",
       description:
-        "Пустыня, власть и цена предначертанного пути. Масштабная история с выразительным визуальным миром.",
+        "Desert, power, and the price of a foretold path. A sweeping story with a striking visual world.",
       image: "https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
       sources: [
         {
-          title: "Карточка фильма · TMDB",
+          title: "Movie page · TMDB",
           url: "https://www.themoviedb.org/movie/693134-dune-part-two",
         },
       ],
@@ -205,7 +205,7 @@ export const films: RichSpec = {
     {
       type: "text",
       content:
-        "Четыре разных настроения: большое путешествие, контакт с неизвестным, инженерное выживание и космическая эпопея. Начни с [[interstellar]] — подробности откроются рядом.",
+        "Four different moods: a big journey, contact with the unknown, engineering survival, and a space epic. Start with [[interstellar]] — details open alongside.",
     },
     {
       type: "entity-list",
@@ -220,29 +220,29 @@ export const films: RichSpec = {
     {
       type: "callout",
       content:
-        "Демонстрационная подборка. Метаданные и постеры приведены для проверки интерфейса; доступность в стримингах не проверялась.",
+        "A demo selection. Metadata and posters are included to exercise the interface; streaming availability was not checked.",
       tone: "info",
     },
   ],
 };
 export const calculator: RichSpec = {
   version: 1,
-  title: "Как меняется капитал со временем",
+  title: "How capital grows over time",
   initialState: { principal: 50000, rate: 12, years: 3 },
   nodes: [
     {
       type: "text",
       content:
-        "Поменяй параметры. Результат пересчитывается локально — без запроса к модели.",
+        "Change the inputs. The result recomputes locally — no model request.",
     },
     {
       type: "card",
-      title: "Калькулятор роста капитала",
+      title: "Capital growth calculator",
       children: [
         {
           type: "slider",
           stateKey: "principal",
-          label: "Начальная сумма, ₽",
+          label: "Initial amount, $",
           min: 10000,
           max: 200000,
           step: 5000,
@@ -250,7 +250,7 @@ export const calculator: RichSpec = {
         {
           type: "slider",
           stateKey: "rate",
-          label: "Годовая доходность, %",
+          label: "Annual return, %",
           min: 0,
           max: 25,
           step: 1,
@@ -258,7 +258,7 @@ export const calculator: RichSpec = {
         {
           type: "slider",
           stateKey: "years",
-          label: "Срок, лет",
+          label: "Term, years",
           min: 1,
           max: 10,
           step: 1,
@@ -266,7 +266,7 @@ export const calculator: RichSpec = {
         { type: "divider" },
         {
           type: "computed",
-          label: "Итог при ежегодной капитализации, ₽",
+          label: "Final amount with annual compounding, $",
           expr: op(
             "round",
             op(
@@ -284,11 +284,11 @@ export const calculator: RichSpec = {
           type: "callout",
           tone: "info",
           content:
-            "Математическая модель, не прогноз доходности. Налоги, комиссии и инфляция не учтены.",
+            "A mathematical model, not a return forecast. Taxes, fees, and inflation are not included.",
         },
         {
           type: "button",
-          label: "Сбросить параметры",
+          label: "Reset parameters",
           variant: "ghost",
           action: { type: "reset" },
         },
@@ -301,14 +301,14 @@ const mini: RichNode[] = [
     type: "grid",
     columns: 2,
     children: [
-      { type: "computed", label: "Задач", expr: 24 },
-      { type: "computed", label: "Готово", expr: 18 },
+      { type: "computed", label: "Tasks", expr: 24 },
+      { type: "computed", label: "Done", expr: 18 },
     ],
   },
 ];
 export const configurator: RichSpec = {
   version: 1,
-  title: "Интерфейс, который реагирует на тебя",
+  title: "An interface that responds to you",
   initialState: {
     project: "My Dashboard",
     analytics: true,
@@ -318,45 +318,45 @@ export const configurator: RichSpec = {
   nodes: [
     {
       type: "card",
-      title: "Конфигуратор интерфейса",
+      title: "Interface configurator",
       children: [
         {
           type: "input",
           stateKey: "project",
-          label: "Название проекта",
-          placeholder: "Мой проект",
+          label: "Project name",
+          placeholder: "My project",
         },
-        { type: "switch", stateKey: "analytics", label: "Включить аналитику" },
+        { type: "switch", stateKey: "analytics", label: "Enable analytics" },
         {
           type: "switch",
           stateKey: "notifications",
-          label: "Показывать уведомления",
+          label: "Show notifications",
         },
         { type: "divider" },
         {
           type: "text",
           variant: "caption",
-          content: "Предварительный результат",
+          content: "Preview",
         },
         { type: "text", variant: "title", content: state("project") },
         {
           type: "tabs",
           stateKey: "layout",
           tabs: [
-            { id: "cards", label: "Карточки", children: mini },
+            { id: "cards", label: "Cards", children: mini },
             {
               id: "table",
-              label: "Таблица",
+              label: "Table",
               children: [
                 {
                   type: "table",
                   columns: [
-                    { key: "task", label: "Задача" },
-                    { key: "status", label: "Статус" },
+                    { key: "task", label: "Task" },
+                    { key: "status", label: "Status" },
                   ],
                   rows: [
-                    { task: "Дизайн", status: "Готово" },
-                    { task: "Разработка", status: "В работе" },
+                    { task: "Design", status: "Done" },
+                    { task: "Development", status: "In progress" },
                   ],
                 },
               ],
@@ -371,12 +371,12 @@ export const configurator: RichSpec = {
               type: "chart",
               kind: "line",
               data: [
-                { label: "Янв", value: 42 },
-                { label: "Фев", value: 55 },
-                { label: "Мар", value: 49 },
-                { label: "Апр", value: 73 },
-                { label: "Май", value: 65 },
-                { label: "Июн", value: 91 },
+                { label: "Jan", value: 42 },
+                { label: "Feb", value: 55 },
+                { label: "Mar", value: 49 },
+                { label: "Apr", value: 73 },
+                { label: "May", value: 65 },
+                { label: "Jun", value: 91 },
               ],
             },
           ],
@@ -388,13 +388,13 @@ export const configurator: RichSpec = {
             {
               type: "callout",
               tone: "success",
-              content: "Уведомления включены в предварительном просмотре.",
+              content: "Notifications are on in the preview.",
             },
           ],
         },
         {
           type: "button",
-          label: "Скопировать название",
+          label: "Copy project name",
           action: { type: "copy", text: state("project") },
         },
       ],
@@ -404,72 +404,72 @@ export const configurator: RichSpec = {
 
 export const listing: RichSpec = {
   version: 1,
-  title: "Электрические чайники",
+  title: "Electric kettles",
   nodes: [
     {
       type: "text",
       content:
-        "Подборка из 3 электрических чайников — от простого стеклянного до моделей с сенсорным управлением.",
+        "Three electric kettles — from a simple glass model to touch-controlled ones.",
     },
     {
       type: "meta",
       items: [
-        { icon: "package", text: "3 модели" },
-        { icon: "wallet", text: "От 1 382 ₽" },
-        { icon: "truck", text: "Доставка 7–18 ноября" },
+        { icon: "package", text: "3 models" },
+        { icon: "wallet", text: "From $15" },
+        { icon: "truck", text: "Delivery Nov 7–18" },
       ],
     },
     { type: "entity-list", entityIds: ["wk1760", "wk1500", "tuvio"] },
     {
       type: "callout",
       tone: "info",
-      title: "Демонстрация",
+      title: "Demo",
       content:
-        "Цены условные. Фотографии — Wikimedia Commons, свободная лицензия; это не снимки конкретных лотов.",
+        "Prices are illustrative. Photos are from Wikimedia Commons under a free licence — they are not photos of these exact listings.",
     },
   ],
   entities: [
     {
       id: "wk1760",
-      kind: "Чайник",
+      kind: "Kettle",
       thumbShape: "square",
       title: "Bosch TWK 3A011",
-      subtitle: "1 382 ₽ · 1,7 л · стекло",
-      description: "LED-подсветка, 1850–2200 Вт",
-      badge: { label: "Самый доступный", tone: "success" },
+      subtitle: "$15 · 1.7 L · glass",
+      description: "LED illumination, 1850–2200 W",
+      badge: { label: "Most affordable", tone: "success" },
       image:
         "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/2023_Czajnik_elektryczny_Bosch_%281%29.jpg/500px-2023_Czajnik_elektryczny_Bosch_%281%29.jpg",
-      facts: [{ label: "Объём", value: "1,7 л" }],
+      facts: [{ label: "Capacity", value: "1.7 L" }],
       sources: [
         {
-          title: "Фото · Wikimedia Commons",
+          title: "Photo · Wikimedia Commons",
           url: "https://commons.wikimedia.org/wiki/File:2023_Czajnik_elektryczny_Bosch_%281%29.jpg",
         },
       ],
     },
     {
       id: "wk1500",
-      kind: "Чайник",
+      kind: "Kettle",
       thumbShape: "square",
       title: "N'OVEEN Kettle 1.7",
-      subtitle: "2 459 ₽ · 1,5 л · сенсор",
-      description: "Дисплей и регулировка нагрева",
+      subtitle: "$27 · 1.5 L · touch control",
+      description: "Display and temperature control",
       image:
         "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/2023_Czajnik_elektryczny_N%27OVEEN.jpg/500px-2023_Czajnik_elektryczny_N%27OVEEN.jpg",
-      facts: [{ label: "Объём", value: "1,5 л" }],
+      facts: [{ label: "Capacity", value: "1.5 L" }],
       sources: [{ title: "Ozon", url: "https://www.ozon.ru/" }],
     },
     {
       id: "tuvio",
-      kind: "Чайник",
+      kind: "Kettle",
       thumbShape: "square",
-      title: "Чайник электрический, 1,7 л",
-      subtitle: "4 336 ₽ · 1,7 л",
-      description: "Поддержка Алисы",
-      badge: { label: "Умный дом", tone: "info" },
+      title: "Electric kettle, 1.7 L",
+      subtitle: "$48 · 1.7 L",
+      description: "Works with Alice",
+      badge: { label: "Smart home", tone: "info" },
       image:
         "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Electric_kettle_-_%D0%AD%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D1%87%D0%B0%D0%B9%D0%BD%D0%B8%D0%BA.JPG/500px-Electric_kettle_-_%D0%AD%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D1%87%D0%B0%D0%B9%D0%BD%D0%B8%D0%BA.JPG",
-      facts: [{ label: "Объём", value: "1,7 л" }],
+      facts: [{ label: "Capacity", value: "1.7 L" }],
       sources: [{ title: "Ozon", url: "https://www.ozon.ru/" }],
     },
   ],
@@ -477,12 +477,12 @@ export const listing: RichSpec = {
 
 export const dashboard: RichSpec = {
   version: 1,
-  title: "Состояние запуска",
+  title: "Launch status",
   nodes: [
     {
       type: "text",
       content:
-        "Три метрики, динамика выручки и план работ. Часть данных меняется локально: переключатели и таблица не вызывают модель.",
+        "Three metrics, revenue trends, and a launch plan. Some data changes locally: the controls and the table do not call the model.",
     },
     {
       type: "grid",
@@ -490,26 +490,26 @@ export const dashboard: RichSpec = {
       children: [
         {
           type: "stat",
-          label: "Доступность",
-          value: "98,7%",
+          label: "Availability",
+          value: "98.7%",
           delta: 0.4,
-          deltaLabel: "к прошлой неделе",
+          deltaLabel: "vs last week",
           icon: "shield-check",
         },
         {
           type: "stat",
-          label: "Активные пользователи",
+          label: "Active users",
           value: 12480,
           delta: 12.5,
-          deltaLabel: "за месяц",
+          deltaLabel: "this month",
           icon: "users",
         },
         {
           type: "stat",
-          label: "Инциденты",
+          label: "Incidents",
           value: 4,
           delta: -18.2,
-          deltaLabel: "меньше, чем в сентябре",
+          deltaLabel: "fewer than in September",
           tone: "success",
           icon: "alert-triangle",
         },
@@ -518,67 +518,67 @@ export const dashboard: RichSpec = {
     {
       type: "chart",
       kind: "line",
-      unit: "тыс. ₽",
-      categories: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
+      unit: "$k",
+      categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
       series: [
-        { label: "Выручка", values: [62, 74, 68, 91, 86, 104] },
-        { label: "Расходы", values: [41, 44, 47, 52, 50, 58] },
+        { label: "Revenue", values: [62, 74, 68, 91, 86, 104] },
+        { label: "Costs", values: [41, 44, 47, 52, 50, 58] },
       ],
-      caption: "Демонстрационные данные, не отчётность.",
+      caption: "Illustrative data, not a financial report.",
     },
     {
       type: "card",
-      title: "План запуска",
+      title: "Launch plan",
       children: [
         {
           type: "table",
           sortable: true,
           filterable: true,
-          filterPlaceholder: "Найти задачу…",
-          caption: "Нажми на заголовок, чтобы отсортировать.",
+          filterPlaceholder: "Find a task…",
+          caption: "Click a column header to sort.",
           columns: [
-            { key: "task", label: "Задача" },
-            { key: "owner", label: "Ответственный" },
+            { key: "task", label: "Task" },
+            { key: "owner", label: "Owner" },
             {
               key: "status",
-              label: "Статус",
+              label: "Status",
               format: "status",
               tones: {
-                Готово: "success",
-                "В работе": "warning",
-                Ожидание: "muted",
+                Done: "success",
+                "In progress": "warning",
+                Waiting: "muted",
               },
             },
             {
               key: "progress",
-              label: "Прогресс",
+              label: "Progress",
               format: "progress",
               tone: "success",
             },
           ],
           rows: [
             {
-              task: "Дизайн",
-              owner: "Аня",
-              status: "Готово",
+              task: "Design",
+              owner: "Anna",
+              status: "Done",
               progress: 100,
             },
             {
-              task: "Разработка",
-              owner: "Марк",
-              status: "В работе",
+              task: "Development",
+              owner: "Mark",
+              status: "In progress",
               progress: 65,
             },
             {
-              task: "Тестирование",
-              owner: "Ира",
-              status: "Ожидание",
+              task: "Testing",
+              owner: "Iris",
+              status: "Waiting",
               progress: 0,
             },
             {
-              task: "Документация",
-              owner: "Лев",
-              status: "В работе",
+              task: "Documentation",
+              owner: "Leo",
+              status: "In progress",
               progress: 40,
             },
           ],
@@ -586,9 +586,9 @@ export const dashboard: RichSpec = {
         {
           type: "row",
           children: [
-            { type: "status", label: "Сборка зелёная", tone: "success" },
-            { type: "status", label: "Идёт ревью", tone: "warning" },
-            { type: "status", label: "Без блокеров", tone: "muted" },
+            { type: "status", label: "Build green", tone: "success" },
+            { type: "status", label: "In review", tone: "warning" },
+            { type: "status", label: "No blockers", tone: "muted" },
           ],
         },
       ],
@@ -596,29 +596,29 @@ export const dashboard: RichSpec = {
     {
       type: "diagram",
       direction: "vertical",
-      caption: "Путь запроса до готового ответа.",
+      caption: "The path from request to a finished answer.",
       steps: [
         {
           id: "ask",
-          label: "Запрос",
-          detail: "«Собери дашборд»",
+          label: "Request",
+          detail: "\"Build a dashboard\"",
         },
         {
           id: "model",
-          label: "Модель",
-          detail: "выбирает структуру и данные",
-          connector: "описание интерфейса",
+          label: "Model",
+          detail: "picks the structure and data",
+          connector: "interface description",
         },
         {
           id: "render",
-          label: "Рендерер",
-          detail: "проверяет контракт и рисует компоненты",
+          label: "Renderer",
+          detail: "checks the contract and renders components",
           connector: "RichSpec",
         },
         {
           id: "user",
-          label: "Читатель",
-          detail: "меняет значения, не отправляя запрос",
+          label: "Reader",
+          detail: "changes values without sending a request",
           tone: "success",
         },
       ],
@@ -626,9 +626,9 @@ export const dashboard: RichSpec = {
     {
       type: "callout",
       tone: "info",
-      title: "Границы",
+      title: "Limits",
       content:
-        "Это не произвольный HTML и не мини-приложение. Компоненты, состояние и вычисления ограничены схемой.",
+        "This is not arbitrary HTML or a mini app. Components, state, and calculations are limited by the schema.",
     },
   ],
 };

@@ -91,7 +91,7 @@ export function SortableTable({
         ),
   );
   if (rows.length === 0)
-    return <p className="ru-empty">{node.empty ?? "Нет данных"}</p>;
+    return <p className="ru-empty">{node.empty ?? "No data"}</p>;
   const table = (
     <div className="ru-table-wrap">
       <table>
@@ -219,7 +219,7 @@ export function SortableTable({
                 className="ru-table-none"
                 role="status"
               >
-                Ничего не найдено
+                Nothing found
               </td>
             </tr>
           )}
@@ -236,14 +236,14 @@ export function SortableTable({
           <input
             type="search"
             value={query}
-            aria-label="Фильтр по таблице"
-            placeholder={node.filterPlaceholder ?? "Фильтр…"}
+            aria-label="Filter the table"
+            placeholder={node.filterPlaceholder ?? "Filter…"}
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
         {query.trim() !== "" && (
           <span className="ru-table-count" role="status">
-            {visible.length} из {rows.length}
+            {visible.length} of {rows.length}
           </span>
         )}
       </div>

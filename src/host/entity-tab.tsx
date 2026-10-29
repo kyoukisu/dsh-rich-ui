@@ -72,12 +72,12 @@ export function makeEntityTabBody(
     const entity = params?.entity;
     const entities = params?.entities ?? (entity ? [entity] : []);
     if (!entity || typeof entity.id !== "string" || !entity.title)
-      return <p className="ru-empty">Нет данных объекта.</p>;
+      return <p className="ru-empty">No entity data.</p>;
     return (
       <section
         className="rich-ui ru-entity-tab"
         data-rich-ui-entity-tab=""
-        aria-label={`Подробности: ${entity.title}`}
+        aria-label={`Details: ${entity.title}`}
       >
         <EntityDetails
           entity={entity}
@@ -96,7 +96,7 @@ export function makeEntityTabBody(
 export function makeEntityTabTitle() {
   return function EntityTabTitle({ useTabInfo }: TabProps) {
     const entity = paramsOf(useTabInfo?.())?.entity;
-    return <>{entity?.title ?? "Объект"}</>;
+    return <>{entity?.title ?? "Entity"}</>;
   };
 }
 
@@ -137,7 +137,7 @@ export function installEntityTab(
           id: ENTITY_TAB_ID,
           kind: ENTITY_TAB_KIND,
           keepMounted: true,
-          title: () => "Объект",
+          title: () => "Entity",
         }),
       );
       disposers.push(

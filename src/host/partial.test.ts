@@ -3,14 +3,14 @@ import { parseStreamingSpec, scanPrefix } from "./partial.ts";
 
 const doc = {
   version: 1,
-  title: "Поток",
+  title: "Stream",
   entities: [
-    { id: "a", kind: "Фильм", title: "A", image: "https://example.org/a.jpg" },
+    { id: "a", kind: "Film", title: "A", image: "https://example.org/a.jpg" },
   ],
   nodes: [
-    { type: "text", content: "Первый абзац" },
+    { type: "text", content: "First paragraph" },
     { type: "entity-list", entityIds: ["a"] },
-    { type: "callout", tone: "info", content: "Готово" },
+    { type: "callout", tone: "info", content: "Done" },
   ],
 };
 const full = JSON.stringify(doc);
@@ -23,9 +23,9 @@ describe("streaming prefix", () => {
     expect(scanPrefix(cut).complete).toBe(false);
   });
   it("drops a node whose string is still being written", () => {
-    const cut = full.slice(0, full.indexOf("Первый") + 6);
+    const cut = full.slice(0, full.indexOf("First") + 6);
     expect(parseStreamingSpec(cut)).toBeNull();
-    const after = full.slice(0, full.indexOf("Первый") + 20);
+    const after = full.slice(0, full.indexOf("First") + 20);
     expect(parseStreamingSpec(after)?.nodes).toHaveLength(1);
   });
   it("stops at a node that does not validate instead of skipping it", () => {
@@ -44,8 +44,8 @@ describe("streaming prefix", () => {
   it("withholds entities that follow the nodes until their array closes", () => {
     const ordered = JSON.stringify({
       version: 1,
-      nodes: [{ type: "text", content: "Первый абзац" }],
-      entities: [{ id: "a", kind: "Фильм", title: "A" }],
+      nodes: [{ type: "text", content: "First paragraph" }],
+      entities: [{ id: "a", kind: "Film", title: "A" }],
     });
     const cut = ordered.slice(0, ordered.indexOf('"kind"') + 6);
     const spec = parseStreamingSpec(cut);

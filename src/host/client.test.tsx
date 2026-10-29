@@ -70,14 +70,14 @@ afterEach(async () => {
 });
 
 describe("diagnostic copy", () => {
-  it("explains common validator errors in Russian", () => {
+  it("explains common validator errors in English", () => {
     expect(explain("Missing value")).toBe(
-      "Не хватает обязательного поля «value».",
+      "Missing required field \"value\".",
     );
-    expect(explain("Unknown field: colour")).toContain("«colour»");
-    expect(explain("Unknown node type")).toContain("Неизвестный тип");
-    expect(explain("Invalid URL")).toContain("ссылка");
-    expect(explain("weird internal failure")).toContain("не соответствует");
+    expect(explain("Unknown field: colour")).toContain('"colour"');
+    expect(explain("Unknown node type")).toContain("Unknown block type");
+    expect(explain("Invalid URL")).toContain("Invalid link");
+    expect(explain("weird internal failure")).toContain("does not match the schema");
   });
 });
 
@@ -226,7 +226,7 @@ describe("installed-host DOM contract", () => {
     await tick();
     expect(block.hidden).toBe(true);
     const button = [...document.querySelectorAll("button")].find((item) =>
-      item.textContent?.includes("Попросить модель исправить"),
+      item.textContent?.includes("Ask the model to fix"),
     )!;
     await act(async () => {
       button.click();
@@ -302,7 +302,7 @@ describe("live fence label rules", () => {
 describe("streaming preview", () => {
   it("mounts completed nodes inert, then activates when the block settles", async () => {
     const partial =
-      '{"version":1,"nodes":[{"type":"text","content":"Первый абзац"},{"type":"call';
+      '{"version":1,"nodes":[{"type":"text","content":"First paragraph"},{"type":"call';
     const { row, block, pre } = source(partial, "assistant-step", "Code block");
     row.dataset.streaming = "true";
     dispose = installDomRenderer(ctx());
@@ -312,22 +312,22 @@ describe("streaming preview", () => {
     );
     expect(container).not.toBeNull();
     expect(container!.hasAttribute("inert")).toBe(true);
-    expect(container!.textContent).toContain("Первый абзац");
+    expect(container!.textContent).toContain("First paragraph");
     expect(block.hidden).toBe(true);
 
     delete row.dataset.streaming;
     pre.textContent = JSON.stringify({
       version: 1,
       nodes: [
-        { type: "text", content: "Первый абзац" },
-        { type: "text", content: "Второй" },
+        { type: "text", content: "First paragraph" },
+        { type: "text", content: "Second" },
       ],
     });
     await tick();
     const settled = document.querySelector<HTMLElement>("[data-rich-ui-root]");
     expect(settled).not.toBeNull();
     expect(settled!.hasAttribute("inert")).toBe(false);
-    expect(settled!.textContent).toContain("Второй");
+    expect(settled!.textContent).toContain("Second");
   });
   it("keeps the source visible while no complete node exists", async () => {
     const { row, block } = source(

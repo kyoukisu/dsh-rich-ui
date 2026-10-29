@@ -70,14 +70,14 @@ function ticksFor(min: number, max: number, count = 5) {
 
 function compact(value: number): string {
   if (Math.abs(value) < 1000) return String(Math.round(value * 100) / 100);
-  return new Intl.NumberFormat("ru-RU", {
+  return new Intl.NumberFormat("en-US", {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(value);
 }
 
 function readable(value: number, unit?: string): string {
-  const text = value.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+  const text = value.toLocaleString("en-US", { maximumFractionDigits: 2 });
   return unit ? `${text} ${unit}` : text;
 }
 
@@ -101,7 +101,7 @@ function readSeries(
     categories: data.map((entry) => entry.label),
     series: [
       {
-        label: node.kind === "donut" ? "Доля" : "Значение",
+        label: node.kind === "donut" ? "Share" : "Value",
         values: data.map((entry) => Number(evaluate(entry.value, state)) || 0),
       },
     ],
@@ -131,7 +131,7 @@ export function Chart({
   } catch {
     return (
       <p role="alert" className="ru-evaluation-error">
-        Не удалось вычислить график.
+        Could not render the chart.
       </p>
     );
   }
@@ -161,16 +161,16 @@ export function Chart({
   const labelEvery = Math.ceil(categories.length / (narrow ? 4 : 9));
   const description = `${
     node.kind === "donut"
-      ? "Круговая диаграмма"
+      ? "Donut chart"
       : node.kind === "bar"
-        ? "Столбчатая диаграмма"
+        ? "Bar chart"
         : node.kind === "area"
-          ? "График с областью"
-          : "Линейный график"
-  }: ${categories.length} категорий${multi ? `, ${series.length} серии` : ""}`;
+          ? "Area chart"
+          : "Line chart"
+  }: ${categories.length} categories${multi ? `, ${series.length} series` : ""}`;
 
   if (categories.length === 0)
-    return <p className="ru-empty">Нет данных для графика.</p>;
+    return <p className="ru-empty">No data for the chart.</p>;
 
   return (
     <figure className="ru-chart" aria-label={description}>
@@ -404,7 +404,7 @@ export function Chart({
         <caption>{description}</caption>
         <thead>
           <tr>
-            <th>Категория</th>
+            <th>Category</th>
             {series.map((entry) => (
               <th key={entry.label}>{entry.label}</th>
             ))}
@@ -472,10 +472,10 @@ function Donut({
         className="ru-donut-value"
         fill="var(--ru-ink)"
       >
-        {total.toLocaleString("ru-RU", { maximumFractionDigits: 1 })}
+        {total.toLocaleString("en-US", { maximumFractionDigits: 1 })}
       </text>
       <text textAnchor="middle" y="20" className="ru-axis">
-        {unit ?? "всего"}
+        {unit ?? "total"}
       </text>
     </g>
   );

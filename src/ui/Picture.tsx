@@ -15,7 +15,7 @@ export function Picture({
       aria-label={alt}
     >
       <ImageOff size={22} />
-      <span>Изображение недоступно</span>
+      <span>Image unavailable</span>
     </div>
   ) : (
     <img

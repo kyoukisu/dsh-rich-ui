@@ -158,7 +158,7 @@ export interface ImageLightboxProps {
 export function ImageLightbox({
   src,
   alt,
-  label = "Открыть галерею",
+  label = "Open gallery",
   initialIndex = 0,
 }: ImageLightboxProps) {
   const [open, setOpen] = useState(false);
@@ -280,12 +280,12 @@ export function ImageLightbox({
           <div className="ru-primitive-lightbox-header">
             <h2 id={titleId}>{alt}</h2>
             <button type="button" ref={closeButton} onClick={close}>
-              Закрыть галерею
+              Close gallery
             </button>
           </div>
           <div className="ru-primitive-lightbox-image">
             {failed ? (
-              <p role="status">Изображение недоступно</p>
+              <p role="status">Image unavailable</p>
             ) : (
               <img
                 key={src[current]}
@@ -299,7 +299,7 @@ export function ImageLightbox({
             {src.length > 1 && (
               <button
                 type="button"
-                aria-label="Предыдущее изображение"
+                aria-label="Previous image"
                 onClick={() =>
                   setIndex((current - 1 + src.length) % src.length)
                 }
@@ -313,7 +313,7 @@ export function ImageLightbox({
             {src.length > 1 && (
               <button
                 type="button"
-                aria-label="Следующее изображение"
+                aria-label="Next image"
                 onClick={() => setIndex((current + 1) % src.length)}
               >
                 →

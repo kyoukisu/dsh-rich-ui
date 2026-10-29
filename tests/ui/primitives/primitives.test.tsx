@@ -174,7 +174,7 @@ describe("ImageLightbox", () => {
         `#${dialog.getAttribute("aria-labelledby")!.replace(/:/g, "\\:")}`,
       )?.textContent,
     ).toBe("Landscape");
-    expect(document.activeElement?.textContent).toBe("Закрыть галерею");
+    expect(document.activeElement?.textContent).toBe("Close gallery");
     key(dialog, "Escape");
     expect(host.querySelector("dialog")).toBeNull();
     expect(document.activeElement).toBe(trigger);
@@ -192,7 +192,7 @@ describe("ImageLightbox", () => {
     expect(host.querySelector("img")?.getAttribute("src")).toBe(images[2]);
     key(dialog, "Home");
     expect(host.querySelector("img")?.getAttribute("src")).toBe(images[0]);
-    click(host.querySelector('[aria-label="Следующее изображение"]')!);
+    click(host.querySelector('[aria-label="Next image"]')!);
     expect(host.querySelector("[role=status]")?.textContent).toBe("2 / 3");
   });
   it("wraps keyboard focus in both directions and supports native cancel and backdrop close", () => {
@@ -203,7 +203,7 @@ describe("ImageLightbox", () => {
     const close = dialog.querySelector("button")!;
     key(close, "Tab", true);
     expect(document.activeElement).toBe(
-      dialog.querySelector('[aria-label="Следующее изображение"]'),
+      dialog.querySelector('[aria-label="Next image"]'),
     );
     key(document.activeElement!, "Tab");
     expect(document.activeElement).toBe(close);
@@ -231,7 +231,7 @@ describe("ImageLightbox", () => {
     click(host.querySelector("button")!);
     expect(host.querySelector("img")?.getAttribute("src")).toBe(images[2]);
     act(() => host.querySelector("img")!.dispatchEvent(new Event("error")));
-    expect(host.textContent).toContain("Изображение недоступно");
+    expect(host.textContent).toContain("Image unavailable");
     key(host.querySelector("dialog")!, "Home");
     expect(host.querySelector("img")?.getAttribute("src")).toBe(images[0]);
   });

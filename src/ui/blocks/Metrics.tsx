@@ -11,7 +11,7 @@ import { resolveIcon } from "../icons";
 
 /** Grouping starts at five digits so a year (2014) never becomes "2 014". */
 export function formatNumber(value: number): string {
-  return value.toLocaleString("ru-RU", {
+  return value.toLocaleString("en-US", {
     maximumFractionDigits: 2,
     useGrouping: Math.abs(value) >= 10000,
   });
@@ -19,7 +19,7 @@ export function formatNumber(value: number): string {
 
 export function formatValue(value: Scalar): string {
   if (typeof value === "number") return formatNumber(value);
-  if (typeof value === "boolean") return value ? "да" : "нет";
+  if (typeof value === "boolean") return value ? "yes" : "no";
   return String(value ?? "");
 }
 
@@ -49,7 +49,7 @@ export function Stat({
       ? delta === null || delta === undefined || delta === ""
         ? ""
         : String(delta)
-      : `${numeric > 0 ? "+" : numeric < 0 ? "−" : ""}${Math.abs(numeric).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}%`;
+      : `${numeric > 0 ? "+" : numeric < 0 ? "−" : ""}${Math.abs(numeric).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
   return (
     <article className="ru-stat" data-tone={tone}>
       <header>
@@ -94,7 +94,7 @@ export function Progress({
       <div
         className="ru-progress-track"
         role="progressbar"
-        aria-label={node.label ?? "Прогресс"}
+        aria-label={node.label ?? "Progress"}
         aria-valuemin={0}
         aria-valuemax={max}
         aria-valuenow={clamped}

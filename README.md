@@ -32,13 +32,7 @@ The renderer is a real React tree behind a strict schema. There is no generated 
 <p align="center">
   <img alt="Film collection reflowed beside an open detail panel with poster, facts and sources" src="docs/images/films-desktop.png" width="860">
   <br>
-  <em>In the lab the answer reflows beside the open panel; in Harness the same entity opens in the native right column (next figure).</em>
-</p>
-
-<p align="center">
-  <img alt="Entity details docked in the Harness native right column: tab chip, poster gallery, facts, primary source and related entity" src="docs/images/native-panel.png" width="430">
-  <br>
-  <em>Inside Harness the entity is a native right-column tab: the conversation narrows instead of being covered. Verified in an isolated host; hosts without the column keep the in-page drawer.</em>
+  <em>In the lab the answer reflows beside the open panel. In Harness the same entity opens as a native right-column tab, so the conversation narrows instead of being covered — see <a href="docs/DSH-INTEGRATION.md">the integration notes</a>.</em>
 </p>
 
 <p align="center">

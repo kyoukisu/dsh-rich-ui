@@ -43,7 +43,7 @@ export function EntityDetails({
           <Picture
             key={images[photo]}
             src={images[photo]!}
-            alt={`${entity.title} — изображение ${photo + 1}`}
+            alt={`${entity.title} — image ${photo + 1}`}
             className="ru-detail-photo"
           />
           {images.length > 1 && (
@@ -52,7 +52,7 @@ export function EntityDetails({
                 <button
                   key={source}
                   type="button"
-                  aria-label={`Изображение ${index + 1}`}
+                  aria-label={`Image ${index + 1}`}
                   aria-pressed={photo === index}
                   onClick={() => setPhoto(index)}
                 >
@@ -102,14 +102,14 @@ export function EntityDetails({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Открыть источник
+              Open source
               <ArrowUpRight size={15} />
             </a>
           </div>
         ) : null}
         {entity.sources?.length ? (
           <section>
-            <h3 className="ru-section-title">Источники</h3>
+            <h3 className="ru-section-title">Sources</h3>
             {entity.sources.map((source) => (
               <a
                 className="ru-source"
@@ -130,7 +130,7 @@ export function EntityDetails({
         ) : null}
         {related.length > 0 && (
           <section>
-            <h3 className="ru-section-title">Связанные объекты</h3>
+            <h3 className="ru-section-title">Related</h3>
             {related.map((entry) => (
               <button
                 type="button"
@@ -145,8 +145,8 @@ export function EntityDetails({
           </section>
         )}
         <p className="ru-provenance">
-          Сведения из указанных источников. Демонстрационные данные не являются
-          актуальным предложением.
+          All details come from the listed sources. Demo data is not a live
+          offer.
         </p>
       </div>
     </>

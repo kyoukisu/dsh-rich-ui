@@ -15,24 +15,24 @@ const SHOWN = 20_000;
 /** Plain-language summary; the exact validator text stays visible below. */
 export function explain(error: string): string {
   const missing = /^Missing ([A-Za-z0-9_]+)$/.exec(error);
-  if (missing) return `Не хватает обязательного поля «${missing[1]}».`;
+  if (missing) return `Missing required field "${missing[1]}".`;
   const unknown = /^Unknown field: (.+)$/.exec(error);
-  if (unknown) return `Неизвестное поле «${unknown[1]}».`;
+  if (unknown) return `Unknown field "${unknown[1]}".`;
   const entity = /^Unknown entity: (.+)$/.exec(error);
-  if (entity) return `Ссылка на несуществующую сущность «${entity[1]}».`;
-  if (/^Unknown node type/.test(error)) return "Неизвестный тип блока.";
+  if (entity) return `Reference to a missing entity "${entity[1]}".`;
+  if (/^Unknown node type/.test(error)) return "Unknown block type.";
   if (/^Unsupported spec version/.test(error))
-    return "Неподдерживаемая версия документа.";
-  if (/^Duplicate /.test(error)) return "Повторяющийся идентификатор.";
-  if (/URL|protocol/.test(error)) return "Недопустимая ссылка.";
+    return "Unsupported document version.";
+  if (/^Duplicate /.test(error)) return "Duplicate identifier.";
+  if (/URL|protocol/.test(error)) return "Invalid link.";
   if (/budget|too long|too many|exceeded/i.test(error))
-    return "Документ превысил допустимый размер.";
-  if (/^Expected /.test(error)) return "Неверный тип значения.";
+    return "Document exceeds the size limit.";
+  if (/^Expected /.test(error)) return "Wrong value type.";
   if (/^Invalid enum value/.test(error))
-    return "Недопустимое значение перечисления.";
+    return "Value is not in the allowed set.";
   if (/^Number out of bounds/.test(error))
-    return "Число вне допустимого диапазона.";
-  return "Документ не соответствует схеме.";
+    return "Number is out of range.";
+  return "Document does not match the schema.";
 }
 
 /**
@@ -58,29 +58,29 @@ export function Diagnostic({ error, source, onRepair }: DiagnosticProps) {
     timer.current = setTimeout(() => setCopied("idle"), 2200);
   };
   const visible =
-    source.length > SHOWN ? `${source.slice(0, SHOWN)}\n…обрезано` : source;
+    source.length > SHOWN ? `${source.slice(0, SHOWN)}\n…truncated` : source;
   return (
-    <section className="rich-ui ru-diagnostic" aria-label="Ошибка rich-ui">
+    <section className="rich-ui ru-diagnostic" aria-label="rich-ui error">
       <header className="ru-diagnostic-head">
         <AlertTriangle size={18} aria-hidden="true" />
         <div>
-          <strong>Rich-блок не разобран</strong>
-          <span>Документ не прошёл схему. Исходник сохранён ниже.</span>
+          <strong>Rich block not parsed</strong>
+          <span>The document failed schema validation. The source is kept below.</span>
         </div>
       </header>
       <p className="ru-diagnostic-summary">{explain(error)}</p>
       <p className="ru-diagnostic-error">
-        <span>Схема:</span> {error}
+        <span>Schema:</span> {error}
       </p>
       <div className="ru-diagnostic-actions">
         <button type="button" className="ru-button" onClick={() => void copy()}>
           {copied === "done" ? <Check size={14} /> : <Copy size={14} />}
           <span aria-live="polite">
             {copied === "done"
-              ? "Скопировано"
+              ? "Copied"
               : copied === "failed"
-                ? "Не удалось"
-                : "Скопировать ошибку"}
+                ? "Failed"
+                : "Copy error"}
           </span>
         </button>
         {onRepair && (
@@ -95,17 +95,17 @@ export function Diagnostic({ error, source, onRepair }: DiagnosticProps) {
             }}
           >
             <Wrench size={14} />
-            {sent ? "Запрос отправлен" : "Попросить модель исправить"}
+            {sent ? "Request sent" : "Ask the model to fix"}
           </button>
         )}
       </div>
       <details>
-        <summary>Показать исходный JSON</summary>
+        <summary>Show the source JSON</summary>
         <pre>{visible}</pre>
       </details>
       <p className="ru-diagnostic-note">
-        Исправление отправит ошибку и исходник в текущую сессию — это запрос к
-        модели. Блок не исполнялся и не изменялся.
+        Repair sends the error and the source into the current session — that is
+        a model request. The block was never executed or modified.
       </p>
     </section>
   );

@@ -55,7 +55,7 @@ export function Inline({ text, entities, onEntity }: InlineProps) {
               className="ru-inline-entity"
               key={index}
               onClick={() => onEntity(entity.id)}
-              aria-label={`Открыть: ${entity.title}`}
+              aria-label={`Open: ${entity.title}`}
             >
               {entity.title}
               <ArrowUpRight size={11} aria-hidden="true" />

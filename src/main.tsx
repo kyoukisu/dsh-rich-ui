@@ -18,14 +18,14 @@ import { PrimitiveDemo } from "./demo/PrimitiveDemo";
 import { DiagnosticDemo } from "./demo/DiagnosticDemo";
 type LabDemo = DemoName | "primitives" | "diagnostic";
 const labels: Record<LabDemo, string> = {
-  dashboard: "Дашборд и метрики",
-  technical: "Технический разбор",
-  films: "Подборка фильмов",
-  listing: "Витрина товаров",
-  calculator: "Локальные вычисления",
-  configurator: "Реактивная форма",
-  primitives: "Подсказки и галерея",
-  diagnostic: "Ошибка контракта",
+  dashboard: "Dashboard and metrics",
+  technical: "Technical breakdown",
+  films: "Film picks",
+  listing: "Product listing",
+  calculator: "Local calculations",
+  configurator: "Reactive form",
+  primitives: "Tooltips and gallery",
+  diagnostic: "Contract error",
 };
 function App() {
   const initial = new URLSearchParams(location.search);
@@ -44,7 +44,7 @@ function App() {
         <a className="lab-brand" href="/">
           Rich UI <span>LAB</span>
         </a>
-        <p className="lab-section-label">СЦЕНАРИИ</p>
+        <p className="lab-section-label">SCENARIOS</p>
         <nav>
           {(Object.keys(labels) as LabDemo[]).map((k) => (
             <button
@@ -63,16 +63,16 @@ function App() {
         <div className="lab-sidebar-bottom">
           <FlaskConical size={16} />
           <span>
-            Изолированная лаборатория
+            Isolated laboratory
             <br />
-            <small>Основной Harness не изменён</small>
+            <small>The main Harness is untouched</small>
           </span>
         </div>
       </aside>
       <div className="lab-workspace">
         <header className="lab-header">
           <button
-            aria-label="Переключить меню"
+            aria-label="Toggle menu"
             onClick={() => setSidebar(!sidebar)}
           >
             {sidebar ? (
@@ -87,13 +87,13 @@ function App() {
           </span>
           <div className="lab-header-actions">
             <button
-              aria-label="Сбросить демонстрацию"
+              aria-label="Reset demo"
               onClick={() => setRevision((x) => x + 1)}
             >
               <RotateCcw size={16} />
             </button>
             <button
-              aria-label="Переключить тему"
+              aria-label="Toggle theme"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
               {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
@@ -103,29 +103,29 @@ function App() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Репозиторий <ArrowUpRight size={14} />
+              Repository <ArrowUpRight size={14} />
             </a>
           </div>
         </header>
         <main>
           <div className="lab-context">
             <span className="lab-dot" />
-            Реальный рендерер · локальная интерактивность
+            Real renderer · local interactivity
           </div>
           <div className="lab-user">
             {demo === "films"
-              ? "Подбери научную фантастику на вечер. Хочу видеть постеры и открывать подробности прямо здесь."
+              ? "Pick a science fiction film for tonight. I want posters and details right here."
               : demo === "technical"
-                ? "Почему после отмены контекста программа всё равно зависает?"
+                ? "Why does the program still hang after the context is cancelled?"
                 : demo === "calculator"
-                  ? "Покажи, как изменяется капитал при разных сумме, ставке и сроке."
+                  ? "Show how the capital grows with different amount, rate and term."
                   : demo === "listing"
-                    ? "Сравни чайники с Ozon: цены, объём и что умеют."
+                    ? "Compare electric kettles: prices, capacity and features."
                     : demo === "dashboard"
-                      ? "Собери панель запуска: метрики, график, план работ и схему обработки запроса."
+                      ? "Build a launch dashboard: metrics, a chart, a work plan and a request flow."
                       : demo === "diagnostic"
-                        ? "Почему блок не отрисовался и что теперь делать?"
-                        : "Собери небольшой конфигуратор с живым предпросмотром."}
+                        ? "Why did the block fail to render and what do I do now?"
+                        : "Build a small configurator with a live preview."}
           </div>
           <article className="lab-answer">
             {demo === "primitives" ? (
@@ -144,15 +144,15 @@ function App() {
           </article>
           {events.length > 0 && (
             <details className="lab-events">
-              <summary>События интеграции</summary>
+              <summary>Integration events</summary>
               <pre>{events.join("\n")}</pre>
             </details>
           )}
           <footer className="lab-footer">
-            Это рабочий стенд плагина, не скриншот и не сгенерированная
-            картинка.
+            This is the plugin's live lab, not a screenshot or a generated
+            image.
             <br />
-            Данные демонстрационные. Изменения кода обновляются через Vite HMR.
+            Data is illustrative. Code changes hot-reload through Vite HMR.
           </footer>
         </main>
       </div>

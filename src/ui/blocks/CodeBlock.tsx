@@ -147,7 +147,7 @@ export function CodeBlock({
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const languageKey = (language ?? "").toLowerCase();
   const lang = ALIASES[languageKey] ?? languageKey;
-  const label = LABELS[lang] ?? (language ? language : "Код");
+  const label = LABELS[lang] ?? (language ? language : "Code");
   const lines = splitLines(tokenize(code, languageKey));
   const gutter = lineNumbers ?? lines.length > 12;
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -170,15 +170,15 @@ export function CodeBlock({
           type="button"
           className="ru-code-copy"
           onClick={() => void copy()}
-          aria-label="Скопировать код"
+          aria-label="Copy code"
         >
           {copied === "done" ? <Check size={14} /> : <Copy size={14} />}
           <span aria-live="polite">
             {copied === "done"
-              ? "Скопировано"
+              ? "Copied"
               : copied === "failed"
-                ? "Не удалось"
-                : "Копировать"}
+                ? "Failed"
+                : "Copy"}
           </span>
         </button>
       </figcaption>

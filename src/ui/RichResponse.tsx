@@ -120,9 +120,9 @@ export function RichResponse({
         case "copy":
           try {
             await navigator.clipboard.writeText(String(ev(action.text)));
-            setNotice("Скопировано");
+            setNotice("Copied");
           } catch {
-            setNotice("Не удалось скопировать");
+            setNotice("Copy failed");
           }
           break;
         case "open-url":
@@ -134,7 +134,7 @@ export function RichResponse({
           break;
       }
     } catch {
-      setNotice("Не удалось выполнить действие: ошибка вычисления.");
+      setNotice("Action failed: calculation error.");
     }
   };
   const render = (n: RichNode, i: number | string): React.ReactNode => {
@@ -349,7 +349,7 @@ export function RichResponse({
               <span>
                 {n.label}
                 <output>
-                  {Number(state[n.stateKey] ?? n.min).toLocaleString("ru-RU")}
+                  {Number(state[n.stateKey] ?? n.min).toLocaleString("en-US")}
                 </output>
               </span>
               <input
@@ -510,7 +510,7 @@ export function RichResponse({
               key={key}
               className="ru-entity-card"
               onClick={() => openEntity(entity.id)}
-              aria-label={`Подробнее: ${entity.title}`}
+              aria-label={`Details: ${entity.title}`}
             >
               {entity.image && (
                 <Picture src={entity.image} alt="" className="ru-poster" />
@@ -525,7 +525,7 @@ export function RichResponse({
                   </span>
                 )}
                 <span className="ru-entity-open">
-                  Подробнее <ArrowUpRight size={14} />
+                  Details <ArrowUpRight size={14} />
                 </span>
               </span>
             </button>
@@ -535,7 +535,7 @@ export function RichResponse({
     } catch {
       return (
         <p key={key} role="alert" className="ru-evaluation-error">
-          Не удалось вычислить блок.
+          Could not compute this block.
         </p>
       );
     }
@@ -546,7 +546,7 @@ export function RichResponse({
       ref={root}
       className={`rich-ui${entity ? " ru-has-detail" : ""}`}
       data-detail-mode={detailMode}
-      aria-label={spec.title ?? "Интерактивный ответ"}
+      aria-label={spec.title ?? "Interactive response"}
     >
       {spec.title && <h2>{spec.title}</h2>}
       <div className="ru-response-body">{spec.nodes.map(render)}</div>
@@ -588,7 +588,7 @@ function EntityRows({
           <button
             className="ru-entity-row"
             onClick={() => onOpen(entity.id)}
-            aria-label={`Подробнее: ${entity.title}`}
+            aria-label={`Details: ${entity.title}`}
           >
             {entity.image && (
               <Picture
@@ -633,7 +633,7 @@ function Carousel({ children }: { children: React.ReactNode }) {
       <div className="ru-carousel-controls">
         <button
           type="button"
-          aria-label="Предыдущие карточки"
+          aria-label="Previous cards"
           onClick={() =>
             ref.current?.scrollBy({ left: -330, behavior: "smooth" })
           }
@@ -642,7 +642,7 @@ function Carousel({ children }: { children: React.ReactNode }) {
         </button>
         <button
           type="button"
-          aria-label="Следующие карточки"
+          aria-label="Next cards"
           onClick={() =>
             ref.current?.scrollBy({ left: 330, behavior: "smooth" })
           }
@@ -654,7 +654,7 @@ function Carousel({ children }: { children: React.ReactNode }) {
         ref={ref}
         className="ru-carousel-track"
         tabIndex={0}
-        aria-label="Подборка карточек"
+        aria-label="Card collection"
       >
         {children}
       </div>
@@ -806,7 +806,7 @@ function EntityPanel({
           <button
             ref={close}
             type="button"
-            aria-label="Закрыть подробности"
+            aria-label="Close details"
             onClick={onClose}
           >
             <X size={19} />

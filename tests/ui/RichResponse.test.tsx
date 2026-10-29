@@ -62,7 +62,7 @@ describe("RichResponse regressions", () => {
       button("Bad set").click();
     });
     expect(host.querySelector('[role="status"]')?.textContent).toContain(
-      "Не удалось выполнить",
+      "Action failed",
     );
     expect(host.querySelector("output")?.textContent).toBe("4");
   });
@@ -153,7 +153,7 @@ describe("RichResponse regressions", () => {
         }),
       ),
     );
-    const close = document.querySelector('[aria-label="Закрыть подробности"]');
+    const close = document.querySelector('[aria-label="Close details"]');
     expect(document.activeElement).toBe(close);
     act(() =>
       document.dispatchEvent(
@@ -216,7 +216,7 @@ describe("RichResponse regressions", () => {
     related.focus();
     click(related);
     expect(document.activeElement).toBe(
-      document.querySelector('[aria-label="Закрыть подробности"]'),
+      document.querySelector('[aria-label="Close details"]'),
     );
     expect(document.querySelector(".ru-detail h2")?.textContent).toBe("Two");
     act(() =>
@@ -363,7 +363,7 @@ describe("dashboard vocabulary", () => {
       host
         .querySelector(".ru-stat-value")
         ?.textContent?.replace(/\u00a0/g, " "),
-    ).toBe("12 480");
+    ).toBe("12,480");
     expect(
       host.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow"),
     ).toBe("65");
@@ -422,7 +422,7 @@ describe("table formats and filtering", () => {
       host.querySelector('.ru-status-pill[data-tone="success"]')?.textContent,
     ).toBe("Done");
     const input = host.querySelector<HTMLInputElement>(
-      'input[aria-label="Фильтр по таблице"]',
+      'input[aria-label="Filter the table"]',
     )!;
     act(() => {
       Object.getOwnPropertyDescriptor(
@@ -434,14 +434,14 @@ describe("table formats and filtering", () => {
     expect(host.querySelectorAll("tbody tr")).toHaveLength(1);
     expect(host.querySelector("tbody tr td")?.textContent).toBe("Build");
     expect(host.querySelector('[role="status"]')?.textContent).toContain(
-      "1 из 3",
+      "1 of 3",
     );
   });
 
   it("shows a no-results row instead of an empty table", () => {
     act(() => root.render(<RichResponse spec={spec} />));
     const input = host.querySelector<HTMLInputElement>(
-      'input[aria-label="Фильтр по таблице"]',
+      'input[aria-label="Filter the table"]',
     )!;
     act(() => {
       Object.getOwnPropertyDescriptor(
@@ -451,7 +451,7 @@ describe("table formats and filtering", () => {
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
     expect(host.querySelector(".ru-table-none")?.textContent).toBe(
-      "Ничего не найдено",
+      "Nothing found",
     );
   });
 });
@@ -547,7 +547,7 @@ describe("inline entity chips", () => {
     const open = vi.fn(() => true);
     act(() => root.render(<RichResponse spec={spec} onOpenEntity={open} />));
     const chip = host.querySelector<HTMLButtonElement>(
-      'button[aria-label="Открыть: One"]',
+      'button[aria-label="Open: One"]',
     )!;
     expect(chip.textContent).toContain("One");
     click(chip);
