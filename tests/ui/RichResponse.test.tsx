@@ -377,6 +377,7 @@ describe("dashboard vocabulary", () => {
           rows: [
             { name: "Beta", value: 20 },
             { name: "Alpha", value: 10 },
+            { name: "Gamma", value: 15 },
           ],
         },
       ],
@@ -393,6 +394,13 @@ describe("dashboard vocabulary", () => {
     click(header.querySelector("button")!);
     expect(first()).toBe("Beta");
     expect(header.getAttribute("aria-sort")).toBe("descending");
+    click(header.querySelector("button")!);
+    expect(
+      Array.from(host.querySelectorAll("tbody tr td:first-child")).map(
+        (cell) => cell.textContent,
+      ),
+    ).toEqual(["Beta", "Alpha", "Gamma"]);
+    expect(header.getAttribute("aria-sort")).toBe("none");
   });
 
   it("renders charts, diagrams, stats and highlighted code without throwing", () => {

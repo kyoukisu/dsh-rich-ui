@@ -893,12 +893,21 @@ body[data-ds-dark-theme] .rich-ui {
   color: var(--ru-warning);
   border-color: color-mix(in srgb, var(--ru-warning) 26%, transparent);
 }
+.ru-callout.ru-info {
+  background: var(--ru-info-soft);
+  color: var(--ru-info);
+  border-color: color-mix(in srgb, var(--ru-info) 24%, transparent);
+}
+.ru-callout.ru-info .ru-callout-title {
+  color: var(--ru-info);
+}
 .ru-callout.ru-warning .ru-callout-title {
   color: var(--ru-warning);
 }
 .ru-callout.ru-success > svg,
 .ru-callout.ru-error > svg,
-.ru-callout.ru-warning > svg {
+.ru-callout.ru-warning > svg,
+.ru-callout.ru-info > svg {
   color: currentColor;
 }
 .ru-callout a {
@@ -909,10 +918,20 @@ body[data-ds-dark-theme] .rich-ui {
 
 .ru-table-wrap {
   overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
+  overscroll-behavior-x: contain;
   border: 1px solid var(--ru-border);
   border-radius: 12px;
   background: var(--ru-bg);
   scrollbar-width: thin;
+}
+.ru-table-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+.ru-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--ru-border-strong);
+  border-radius: 999px;
 }
 .ru-table-block {
   display: flex;
@@ -1003,8 +1022,24 @@ body[data-ds-dark-theme] .rich-ui {
 .rich-ui td {
   border-bottom: 1px solid var(--ru-border);
   padding: 10px 14px;
-  white-space: nowrap;
   vertical-align: middle;
+}
+.rich-ui td {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+/* A header stays on one line: it sets the column's minimum width, so the
+   label is never cut in half. */
+.rich-ui th {
+  white-space: nowrap;
+}
+/* Numbers, pills and bars never wrap; prose columns do, so a wide table fits
+   instead of being clipped by the card edge. */
+.rich-ui th[data-align="right"],
+.rich-ui td[data-align="right"],
+.rich-ui td[data-format="status"],
+.rich-ui td[data-format="progress"] {
+  white-space: nowrap;
 }
 .rich-ui th[data-align="right"],
 .rich-ui td[data-align="right"] {
@@ -1027,8 +1062,9 @@ body[data-ds-dark-theme] .rich-ui {
 }
 .ru-th-button {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 5px;
+  text-align: left;
   border: 0;
   background: none;
   padding: 0;
@@ -1040,7 +1076,12 @@ body[data-ds-dark-theme] .rich-ui {
   color: var(--ru-ink);
 }
 .ru-th-button svg {
+  flex: none;
+  margin-top: 2px;
   opacity: 0.55;
+}
+.ru-th-label {
+  min-width: 0;
 }
 .ru-th-button:hover svg,
 .rich-ui th[aria-sort="ascending"] .ru-th-button svg,

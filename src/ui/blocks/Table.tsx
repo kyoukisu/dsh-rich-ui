@@ -36,7 +36,7 @@ function compare(left: Scalar, right: Scalar): number {
     return left - right;
   if (typeof left === "boolean" || typeof right === "boolean")
     return Number(left) - Number(right);
-  return String(left).localeCompare(String(right), "ru", { numeric: true });
+  return String(left).localeCompare(String(right), "en", { numeric: true });
 }
 
 export function SortableTable({
@@ -64,11 +64,11 @@ export function SortableTable({
     [node, state],
   );
   const visible = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase("ru");
+    const needle = query.trim().toLocaleLowerCase("en");
     const filtered = needle
       ? rows.filter((row) =>
           row.some((cell) =>
-            cell.text.toLocaleLowerCase("ru").includes(needle),
+            cell.text.toLocaleLowerCase("en").includes(needle),
           ),
         )
       : rows;
@@ -128,17 +128,16 @@ export function SortableTable({
                       type="button"
                       className="ru-th-button"
                       onClick={() =>
-                        setSort((current) =>
-                          current?.key === column.key
-                            ? {
-                                key: column.key,
-                                dir: current.dir === 1 ? -1 : 1,
-                              }
-                            : { key: column.key, dir: 1 },
-                        )
+                        setSort((current) => {
+                          if (current?.key !== column.key)
+                            return { key: column.key, dir: 1 };
+                          return current.dir === 1
+                            ? { key: column.key, dir: -1 }
+                            : null;
+                        })
                       }
                     >
-                      {column.label}
+                      <span className="ru-th-label">{column.label}</span>
                       {active ? (
                         sort.dir === 1 ? (
                           <ArrowUp size={13} aria-hidden="true" />
