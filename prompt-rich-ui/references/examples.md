@@ -66,28 +66,14 @@ Replace demonstration content with sourced real findings. These JSON blocks are 
   "nodes": [
     {
       "type": "text",
-      "content": "Open a place for facts and source links.",
+      "content": "Open a place for facts and source links. Each card already carries its own poster and description — do not add them as separate nodes.",
       "variant": "subtitle"
     },
     {
       "type": "carousel",
       "children": [
-        {
-          "type": "card",
-          "title": "Outside",
-          "children": [
-            { "type": "icon", "name": "Flower2" },
-            { "type": "entity-ref", "entityId": "garden" }
-          ]
-        },
-        {
-          "type": "card",
-          "title": "Inside",
-          "children": [
-            { "type": "icon", "name": "Landmark" },
-            { "type": "entity-ref", "entityId": "museum" }
-          ]
-        }
+        { "type": "entity-ref", "entityId": "garden" },
+        { "type": "entity-ref", "entityId": "museum" }
       ]
     },
     {
