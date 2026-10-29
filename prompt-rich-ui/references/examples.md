@@ -391,3 +391,21 @@ Use this shape when the answer is a status page or a comparison with several kin
   ]
 }
 ```
+
+## Stacked architecture with layers
+
+Use `layers` when containment carries the answer: one shared handle, its members and the system below.
+
+```rich-ui
+{"version":1,"nodes":[
+ {"type":"layers","caption":"One pool, many connections","layers":[
+   {"title":"HTTP handlers","detail":"call the database at the same time","icon":"server",
+    "layers":[
+      {"title":"*sql.DB — pool","icon":"database","items":[
+        {"label":"Conn 1","icon":"database"},
+        {"label":"Conn 2","icon":"database"},
+        {"label":"Conn 3","icon":"database"}]}]},
+   {"title":"PostgreSQL","icon":"server","detail":"physical sessions, opened on demand"}]},
+ {"type":"code","language":"go","title":"Tuning the pool","code":"db.SetMaxOpenConns(10)\ndb.SetMaxIdleConns(5)"}
+]}
+```

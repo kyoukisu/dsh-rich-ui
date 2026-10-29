@@ -577,6 +577,66 @@ describe("progress columns and thumbnail shape", () => {
     expect(parsed.entities?.[0]?.thumbShape).toBe("square");
   });
 
+
+  it("accepts nested layers and rejects impossible layer shapes", () => {
+    const parsed = parseRichSpec(
+      spec({
+        type: "layers",
+        caption: "One pool, many connections",
+        layers: [
+          {
+            title: "HTTP handlers",
+            layers: [
+              {
+                title: "*sql.DB — pool",
+                items: [{ label: "Conn 1", icon: "database", tone: "success" }],
+              },
+            ],
+          },
+          { title: "PostgreSQL" },
+        ],
+      }),
+    );
+    expect(parsed.nodes[0]).toMatchObject({ type: "layers" });
+
+    for (const node of [
+      { type: "layers", layers: [] },
+      {
+        type: "layers",
+        layers: [
+          {
+            title: "mixed",
+            items: [{ label: "a" }],
+            layers: [{ title: "nested" }],
+          },
+        ],
+      },
+      {
+        type: "layers",
+        layers: [
+          {
+            title: "one",
+            layers: [
+              { title: "two", layers: [{ title: "three", layers: [{ title: "four" }] }] },
+            ],
+          },
+        ],
+      },
+      {
+        type: "layers",
+        layers: [
+          {
+            title: "many",
+            items: Array.from({ length: 7 }, (_, index) => ({
+              label: `conn ${index}`,
+            })),
+          },
+        ],
+      },
+    ])
+      expect(() => parseRichSpec(spec(node))).toThrow();
+  });
+
   it("rejects progress options on other formats and unknown shapes", () => {
     for (const node of [
       {

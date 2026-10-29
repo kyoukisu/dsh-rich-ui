@@ -41,6 +41,7 @@ import {
   formatNumber,
 } from "./blocks/Metrics";
 import { SortableTable } from "./blocks/Table";
+import { Layers } from "./blocks/Layers";
 import "./rich-ui.css";
 
 const TONE_ICONS = {
@@ -218,6 +219,8 @@ export function RichResponse({
           return <Status key={key} node={n} />;
         case "diagram":
           return <Diagram key={key} node={n} />;
+        case "layers":
+          return <Layers key={key} node={n} />;
         case "meta":
           return (
             <div key={key} className="ru-meta">

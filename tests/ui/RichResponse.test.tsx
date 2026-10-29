@@ -27,6 +27,49 @@ const button = (text: string) =>
   )!;
 const division = { op: "div" as const, args: [1, 0] };
 describe("RichResponse regressions", () => {
+  it("draws stack layers with member chips and a caption", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "layers",
+          caption: "One shared pool",
+          layers: [
+            {
+              title: "HTTP handlers",
+              detail: "call the database at once",
+              icon: "server",
+              layers: [
+                {
+                  title: "*sql.DB — pool",
+                  icon: "database",
+                  items: [
+                    { label: "Conn 1", icon: "database" },
+                    { label: "Conn 2", icon: "database" },
+                  ],
+                },
+              ],
+            },
+            { title: "PostgreSQL", tone: "success" },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const figure = host.querySelector("figure.ru-layers")!;
+    expect(figure).not.toBeNull();
+    expect(figure.querySelectorAll(".ru-layer").length).toBe(3);
+    expect(figure.querySelector(".ru-layer[data-depth='1']")).not.toBeNull();
+    expect(
+      Array.from(figure.querySelectorAll(".ru-layer-items li")).map((li) =>
+        li.textContent?.trim(),
+      ),
+    ).toEqual(["Conn 1", "Conn 2"]);
+    expect(figure.querySelector("figcaption")?.textContent).toBe(
+      "One shared pool",
+    );
+  });
+
   it("isolates failed expressions and charts without losing healthy content", () => {
     const spec: RichSpec = {
       version: 1,

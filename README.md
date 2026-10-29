@@ -4,7 +4,7 @@
 
 **Answers that behave like an interface, not a wall of Markdown.**
 
-Entity collections with detail panels, KPI cards, multi-series charts, sortable tables, flow diagrams, calculators that recompute as you drag — rendered inside [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) from a strict JSON contract.
+Entity collections with detail panels, KPI cards, multi-series charts, sortable tables, flow and layered architecture diagrams, calculators that recompute as you drag — rendered inside [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) from a strict JSON contract.
 
 [![stars](https://shieldcn.dev/github/kyoukisu/dsh-rich-ui/stars.svg?variant=branded&size=xs)](https://github.com/kyoukisu/dsh-rich-ui/stargazers)
 [![license](https://shieldcn.dev/github/kyoukisu/dsh-rich-ui/license.svg?variant=branded&size=xs)](LICENSE)
@@ -42,6 +42,12 @@ The renderer is a real React tree behind a strict schema. There is no generated 
   </picture>
   <br>
   <em>Metrics, a two-series chart with units and hover, a filterable table with status pills and an ordered flow — one document.</em>
+</p>
+
+<p align="center">
+  <img alt="Layered architecture: HTTP handlers containing a connection pool with three connections, an arrow to PostgreSQL, and a Go code block with syntax colour" src="docs/images/layers-desktop.png" width="820">
+  <br>
+  <em>Boxes inside boxes: the pool holds connections, the arrow shows what it talks to. The code block keeps language label, syntax colour and copy.</em>
 </p>
 
 <p align="center">
@@ -98,10 +104,10 @@ Things worth trying: *"build a budget calculator with three sliders"*, *"show th
 | Group | Nodes |
 |---|---|
 | Layout | `stack`, `row`, `grid`, `card`, `divider`, `meta` |
-| Text | `text` with inline `code`, **bold**, links and `[[entityId]]` chips; `callout` with optional title; `code` with highlighting, line numbers and copy |
+| Text | `text` with inline `code`, **bold**, links and `[[entityId]]` chips; `callout` with optional title; `code` with syntax colour, language label, line numbers and copy |
 | Objects | `entity-ref`, ``entity-list` with poster or square row thumbnails; entity details dock in the native right column or fall back to an in-page drawer |
 | Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status and progress columns), `chart` (bar / line / area / donut, 1–6 series, units, tooltips), `computed` |
-| Flow | `diagram` with ordered steps, connector labels and branch depth |
+| Flow | `diagram` with ordered steps, connector labels and branch depth; `layers` for boxes-inside-boxes architecture with member chips |
 | Media | `image`, `image-group`, gallery lightbox, popover, tooltip |
 | Controls | `input` (text / number / date), `select`, `slider`, `switch`, `checkbox`, `radio`, `segmented`, `tabs` |
 | Logic | expressions (`add`, `mul`, `round`, comparisons…), `conditional`, local actions, `send-message` |

@@ -121,6 +121,27 @@ export interface DiagramNode extends NodeBase {
   direction?: "horizontal" | "vertical";
   caption?: string;
 }
+export interface LayerItem {
+  label: string;
+  detail?: string;
+  icon?: string;
+  tone?: Exclude<Tone, "default">;
+}
+/** One box in a stacked architecture. Set items or nested layers, not both. */
+export interface Layer {
+  title: string;
+  detail?: string;
+  icon?: string;
+  tone?: Exclude<Tone, "default">;
+  items?: LayerItem[];
+  layers?: Layer[];
+}
+/** Stacked architecture: nested boxes from top to bottom, with inline members. */
+export interface LayersNode extends NodeBase {
+  type: "layers";
+  layers: Layer[];
+  caption?: string;
+}
 export interface MetaItem {
   text: string;
   icon?: string;
@@ -298,6 +319,7 @@ export type RichNode =
   | ProgressNode
   | StatusNode
   | DiagramNode
+  | LayersNode
   | EntityListNode
   | MetaNode
   | ImageNode
@@ -777,6 +799,52 @@ export function parseRichSpec(input: unknown): RichSpec {
             if (!Number.isInteger(step.depth)) fail("Depth must be integer");
           }
         });
+        break;
+      }
+      case "layers": {
+        check(["layers"], ["caption"]);
+        if (o.caption !== undefined) str(o.caption);
+        const walk = (value: unknown, depth: number) => {
+          if (!Array.isArray(value) || value.length === 0)
+            fail("Layers need entries");
+          const entries = value as unknown[];
+          if (entries.length > 6) fail("Too many layers");
+          arr(entries, (entry) => {
+            const layer = obj(entry);
+            fields(layer, ["title"], [
+              "detail",
+              "icon",
+              "tone",
+              "items",
+              "layers",
+            ]);
+            str(layer.title);
+            if (layer.detail !== undefined) str(layer.detail);
+            if (layer.icon !== undefined) str(layer.icon);
+            if (layer.tone !== undefined) choice(layer.tone, BRIGHT_TONES);
+            if (layer.items !== undefined) {
+              if (!Array.isArray(layer.items) || layer.items.length === 0)
+                fail("Layer items cannot be empty");
+              const members = layer.items as unknown[];
+              if (members.length > 6) fail("Too many layer items");
+              arr(members, (member) => {
+                const item = obj(member);
+                fields(item, ["label"], ["detail", "icon", "tone"]);
+                str(item.label);
+                if (item.detail !== undefined) str(item.detail);
+                if (item.icon !== undefined) str(item.icon);
+                if (item.tone !== undefined) choice(item.tone, BRIGHT_TONES);
+              });
+            }
+            if (layer.layers !== undefined) {
+              if (depth >= 2) fail("Layers nest too deep");
+              walk(layer.layers, depth + 1);
+            }
+            if (layer.items !== undefined && layer.layers !== undefined)
+              fail("A layer cannot hold items and nested layers together");
+          });
+        };
+        walk(o.layers, 0);
         break;
       }
       case "meta": {

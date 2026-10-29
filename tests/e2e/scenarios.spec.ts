@@ -85,6 +85,7 @@ test("all scenarios have no horizontal overflow or runtime errors in both themes
     "films",
     "calculator",
     "configurator",
+    "pool",
     "diagnostic",
   ]) {
     for (const theme of ["light", "dark"]) {
@@ -148,6 +149,7 @@ test("renderer passes automated accessibility checks", async ({ page }) => {
     "films",
     "calculator",
     "configurator",
+    "pool",
     "diagnostic",
   ]) {
     await page.goto(`/?demo=${demo}`);

@@ -24,6 +24,7 @@ const labels: Record<LabDemo, string> = {
   listing: "Product listing",
   calculator: "Local calculations",
   configurator: "Reactive form",
+  pool: "Architecture layers",
   primitives: "Tooltips and gallery",
   diagnostic: "Contract error",
 };
@@ -125,7 +126,9 @@ function App() {
                       ? "Build a launch dashboard: metrics, a chart, a work plan and a request flow."
                       : demo === "diagnostic"
                         ? "Why did the block fail to render and what do I do now?"
-                        : "Build a small configurator with a live preview."}
+                        : demo === "pool"
+                          ? "Explain what *sql.DB really is and how the pool works."
+                          : "Build a small configurator with a live preview."}
           </div>
           <article className="lab-answer">
             {demo === "primitives" ? (

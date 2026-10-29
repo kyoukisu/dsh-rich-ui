@@ -633,6 +633,59 @@ export const dashboard: RichSpec = {
   ],
 };
 
+export const pool: RichSpec = {
+  version: 1,
+  title: "Why sql.DB is a pool, not a connection",
+  nodes: [
+    {
+      type: "text",
+      content:
+        "One value for the whole process. Every handler borrows a connection for the length of a query and gives it back.",
+    },
+    {
+      type: "layers",
+      caption:
+        "A single shared handle fans out into physical sessions that open on demand.",
+      layers: [
+        {
+          title: "HTTP handlers / goroutines",
+          detail: "Hit the database at the same time",
+          icon: "server",
+          layers: [
+            {
+              title: "*sql.DB — connection pool",
+              detail: "One thread-safe value, created once at start-up",
+              icon: "database",
+              tone: "accent",
+              items: [
+                { label: "Conn 1", icon: "database" },
+                { label: "Conn 2", icon: "database" },
+                { label: "Conn 3", icon: "database" },
+              ],
+            },
+          ],
+        },
+        {
+          title: "PostgreSQL / MySQL",
+          detail: "Physical sessions, opened and reused on demand",
+          icon: "server",
+        },
+      ],
+    },
+    {
+      type: "text",
+      content:
+        "Set the limits once. The pool queues the rest instead of opening a session per request.",
+    },
+    {
+      type: "code",
+      language: "go",
+      title: "Tuning the pool",
+      code: "db.SetMaxOpenConns(10)\ndb.SetMaxIdleConns(5)\ndb.SetConnMaxLifetime(30 * time.Minute)",
+    },
+  ],
+};
+
 export const demos = {
   dashboard,
   technical,
@@ -640,5 +693,6 @@ export const demos = {
   listing,
   calculator,
   configurator,
+  pool,
 };
 export type DemoName = keyof typeof demos;

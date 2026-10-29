@@ -1,9 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Code2, Copy } from "lucide-react";
 
 interface Token {
   text: string;
-  kind?: "comment" | "string" | "number" | "keyword" | "literal" | "meta";
+  kind?:
+    | "comment"
+    | "string"
+    | "number"
+    | "keyword"
+    | "literal"
+    | "function"
+    | "type"
+    | "meta";
 }
 
 const KEYWORDS: Record<string, Set<string>> = {
@@ -105,6 +113,20 @@ function tokenize(code: string, language: string): Token[] {
     else tokens.push({ text });
   }
   if (last < code.length) tokens.push({ text: code.slice(last) });
+  const isBlank = (token: Token) => token.kind === undefined && !token.text.trim();
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index]!;
+    if (token.kind !== undefined) continue;
+    if (!/^[A-Za-z_$][\w$]*$/.test(token.text)) continue;
+    let next: Token | undefined;
+    for (let probe = index + 1; probe < tokens.length; probe += 1) {
+      if (isBlank(tokens[probe]!)) continue;
+      next = tokens[probe];
+      break;
+    }
+    if (next?.text.startsWith("(")) token.kind = "function";
+    else if (/^[A-Z][A-Za-z0-9_]*$/.test(token.text)) token.kind = "type";
+  }
   return tokens;
 }
 
@@ -164,16 +186,20 @@ export function CodeBlock({
   return (
     <figure className="ru-code">
       <figcaption className="ru-code-head">
-        <span className="ru-code-title">{title ?? label}</span>
-        {title && <span className="ru-code-lang">{label}</span>}
+        <span className="ru-code-lang">
+          <Code2 size={14} aria-hidden="true" />
+          {label}
+        </span>
+        {title ? <span className="ru-code-title">{title}</span> : null}
         <button
           type="button"
           className="ru-code-copy"
           onClick={() => void copy()}
           aria-label="Copy code"
+          title={copied === "done" ? "Copied" : "Copy code"}
         >
-          {copied === "done" ? <Check size={14} /> : <Copy size={14} />}
-          <span aria-live="polite">
+          {copied === "done" ? <Check size={15} /> : <Copy size={15} />}
+          <span className="ru-sr-only" aria-live="polite">
             {copied === "done"
               ? "Copied"
               : copied === "failed"
