@@ -12,7 +12,10 @@ const images = [
 /** Deterministic browser QA fixture: no external media requests or model actions. */
 export function PrimitiveDemo() {
   return (
-    <section className="rich-ui" aria-label="Интерактивные примитивы">
+    <section
+      className="rich-ui ru-primitive-demo"
+      aria-label="Интерактивные примитивы"
+    >
       <h2>Локальные интерактивные элементы</h2>
       <p>
         Открывайте элементы мышью или клавиатурой. Escape закрывает активную

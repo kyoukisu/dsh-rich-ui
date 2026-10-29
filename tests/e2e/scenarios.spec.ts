@@ -291,3 +291,29 @@ test("inline entity chips open the shared detail surface", async ({ page }) => {
   await chip.click();
   await expect(page.locator(".ru-detail h2")).toHaveText("Interstellar");
 });
+
+test("popover controls follow the page theme, not the OS", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/?demo=primitives&theme=light");
+  await page.getByRole("button", { name: "Открыть настройки" }).click();
+  const panel = page.locator(".ru-primitive-popover-panel");
+  await expect(panel).toBeVisible();
+  expect(await panel.evaluate((el) => getComputedStyle(el).colorScheme)).toBe(
+    "light",
+  );
+  const input = panel.locator("input");
+  expect(
+    await input.evaluate((el) => getComputedStyle(el).backgroundColor),
+  ).toBe("rgb(246, 246, 247)");
+  expect(await input.evaluate((el) => getComputedStyle(el).color)).toBe(
+    "rgb(32, 32, 32)",
+  );
+
+  await page.goto("/?demo=primitives&theme=dark");
+  await page.getByRole("button", { name: "Открыть настройки" }).click();
+  expect(
+    await page
+      .locator(".ru-primitive-popover-panel")
+      .evaluate((el) => getComputedStyle(el).colorScheme),
+  ).toBe("dark");
+});

@@ -17,6 +17,7 @@ input {
   -webkit-tap-highlight-color: transparent;
 }
 .lab {
+  color-scheme: light;
   --lab-bg: #fff;
   --lab-sidebar: #f9f9f9;
   --lab-ink: #202020;
@@ -27,6 +28,7 @@ input {
   color: var(--lab-ink);
 }
 .lab[data-theme="dark"] {
+  color-scheme: dark;
   --lab-bg: #212121;
   --lab-sidebar: #181818;
   --lab-ink: #ececec;
@@ -298,4 +300,9 @@ body:has(.ru-drawer) .lab-workspace {
 :focus-visible {
   outline: 2px solid #23836a;
   outline-offset: 3px;
+}
+
+/* Room for an open popover above the footer. */
+.ru-primitive-demo {
+  padding-bottom: 10rem;
 }

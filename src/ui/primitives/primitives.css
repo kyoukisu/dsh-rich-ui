@@ -113,12 +113,44 @@
   outline: 2px solid Highlight;
   outline-offset: 3px;
 }
-@media (prefers-color-scheme: dark) {
-  .ru-primitive-lightbox,
-  .ru-primitive-popover-panel,
-  .ru-primitive-trigger {
-    color-scheme: dark;
-  }
+/* Follow the surface's own theme, never the OS: the lab and Harness force a
+   theme that may differ from prefers-color-scheme, and native controls must
+   match the surface they are drawn on. */
+.ru-primitive-popover-panel,
+.ru-primitive-lightbox,
+.ru-primitive-trigger {
+  color-scheme: inherit;
+}
+.ru-primitive-popover-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+.ru-primitive-popover-panel input {
+  box-sizing: border-box;
+  width: 100%;
+  font: inherit;
+  color: var(--ru-ink, CanvasText);
+  background: var(--ru-surface, Canvas);
+  border: 1px solid var(--ru-border, GrayText);
+  border-radius: 0.4rem;
+  padding: 0.45rem 0.55rem;
+}
+.ru-primitive-popover-panel button {
+  font: inherit;
+  color: var(--ru-ink, CanvasText);
+  background: var(--ru-surface, Canvas);
+  border: 1px solid var(--ru-border, GrayText);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  cursor: pointer;
+}
+.ru-primitive-popover-panel input:focus-visible,
+.ru-primitive-popover-panel button:focus-visible {
+  outline: 2px solid var(--ru-accent, Highlight);
+  outline-offset: 2px;
 }
 [data-theme="dark"] .ru-primitive-gallery,
 [data-theme="dark"] .ru-primitive-popover {
