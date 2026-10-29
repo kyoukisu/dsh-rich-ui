@@ -215,6 +215,8 @@ export interface RadioNode extends NodeBase {
   type: "radio" | "segmented";
   stateKey: string;
   label?: string;
+  /** `column` renders one option per row, like a navigable list. */
+  layout?: "row" | "column";
   options: { label: string; value: Scalar }[];
 }
 export interface SliderNode extends NodeBase {
@@ -244,7 +246,7 @@ export interface ConditionalNode extends NodeBase {
 export interface TabsNode extends NodeBase {
   type: "tabs";
   stateKey: string;
-  tabs: { id: string; label: string; children: RichNode[] }[];
+  tabs: { id: string; label: string; icon?: string; children: RichNode[] }[];
 }
 export type TableFormat = "text" | "number" | "status" | "progress";
 export interface TableColumn {
@@ -698,6 +700,8 @@ export function parseRichSpec(input: unknown): RichSpec {
         arr(o.children, node);
         if (o.gap !== undefined) num(o.gap, 0, 128);
         if (o.columns !== undefined) {
+          if (o.type !== "grid" && o.type !== "row")
+            fail("columns is only valid on grid and row");
           num(o.columns, 1, 12);
           if (!Number.isInteger(o.columns)) fail("Columns must be integer");
         }
@@ -910,9 +914,13 @@ export function parseRichSpec(input: unknown): RichSpec {
       case "radio":
       case "segmented":
       case "select":
-        check(["stateKey", "options"], ["label"]);
+        check(["stateKey", "options"], ["label", "layout"]);
         key(o.stateKey);
         if (o.label !== undefined) str(o.label);
+        if (o.layout !== undefined) {
+          if (o.type !== "radio") fail("layout is only valid on radio");
+          choice(o.layout, ["row", "column"]);
+        }
         if (!Array.isArray(o.options) || o.options.length === 0)
           fail("Options cannot be empty");
         arr(o.options, (x) => {
@@ -955,9 +963,14 @@ export function parseRichSpec(input: unknown): RichSpec {
         const ids = new Set<string>();
         arr(o.tabs, (t) => {
           const p = obj(t);
-          fields(p, ["id", "label", "children"]);
+          fields(p, ["id", "label", "children"], ["icon"]);
           key(p.id);
           str(p.label);
+          if (p.icon !== undefined) {
+            str(p.icon);
+            if (!/^[a-zA-Z][a-zA-Z0-9-]{0,63}$/.test(p.icon))
+              fail("Invalid tab icon");
+          }
           if (ids.has(p.id as string)) fail("Duplicate tab id");
           ids.add(p.id as string);
           arr(p.children, node);

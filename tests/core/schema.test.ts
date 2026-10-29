@@ -578,6 +578,57 @@ describe("progress columns and thumbnail shape", () => {
   });
 
 
+
+  it("accepts equal row columns, column radios and tab icons", () => {
+    const parsed = parseRichSpec(
+      spec({
+        type: "card",
+        title: "Concept",
+        children: [
+          {
+            type: "tabs",
+            stateKey: "ws",
+            tabs: [
+              { id: "all", label: "All", icon: "home", children: [] },
+              { id: "one", label: "One", icon: "folder", children: [] },
+            ],
+          },
+          {
+            type: "row",
+            columns: 2,
+            children: [{ type: "text", content: "left" }],
+          },
+          {
+            type: "radio",
+            stateKey: "session",
+            layout: "column",
+            options: [
+              { label: "A", value: "a" },
+              { label: "B", value: "b" },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.nodes).toHaveLength(1);
+
+    for (const node of [
+      { type: "stack", columns: 2, children: [] },
+      {
+        type: "segmented",
+        stateKey: "x",
+        layout: "column",
+        options: [{ label: "A", value: "a" }],
+      },
+      {
+        type: "tabs",
+        stateKey: "ws",
+        tabs: [{ id: "a", label: "A", icon: "bad icon!", children: [] }],
+      },
+    ])
+      expect(() => parseRichSpec(spec(node))).toThrow();
+  });
+
   it("accepts nested layers and rejects impossible layer shapes", () => {
     const parsed = parseRichSpec(
       spec({

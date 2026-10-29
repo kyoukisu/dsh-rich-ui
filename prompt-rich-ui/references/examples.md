@@ -395,3 +395,31 @@ Use `layers` when containment carries the answer: one shared handle, its members
  {"type":"code","language":"go","title":"Tuning the pool","code":"db.SetMaxOpenConns(10)\ndb.SetMaxIdleConns(5)"}
 ]}
 ```
+
+## Interface concept mock
+
+When the answer is about a layout rather than data, compose a small schematic: a card with a tab strip, two equal panes and a column radio list. It reads as a mock, not as a product screenshot.
+
+```rich-ui
+{"version":1,"nodes":[
+ {"type":"card","title":"Concept: workspaces on top, chats on the left","children":[
+   {"type":"tabs","stateKey":"ws","tabs":[
+     {"id":"all","label":"All","icon":"home","children":[]},
+     {"id":"backend","label":"Backend","icon":"folder","children":[]},
+     {"id":"site","label":"Website","icon":"folder","children":[]}]},
+   {"type":"row","columns":2,"children":[
+     {"type":"stack","children":[
+       {"type":"text","variant":"subtitle","content":"Backend · Chats"},
+       {"type":"input","stateKey":"q","label":"Search","placeholder":"Search this project"},
+       {"type":"radio","stateKey":"session","layout":"column","options":[
+         {"label":"Fix authentication","value":"fix"},
+         {"label":"API refactoring","value":"api"},
+         {"label":"DB migration","value":"db"}]}]},
+     {"type":"stack","children":[
+       {"type":"text","variant":"subtitle","content":"Fix authentication"},
+       {"type":"callout","tone":"info","content":"Patch the refresh token flow"},
+       {"type":"text","variant":"caption","content":"The agent checks the auth middleware…"},
+       {"type":"input","stateKey":"msg","label":"Message","placeholder":"Write a message…"}]}]}]},
+ {"type":"text","variant":"caption","content":"Layout sketch, not a screenshot of a shipped plugin."}
+]}
+```

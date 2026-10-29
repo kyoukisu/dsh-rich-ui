@@ -562,6 +562,10 @@ body[data-ds-dark-theme] .rich-ui {
   font-size: 13px;
   color: var(--ru-muted);
 }
+.ru-row[data-columns] > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
 .ru-choice-options {
   display: flex;
   flex-wrap: wrap;
@@ -606,7 +610,11 @@ body[data-ds-dark-theme] .rich-ui {
   overflow: hidden;
   clip-path: inset(50%);
 }
-.ru-segmented .ru-choice-options {
+.ru-segmented .ru-row[data-columns] > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.ru-choice-options {
   gap: 3px;
 }
 .ru-segmented .ru-choice-options input {
@@ -829,6 +837,9 @@ body[data-ds-dark-theme] .rich-ui {
   display: none;
 }
 .ru-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 0;
   background: transparent;
   color: var(--ru-muted);
@@ -2378,4 +2389,30 @@ button.ru-inline-entity:hover {
   margin-top: 10px;
   font-size: 12.5px;
   color: var(--ru-muted);
+}
+
+/* A column layout turns radio options into a navigable list. */
+.ru-radio[data-layout="column"] .ru-choice-options {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+.ru-radio[data-layout="column"] label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.ru-radio[data-layout="column"] label:hover {
+  background: var(--ru-surface);
+}
+.ru-radio[data-layout="column"] label:has(input:checked) {
+  background: var(--ru-accent-soft);
+  color: var(--ru-ink);
+}
+.ru-radio[data-layout="column"] input {
+  margin: 0;
 }

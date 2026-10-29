@@ -178,6 +178,9 @@ export function RichResponse({
             <div
               key={key}
               className={`ru-${n.type}`}
+              data-columns={
+                n.type === "row" && n.columns ? n.columns : undefined
+              }
               style={
                 {
                   gap: n.gap,
@@ -401,6 +404,7 @@ export function RichResponse({
               key={key}
               className={`ru-choice ru-${n.type}`}
               aria-label={n.label}
+              data-layout={n.layout}
             >
               {n.label && <legend>{n.label}</legend>}
               <div className="ru-choice-options">
@@ -465,6 +469,12 @@ export function RichResponse({
                       )?.focus();
                     }}
                   >
+                    {(() => {
+                      const Glyph = tab.icon ? resolveIcon(tab.icon) : undefined;
+                      return Glyph ? (
+                        <Glyph size={14} aria-hidden="true" />
+                      ) : null;
+                    })()}
                     {tab.label}
                   </button>
                 ))}
