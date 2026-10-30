@@ -2416,3 +2416,59 @@ button.ru-inline-entity:hover {
 .ru-radio[data-layout="column"] input {
   margin: 0;
 }
+
+/* Media ------------------------------------------------------------------- */
+.ru-media {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.ru-media-video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: var(--ru-surface);
+  border: 1px solid var(--ru-border);
+  display: block;
+}
+.ru-media-audio-player {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 10px;
+  background: var(--ru-surface);
+  border: 1px solid var(--ru-border);
+  padding: 4px;
+  display: block;
+}
+.ru-media figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+  color: var(--ru-caption-ink);
+}
+.ru-media figcaption strong {
+  font-size: 13px;
+  color: var(--ru-ink);
+  font-weight: 600;
+}
+
+/* Scatter ----------------------------------------------------------------- */
+.ru-chart-scatter .ru-grid-line-x {
+  opacity: 0.45;
+}
+.ru-axis-line {
+  stroke: var(--ru-border-strong);
+  stroke-width: 1;
+}
+.ru-scatter-point {
+  fill: var(--ru-chart-1);
+  stroke: var(--ru-bg);
+  stroke-width: 1.5;
+  cursor: pointer;
+  transition: r 90ms ease;
+}

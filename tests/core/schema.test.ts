@@ -579,6 +579,43 @@ describe("progress columns and thumbnail shape", () => {
 
 
 
+
+  it("accepts scatter points and media, and rejects their impossible shapes", () => {
+    const parsed = parseRichSpec({
+      version: 1,
+      nodes: [
+        {
+          type: "chart",
+          kind: "scatter",
+          points: [
+            { x: 2, y: 8, label: "A" },
+            { x: 5, y: 3 },
+          ],
+          unit: "$k",
+          xUnit: "price",
+        },
+        { type: "video", src: "https://example.org/clip.mp4", poster: "https://example.org/p.jpg" },
+        { type: "audio", src: "https://example.org/track.mp3", title: "Track" },
+      ],
+    });
+    expect(parsed.nodes).toHaveLength(3);
+
+    for (const node of [
+      { type: "chart", kind: "scatter" },
+      { type: "chart", kind: "scatter", data: [{ label: "a", value: 1 }] },
+      { type: "chart", kind: "line", points: [{ x: 1, y: 1 }] },
+      { type: "video", src: "javascript:alert(1)" },
+      { type: "audio", src: "ftp://example.org/a.mp3" },
+      { type: "video", src: "https://example.org/a.mp4", autoplay: true },
+      {
+        type: "chart",
+        kind: "scatter",
+        points: Array.from({ length: 201 }, (_, index) => ({ x: index, y: index })),
+      },
+    ])
+      expect(() => parseRichSpec(spec(node))).toThrow();
+  });
+
   it("accepts equal row columns, column radios and tab icons", () => {
     const parsed = parseRichSpec(
       spec({

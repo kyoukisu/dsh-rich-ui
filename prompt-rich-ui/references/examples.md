@@ -423,3 +423,19 @@ When the answer is about a layout rather than data, compose a small schematic: a
  {"type":"text","variant":"caption","content":"Layout sketch, not a screenshot of a shipped plugin."}
 ]}
 ```
+
+## Scatter and a media clip
+
+Use a scatter for two numeric dimensions, and `video` / `audio` for direct files with native controls.
+
+```rich-ui
+{"version":1,"nodes":[
+ {"type":"chart","kind":"scatter","unit":"revenue, $k","xUnit":"price, $","points":[
+   {"x":12,"y":40,"label":"Basic"},
+   {"x":19,"y":55,"label":"Plus"},
+   {"x":24,"y":62,"label":"Pro"},
+   {"x":48,"y":96,"label":"Scale"}]},
+ {"type":"video","src":"https://example.com/demo.mp4","title":"Renderer walkthrough","caption":"12 seconds, no sound."},
+ {"type":"audio","src":"https://example.com/done.mp3","title":"Turn finished"}
+]}
+```

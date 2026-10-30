@@ -104,6 +104,19 @@ export interface StatusNode extends NodeBase {
   label: string;
   tone?: Exclude<Tone, "default">;
 }
+export interface VideoNode extends NodeBase {
+  type: "video";
+  src: string;
+  poster?: string;
+  title?: string;
+  caption?: string;
+}
+export interface AudioNode extends NodeBase {
+  type: "audio";
+  src: string;
+  title?: string;
+  caption?: string;
+}
 export interface DiagramStep {
   id: string;
   label: string;
@@ -278,9 +291,18 @@ export interface ChartSeries {
   label: string;
   values: Expr[];
 }
+export interface ScatterPoint {
+  x: number;
+  y: number;
+  label?: string;
+}
 export interface ChartNode extends NodeBase {
   type: "chart";
-  kind: "bar" | "line" | "area" | "donut";
+  kind: "bar" | "line" | "area" | "donut" | "scatter";
+  /** Scatter mode: raw numeric points instead of categories. */
+  points?: ScatterPoint[];
+  /** X-axis label for scatter, e.g. "price". */
+  xUnit?: string;
   /** Single-series data, or the slice labels for a donut. */
   data?: { label: string; value: Expr }[];
   /** Multi-series mode: one shared category axis plus aligned value arrays. */
@@ -321,6 +343,8 @@ export type RichNode =
   | ProgressNode
   | StatusNode
   | DiagramNode
+  | VideoNode
+  | AudioNode
   | LayersNode
   | EntityListNode
   | MetaNode
@@ -717,6 +741,21 @@ export function parseRichSpec(input: unknown): RichSpec {
         str(o.label);
         str(o.text);
         break;
+      case "video": {
+        check(["src"], ["poster", "title", "caption"]);
+        url(o.src);
+        if (o.poster !== undefined) url(o.poster);
+        if (o.title !== undefined) str(o.title);
+        if (o.caption !== undefined) str(o.caption);
+        break;
+      }
+      case "audio": {
+        check(["src"], ["title", "caption"]);
+        url(o.src);
+        if (o.title !== undefined) str(o.title);
+        if (o.caption !== undefined) str(o.caption);
+        break;
+      }
       case "image-group":
         check(["src", "alt"], ["label"]);
         arr(o.src, url);
@@ -1038,8 +1077,37 @@ export function parseRichSpec(input: unknown): RichSpec {
         break;
       }
       case "chart": {
-        check(["kind"], ["data", "categories", "series", "unit", "caption"]);
-        choice(o.kind, ["bar", "line", "area", "donut"]);
+        check(["kind"], [
+          "data",
+          "categories",
+          "series",
+          "points",
+          "unit",
+          "xUnit",
+          "caption",
+        ]);
+        choice(o.kind, ["bar", "line", "area", "donut", "scatter"]);
+        if (o.kind === "scatter") {
+          if (o.data !== undefined || o.series !== undefined)
+            fail("Scatter uses points, not data or series");
+          if (!Array.isArray(o.points) || o.points.length === 0)
+            fail("Scatter needs points");
+          if ((o.points as unknown[]).length > 200)
+            fail("Too many scatter points");
+          arr(o.points, (point) => {
+            const p = obj(point);
+            fields(p, ["x", "y"], ["label"]);
+            num(p.x);
+            num(p.y);
+            if (p.label !== undefined) str(p.label);
+          });
+          if (o.xUnit !== undefined) str(o.xUnit);
+          if (o.unit !== undefined) str(o.unit);
+          if (o.caption !== undefined) str(o.caption);
+          break;
+        }
+        if (o.points !== undefined) fail("points require kind: scatter");
+        if (o.xUnit !== undefined) fail("xUnit requires kind: scatter");
         if (o.data === undefined && o.series === undefined)
           fail("Chart needs data or series");
         if (o.data !== undefined) {

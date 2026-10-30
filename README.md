@@ -106,9 +106,9 @@ Things worth trying: *"build a budget calculator with three sliders"*, *"show th
 | Layout | `stack`, `row`, `grid`, `card`, `divider`, `meta` |
 | Text | `text` with inline `code`, **bold**, links and `[[entityId]]` chips; `callout` with optional title; `code` with syntax colour, language label, line numbers and copy |
 | Objects | `entity-ref`, ``entity-list` with poster or square row thumbnails; entity details dock in the native right column or fall back to an in-page drawer |
-| Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status and progress columns), `chart` (bar / line / area / donut, 1–6 series, units, tooltips), `computed` |
+| Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status and progress columns), `chart` (bar / line / area / donut / scatter, 1–6 series, units, tooltips), `computed` |
 | Flow | `diagram` with ordered steps, connector labels and branch depth; `layers` for boxes-inside-boxes architecture with member chips |
-| Media | `image`, `image-group`, gallery lightbox, popover, tooltip |
+| Media | `image` with caption, `image-group`, `video` and `audio` with native controls, gallery lightbox, popover, tooltip |
 | Controls | `input` (text / number / date), `select`, `slider`, `switch`, `checkbox`, `radio`, `segmented`, `tabs` |
 | Logic | expressions (`add`, `mul`, `round`, comparisons…), `conditional`, local actions, `send-message` |
 
@@ -178,7 +178,7 @@ flowchart LR
 
 ## Parity with the reference
 
-Measured, not claimed: **18 of 27** reference scenarios reproduced, **1 partial**, **8 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps.
+Measured, not claimed: **20 of 27** reference scenarios reproduced, **1 partial**, **6 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: Mermaid/ER graphs, math, maps, artifacts, persistent panels and mini-apps.
 
 Known limitation: the fence label is not preserved by Harness, so an unlabelled block is claimed only when its payload looks like a spec document and passes the strict parser. A `json`-labelled block is never claimed.
 

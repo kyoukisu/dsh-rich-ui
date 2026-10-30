@@ -35,16 +35,16 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Citations attached to prose                                           | Partial | sources live in the entity panel, not inline                                      |
 | Inline entity chip inside a sentence                                  | Covered | `[[entityId]]` in text resolves a declared entity and opens the same host surface; unknown ids stay text |
 | Filterable tables                                                     | Covered | `dashboard`; local substring filter, visible count and a no-results row           |
-| Scatter plot                                                          | Missing | bar, line, area and donut only                                                    |
+| Scatter plot                                                          | Covered | `chart kind:"scatter"` with 1–200 numeric points, axis units, hidden data table   |
 | Mermaid / ER / sequence diagrams                                      | Missing | `diagram` is an ordered flow, not a graph layout engine                           |
 | Math (KaTeX)                                                          | Missing | not implemented                                                                    |
 | Writing artifact / editable document                                  | Missing | not implemented                                                                    |
 | Maps                                                                  | Missing | no provider                                                                        |
-| Video / audio playback                                                | Missing | images only                                                                        |
+| Video / audio playback                                                | Covered | `video` / `audio` nodes, native controls, poster and caption, no autoplay          |
 | Persistent panel / canvas across turns                                 | Missing | not implemented                                                                    |
 | Mini-apps with isolated runtime                                       | Missing | deliberately out of scope                                                          |
 
-Coverage: **18 / 27** scenarios covered, **1 partial**, **8 missing**.
+Coverage: **20 / 27** scenarios covered, **1 partial**, **6 missing**.
 
 ## Visual deviations (known, not yet fixed)
 
@@ -52,7 +52,7 @@ Coverage: **18 / 27** scenarios covered, **1 partial**, **8 missing**.
 | --- | ------------------------------------------------------------------------------------------- | -------- |
 | 1   | Typography follows the host font but uses our own scale and rhythm                          | S2       |
 | 2   | Wide tables scroll horizontally on a phone; the demo four-column table now fits             | S3       |
-| 3   | Chart omits scatter plots and custom series styling                                         | S3       |
+| 3   | Chart series colours are fixed; no per-series palette override                              | S3       |
 | 4   | Entity panel success geometry was never observed in the reference (anonymous share errored) | Unknown  |
 
 ## What we are not measuring

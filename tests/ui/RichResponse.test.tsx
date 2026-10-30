@@ -363,6 +363,34 @@ describe("RichResponse regressions", () => {
 });
 
 describe("dashboard vocabulary", () => {
+  it("draws scatter points with an accessible table and media controls", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "chart",
+          kind: "scatter",
+          points: [
+            { x: 1, y: 2, label: "A" },
+            { x: 3, y: 4 },
+          ],
+          unit: "$k",
+          xUnit: "price",
+        },
+        { type: "video", src: "https://example.org/clip.mp4", title: "Clip" },
+        { type: "audio", src: "https://example.org/track.mp3" },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelectorAll(".ru-scatter-point").length).toBe(2);
+    expect(host.querySelector(".ru-chart-scatter .ru-sr-only table")).not.toBeNull();
+    const video = host.querySelector("video");
+    expect(video?.getAttribute("src")).toBe("https://example.org/clip.mp4");
+    expect(video?.hasAttribute("controls")).toBe(true);
+    expect(video?.hasAttribute("autoplay")).toBe(false);
+    expect(host.querySelector("audio")?.hasAttribute("controls")).toBe(true);
+  });
+
   it("sorts a table locally and reports the sort direction", () => {
     const spec: RichSpec = {
       version: 1,

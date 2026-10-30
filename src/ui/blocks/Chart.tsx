@@ -125,6 +125,9 @@ export function Chart({
     : { top: 18, right: 18, bottom: 38, left: 62 };
   const plotW = W - M.left - M.right;
   const plotH = H - M.top - M.bottom;
+  if (node.kind === "scatter") {
+    return <Scatter node={node} narrow={narrow} W={W} H={H} M={M} />;
+  }
   let model: { categories: string[]; series: Series[] };
   try {
     model = readSeries(node, state);
@@ -474,4 +477,205 @@ function Donut({
       </text>
     </g>
   );
+}
+
+/** Scatter: raw numeric points on two axes, one series, no category slots. */
+function Scatter({
+  node,
+  narrow,
+  W,
+  H,
+  M,
+}: {
+  node: ChartNode;
+  narrow: boolean;
+  W: number;
+  H: number;
+  M: { top: number; right: number; bottom: number; left: number };
+}) {
+  const points = node.points ?? [];
+  const [hover, setHover] = useState<number | null>(null);
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  let xLo = Math.min(...xs);
+  let xHi = Math.max(...xs);
+  let yLo = Math.min(...ys);
+  let yHi = Math.max(...ys);
+  if (xHi - xLo === 0) {
+    xLo -= 1;
+    xHi += 1;
+  }
+  if (yHi - yLo === 0) {
+    yLo -= 1;
+    yHi += 1;
+  }
+  const xPad = (xHi - xLo) * 0.05;
+  const yPad = (yHi - yLo) * 0.08;
+  xLo -= xPad;
+  xHi += xPad;
+  yLo -= yPad;
+  yHi += yPad;
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+  const sx = (value: number) => M.left + ((value - xLo) / (xHi - xLo)) * plotW;
+  const sy = (value: number) => M.top + plotH - ((value - yLo) / (yHi - yLo)) * plotH;
+  const xTicks = niceTicks(xLo, xHi);
+  const yTicks = niceTicks(yLo, yHi);
+  const label = (value: number) => formatTick(value);
+  const description = `Scatter chart: ${points.length} points`;
+  const active = hover === null ? null : points[hover];
+  return (
+    <figure className="ru-chart ru-chart-scatter" aria-label={description}>
+      {node.unit ? <div className="ru-chart-unit">{node.unit}</div> : null}
+      <div className="ru-chart-canvas">
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={description}>
+          {yTicks.map((tick) => (
+            <g key={`y${tick}`}>
+              <line
+                x1={M.left}
+                x2={W - M.right}
+                y1={sy(tick)}
+                y2={sy(tick)}
+                className="ru-grid-line"
+              />
+              <text
+                x={M.left - 10}
+                y={sy(tick)}
+                dy="0.32em"
+                textAnchor="end"
+                className="ru-axis"
+              >
+                {label(tick)}
+              </text>
+            </g>
+          ))}
+          {xTicks.map((tick) => (
+            <g key={`x${tick}`}>
+              <line
+                x1={sx(tick)}
+                x2={sx(tick)}
+                y1={M.top}
+                y2={H - M.bottom}
+                className="ru-grid-line ru-grid-line-x"
+              />
+              <text
+                x={sx(tick)}
+                y={H - M.bottom + 16}
+                textAnchor="middle"
+                className="ru-axis"
+              >
+                {label(tick)}
+              </text>
+            </g>
+          ))}
+          <line
+            x1={M.left}
+            x2={W - M.right}
+            y1={H - M.bottom}
+            y2={H - M.bottom}
+            className="ru-axis-line"
+          />
+          <line
+            x1={M.left}
+            x2={M.left}
+            y1={M.top}
+            y2={H - M.bottom}
+            className="ru-axis-line"
+          />
+          {node.xUnit ? (
+            <text
+              x={W - M.right}
+              y={H - M.bottom + 30}
+              textAnchor="end"
+              className="ru-axis"
+            >
+              {node.xUnit}
+            </text>
+          ) : null}
+          {points.map((point, index) => (
+            <circle
+              key={`${point.x}:${point.y}:${index}`}
+              cx={sx(point.x)}
+              cy={sy(point.y)}
+              r={hover === index ? 5.2 : 3.6}
+              className="ru-scatter-point"
+              onMouseEnter={() => setHover(index)}
+              onMouseLeave={() => setHover(null)}
+            >
+              <title>
+                {point.label ? `${point.label}: ` : ""}
+                {label(point.x)}
+                {node.xUnit ? ` ${node.xUnit}` : ""} · {label(point.y)}
+                {node.unit ? ` ${node.unit}` : ""}
+              </title>
+            </circle>
+          ))}
+        </svg>
+        {active ? (
+          <div className="ru-chart-tip" style={{ left: "18%", top: "8%" }}>
+            <strong>{active.label ?? "Point"}</strong>
+            <span>
+              {label(active.x)}
+              {node.xUnit ? ` ${node.xUnit}` : ""}
+            </span>
+            <span>
+              {label(active.y)}
+              {node.unit ? ` ${node.unit}` : ""}
+            </span>
+          </div>
+        ) : null}
+      </div>
+      {node.caption ? (
+        <figcaption>
+          <p className="ru-chart-caption">{node.caption}</p>
+        </figcaption>
+      ) : null}
+      <div className="ru-sr-only">
+        <table>
+          <caption>{description}</caption>
+          <thead>
+            <tr>
+              <th>{node.xUnit ?? "X"}</th>
+              <th>{node.unit ?? "Y"}</th>
+              <th>Label</th>
+            </tr>
+          </thead>
+          <tbody>
+            {points.map((point, index) => (
+              <tr key={`${point.x}:${point.y}:${index}`}>
+                <td>{point.x}</td>
+                <td>{point.y}</td>
+                <td>{point.label ?? ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </figure>
+  );
+}
+
+/** Round axis steps so labels read 0, 25, 50 instead of 35.52 and 51.76. */
+function niceTicks(lo: number, hi: number, count = 5): number[] {
+  const span = hi - lo || 1;
+  const raw = span / count;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
+  const normalized = raw / magnitude;
+  const step =
+    (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) *
+    magnitude;
+  const start = Math.ceil(lo / step) * step;
+  const ticks: number[] = [];
+  for (let value = start; value <= hi + step * 0.001; value += step) {
+    ticks.push(Number(value.toPrecision(12)));
+  }
+  return ticks;
+}
+
+/** Small tick formatter: two decimals at most, grouping above 10k. */
+function formatTick(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  return Math.abs(rounded) >= 10000
+    ? rounded.toLocaleString("en-US", { maximumFractionDigits: 2 })
+    : String(rounded);
 }

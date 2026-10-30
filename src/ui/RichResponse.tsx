@@ -42,6 +42,7 @@ import {
 } from "./blocks/Metrics";
 import { SortableTable } from "./blocks/Table";
 import { Layers } from "./blocks/Layers";
+import { Audio, Video } from "./blocks/Media";
 import "./rich-ui.css";
 
 const TONE_ICONS = {
@@ -511,6 +512,10 @@ export function RichResponse({
               {n.caption && <figcaption>{n.caption}</figcaption>}
             </figure>
           );
+        case "video":
+          return <Video key={key} node={n} />;
+        case "audio":
+          return <Audio key={key} node={n} />;
         case "carousel":
           return <Carousel key={key}>{n.children.map(render)}</Carousel>;
         case "entity-ref": {
