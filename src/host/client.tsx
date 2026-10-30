@@ -5,6 +5,7 @@ import { Diagnostic } from "../ui/Diagnostic";
 import { installEntityTab, openEntityInSidebar } from "./entity-tab";
 import { parseStreamingSpec } from "./partial.ts";
 import { parseRichSpec, type RichSpec } from "../core/schema";
+import { createAutoRepair, type AutoRepair } from "./auto-repair";
 
 export const name = "@kyoukisu/dsh-rich-ui";
 export const inject = ["sessions"];
@@ -242,6 +243,29 @@ export function repairHandler(
   };
 }
 
+
+const autoRepairs = new Map<string, AutoRepair>();
+
+/** One guarded auto-repair channel per session; the send target is resolved at
+ * delivery time because the conversation service can be recreated. */
+function autoRepairFor(
+  ctx: ClientContext,
+  sessionId: string | undefined,
+): AutoRepair | undefined {
+  if (!sessionId) return undefined;
+  const existing = autoRepairs.get(sessionId);
+  if (existing) return existing;
+  const created = createAutoRepair({
+    send: (text) => {
+      const conversation = ctx.sessions.scope(sessionId)?.get("conversation") as
+        { send?: (input: string) => Promise<unknown> } | undefined;
+      return conversation?.send ? conversation.send(text) : Promise.resolve();
+    },
+  });
+  autoRepairs.set(sessionId, created);
+  return created;
+}
+
 /** DOM channel follows the stock genui technique; no host/root slot replacement. */
 export function installDomRenderer(
   ctx: ClientContext,
@@ -302,6 +326,14 @@ export function installDomRenderer(
         continue;
       }
       const sessionId = viewedSession(ctx);
+      if (!spec && error && !streaming) {
+        autoRepairFor(ctx, sessionId)?.consider({
+          sessionId,
+          source: raw,
+          error,
+          streaming,
+        });
+      }
       const mode: Mount["mode"] = spec ? "rich" : "diagnostic";
       const specKey = spec ? JSON.stringify(spec) : `diagnostic:${error}`;
       if (
