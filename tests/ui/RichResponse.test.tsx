@@ -382,7 +382,12 @@ describe("dashboard vocabulary", () => {
       ],
     };
     act(() => root.render(<RichResponse spec={spec} />));
-    expect(host.querySelectorAll(".ru-scatter-point").length).toBe(2);
+    const points = host.querySelectorAll(".ru-scatter-point");
+    expect(points.length).toBe(2);
+    expect(points[0]!.getAttribute("tabindex")).toBe("0");
+    expect(points[0]!.getAttribute("aria-label")).toContain("2 $k");
+    act(() => points[0]!.dispatchEvent(new FocusEvent("focusin", { bubbles: true })));
+    expect(host.querySelector(".ru-chart-tip")?.textContent).toContain("A");
     expect(host.querySelector(".ru-chart-scatter .ru-sr-only table")).not.toBeNull();
     const video = host.querySelector("video");
     expect(video?.getAttribute("src")).toBe("https://example.org/clip.mp4");

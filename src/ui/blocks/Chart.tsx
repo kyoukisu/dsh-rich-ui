@@ -592,27 +592,40 @@ function Scatter({
               {node.xUnit}
             </text>
           ) : null}
-          {points.map((point, index) => (
-            <circle
-              key={`${point.x}:${point.y}:${index}`}
-              cx={sx(point.x)}
-              cy={sy(point.y)}
-              r={hover === index ? 5.2 : 3.6}
-              className="ru-scatter-point"
-              onMouseEnter={() => setHover(index)}
-              onMouseLeave={() => setHover(null)}
-            >
-              <title>
-                {point.label ? `${point.label}: ` : ""}
-                {label(point.x)}
-                {node.xUnit ? ` ${node.xUnit}` : ""} · {label(point.y)}
-                {node.unit ? ` ${node.unit}` : ""}
-              </title>
-            </circle>
-          ))}
+          {points.map((point, index) => {
+            const spoken = `${point.label ? `${point.label}: ` : ""}${label(
+              point.x,
+            )}${node.xUnit ? ` ${node.xUnit}` : ""}, ${label(point.y)}${
+              node.unit ? ` ${node.unit}` : ""
+            }`;
+            return (
+              <circle
+                key={`${point.x}:${point.y}:${index}`}
+                cx={sx(point.x)}
+                cy={sy(point.y)}
+                r={hover === index ? 5.2 : 3.6}
+                className="ru-scatter-point"
+                tabIndex={0}
+                role="img"
+                aria-label={spoken}
+                onMouseEnter={() => setHover(index)}
+                onMouseLeave={() => setHover(null)}
+                onFocus={() => setHover(index)}
+                onBlur={() => setHover(null)}
+              >
+                <title>{spoken}</title>
+              </circle>
+            );
+          })}
         </svg>
         {active ? (
-          <div className="ru-chart-tip" style={{ left: "18%", top: "8%" }}>
+          <div
+            className="ru-chart-tip"
+            style={{
+              left: `${Math.min(86, Math.max(14, (sx(active.x) / W) * 100))}%`,
+              top: `${Math.min(84, Math.max(2, (sy(active.y) / H) * 100 - 14))}%`,
+            }}
+          >
             <strong>{active.label ?? "Point"}</strong>
             <span>
               {label(active.x)}
