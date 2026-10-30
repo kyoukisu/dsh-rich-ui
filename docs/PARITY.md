@@ -30,7 +30,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Process / architecture flow                                           | Covered | `diagram`; ordered steps, connector labels, mobile reflow                         |
 | Syntax highlighting with copy                                         | Covered | `technical`; tokenizer for js/ts, Go, Python, shell, SQL, JSON, CSS                |
 | Support-matrix style table                                            | Covered | `table` inside `card`                                                             |
-| Same-turn repair: invalid fence returns diagnostics to the model      | Partial | diagnostic card with the exact error and a one-click repair message; no automatic turn hook |
+| Same-turn repair: invalid fence returns diagnostics to the model      | Covered | diagnostic card with the exact error plus one guarded automatic request (once per document, twice per session per hour, never while streaming); manual button stays |
 | Panel that reflows the conversation column                            | Covered | native right-column tab in Harness; isolated host showed a 647px column, related navigation and axe clean; drawer fallback |
 | Citations attached to prose                                           | Partial | sources live in the entity panel, not inline                                      |
 | Inline entity chip inside a sentence                                  | Covered | `[[entityId]]` in text resolves a declared entity and opens the same host surface; unknown ids stay text |
@@ -44,7 +44,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Persistent panel / canvas across turns                                 | Missing | not implemented                                                                    |
 | Mini-apps with isolated runtime                                       | Missing | deliberately out of scope                                                          |
 
-Coverage: **17 / 27** scenarios covered, **2 partial**, **8 missing**.
+Coverage: **18 / 27** scenarios covered, **1 partial**, **8 missing**.
 
 ## Visual deviations (known, not yet fixed)
 
@@ -65,7 +65,7 @@ Coverage: **17 / 27** scenarios covered, **2 partial**, **8 missing**.
 
 Ordered by effect on daily use:
 
-1. Close the repair loop automatically when the host exposes a turn hook; today the reader presses one button.
+1. The repair loop now closes by itself through the conversation service; the button remains for a manual retry.
 2. Inline citations inside prose.
 3. Scatter and richer chart options.
 4. Math, media nodes, artifacts and maps.

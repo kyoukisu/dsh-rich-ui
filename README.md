@@ -163,7 +163,7 @@ flowchart LR
 
 - **Node half** registers one always-on system-prompt section with the whole contract and the absolute path of the reference files. No skill, no tool call: the model can answer on the first attempt, and opens references only after a rejected block.
 - **Browser half** validates the fence and mounts into a plugin-owned root. While the model is still writing, closed nodes render in an inert preview and become interactive when the block settles.
-- Malformed documents are never repaired silently: a claimed block shows a diagnostic card with the exact error, the rejected JSON and a one-click request for a corrected block. Unfinished streams stay code until the model closes them.
+- A malformed document is never patched in place: it shows a diagnostic card with the exact error, the rejected JSON and one guarded request for a corrected block (once per document, twice per session per hour), plus a button for a manual retry. Unfinished streams stay code until the model closes them.
 
 ## Safety
 
@@ -178,13 +178,13 @@ flowchart LR
 
 ## Parity with the reference
 
-Measured, not claimed: **17 of 27** reference scenarios reproduced, **2 partial**, **8 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: automatic same-turn repair, scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps.
+Measured, not claimed: **18 of 27** reference scenarios reproduced, **1 partial**, **8 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: scatter plots, Mermaid/ER graphs, math, maps, media, artifacts, persistent panels and mini-apps.
 
 Known limitation: the fence label is not preserved by Harness, so an unlabelled block is claimed only when its payload looks like a spec document and passes the strict parser. A `json`-labelled block is never claimed.
 
 ## Troubleshooting
 
-**The block stayed as code.** The JSON did not pass the schema — usually an unknown field (`title` inside a node that has none, or `items` from another plugin's syntax). A claimed fence now shows the exact error, the rejected source and a button that sends both back to the model for a corrected block. Nothing is repaired or executed silently.
+**The block stayed as code.** The JSON did not pass the schema — usually an unknown field (`title` inside a node that has none, or `items` from another plugin's syntax). A claimed fence shows the exact error, the rejected source and one guarded request for a corrected block. Nothing is executed or rewritten in place; the model is asked again, at most twice per session per hour.
 
 <p align="center">
   <picture>
