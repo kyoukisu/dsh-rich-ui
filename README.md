@@ -2,9 +2,9 @@
 
 # DSH Rich UI
 
-**Answers that behave like an interface, not a wall of Markdown.**
+**ChatGPT-style rich answers inside DeepSeek Harness.**
 
-Entity collections with detail panels, KPI cards, multi-series charts, sortable tables, flow and layered architecture diagrams, calculators that recompute as you drag — rendered inside [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) from a strict JSON contract.
+Entity collections with detail panels, KPI cards, multi-series charts, sortable tables, flow and layered architecture diagrams, calculators that recompute as you drag — rendered natively inside [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness).
 
 [![stars](https://shieldcn.dev/github/kyoukisu/dsh-rich-ui/stars.svg?variant=branded&size=xs)](https://github.com/kyoukisu/dsh-rich-ui/stargazers)
 [![license](https://shieldcn.dev/github/kyoukisu/dsh-rich-ui/license.svg?variant=branded&size=xs)](LICENSE)
@@ -225,4 +225,4 @@ Screenshots in this README are captures of that lab, not mockups. Golden images 
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Demo photography comes from Wikimedia Commons under free licences; prices and metadata are illustrative. DeepSeek Harness is a separate project by DeepSeek; this plugin is unaffiliated.
+MIT — see [LICENSE](LICENSE). Demo photography comes from Wikimedia Commons under free licences; prices and metadata are illustrative. DeepSeek Harness is a separate project by DeepSeek; this plugin is unaffiliated. ChatGPT is a trademark of OpenAI: the description points at the style of rich answers, not at any affiliation, endorsement or shared code.
