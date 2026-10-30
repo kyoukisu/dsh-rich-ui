@@ -1,6 +1,6 @@
-# Parity with the ChatGPT reference
+# How our rendering compares to the chat UIs we studied
 
-Measured against the two shared conversations and the product screenshots in this session. Status is **evidence-based**: "covered" means a scenario is reproduced by the renderer and guarded by a test, not that it looks identical.
+Measured against the two shared conversations and the product screenshots we collected. This is a design notebook, not a claim that the plugin is a clone. Status is **evidence-based**: "covered" means a scenario is reproduced by the renderer and guarded by a test, not that it looks identical.
 
 ## How parity is measured
 

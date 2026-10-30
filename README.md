@@ -12,7 +12,7 @@ Entity collections with detail panels, KPI cards, multi-series charts, sortable 
 ![DSH](https://shieldcn.dev/badge/DSH-0.2.x-1f6feb.svg?variant=branded&size=xs)
 [![npm](https://img.shields.io/npm/v/@kyoukisu/dsh-rich-ui?label=npm&color=cb3837)](https://www.npmjs.com/package/@kyoukisu/dsh-rich-ui)
 
-[Live demo](https://rich-ui.beako.best/) · [Install](#install) · [Quick start](#quick-start) · [Contract](prompt-rich-ui/prompt.md) · [Parity](docs/PARITY.md) · [Safety](#safety)
+[Live demo](https://rich-ui.beako.best/) · [Install](#install) · [Quick start](#quick-start) · [Contract](prompt-rich-ui/prompt.md) · [Design notes](docs/PARITY.md) · [Safety](#safety)
 
 </div>
 
