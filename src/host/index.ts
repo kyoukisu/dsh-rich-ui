@@ -4,18 +4,16 @@ import { fileURLToPath } from "node:url";
 import { parseRichSpec, type RichSpec } from "../core/schema";
 
 export const name = "@kyoukisu/dsh-rich-ui";
-export const inject = ["systemPrompt"];
+export const inject = ["systemPrompt", "tools"];
 
 interface HostContext {
   systemPrompt: {
     getSectionOrder(name: string): number;
     section(section: { name: string; order: number; text: string }): unknown;
   };
-  tools?: {
+  tools: {
     register(definition: ValidateTool): () => void;
   };
-  /** Dynamic lookup for hosts that expose services without declaring them. */
-  get?(name: string): unknown;
 }
 
 /**
@@ -171,17 +169,11 @@ export function apply(ctx: HostContext): (() => void) | undefined {
   // Register first: the prompt must not promise a tool that this host refused.
   let disposeTool: (() => void) | undefined;
   let hasTool = false;
-  const tools =
-    ctx.tools ??
-    (ctx.get?.("tools") as HostContext["tools"] | undefined) ??
-    undefined;
-  if (tools?.register) {
-    try {
-      disposeTool = tools.register(buildValidateTool());
-      hasTool = true;
-    } catch (error) {
-      console.warn("[rich-ui] validation tool unavailable", error);
-    }
+  try {
+    disposeTool = ctx.tools.register(buildValidateTool());
+    hasTool = true;
+  } catch (error) {
+    console.warn("[rich-ui] validation tool unavailable", error);
   }
   try {
     ctx.systemPrompt.section({

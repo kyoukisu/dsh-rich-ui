@@ -91,16 +91,6 @@ describe("rich_ui_validate host tool", () => {
     expect(release).toHaveBeenCalledTimes(1);
   });
 
-  it("still installs the prompt when the tools service is absent", () => {
-    const section = vi.fn();
-    const dispose = apply({
-      systemPrompt: { getSectionOrder: () => 1, section },
-    });
-    expect(dispose).toBeUndefined();
-    const text = section.mock.calls[0]![0].text as string;
-    expect(text).toContain("No `rich_ui_validate` tool is registered");
-  });
-
   it("does not advertise the tool when registration fails", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const section = vi.fn();

@@ -207,7 +207,7 @@ npm ci
 npm run dev            # lab at http://127.0.0.1:4173, HMR, no Harness needed
 npm run build          # typecheck + lab build
 npm run build:plugin   # the two real bundle artifacts
-npm test               # 170 unit, schema and DOM tests
+npm test               # 169 unit, schema and DOM tests
 npm run test:browser   # Playwright desktop + mobile (goldens never auto-update)
 ```
 
