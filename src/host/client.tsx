@@ -2,10 +2,13 @@ import { Component, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { RichResponse } from "../ui/RichResponse";
 import { Diagnostic } from "../ui/Diagnostic";
-import { installEntityTab, openEntityInSidebar } from "./entity-tab";
+import {
+  installEntityTab,
+  openEntityInSidebar,
+  type EntityTabHandle,
+} from "./entity-tab";
 import { parseStreamingSpec } from "./partial.ts";
 import { parseRichSpec, type RichSpec } from "../core/schema";
-import { createAutoRepair, type AutoRepair } from "./auto-repair";
 
 export const name = "@kyoukisu/dsh-rich-ui";
 export const inject = ["sessions"];
@@ -90,7 +93,6 @@ interface Mount {
   raw: string;
   hidden: boolean;
   streaming: boolean;
-  spec: string;
   mode: "rich" | "diagnostic";
   error?: string;
   sessionId?: string;
@@ -173,7 +175,44 @@ export function isRichFence(
       .find((text) => text.length > 0) ?? "";
   const token = label.toLowerCase();
   if (/^[a-z0-9+#._-]{1,24}$/.test(token)) return token === "rich-ui";
-  return /^\{\s*"version"\s*:\s*1\s*,/.test(raw.trimStart());
+  // The host replaces an unknown fence language with a generic localized
+  // label, so the payload has to identify itself. Key order is irrelevant;
+  // ordinary JSON code blocks still stay code because they fail this check.
+  const payload = raw.trimStart();
+  if (/^\{\s*"version"\s*:\s*1\s*,/.test(payload)) return true;
+  return looksLikeSpec(payload);
+}
+
+const SPEC_LOOKUP = new Map<string, boolean>();
+/** Bounded cache: the scanner sees the same fence on every mutation. */
+function looksLikeSpec(raw: string): boolean {
+  // A partial streaming document is not valid JSON; skip the parse until the
+  // closing brace appears so a long stream does not re-parse on every token.
+  if (
+    !raw.startsWith("{") ||
+    !raw.trimEnd().endsWith("}") ||
+    raw.length > 256_000
+  )
+    return false;
+  const cached = SPEC_LOOKUP.get(raw);
+  if (cached !== undefined) return cached;
+  let result = false;
+  try {
+    const value: unknown = JSON.parse(raw);
+    result =
+      Boolean(value) &&
+      typeof value === "object" &&
+      (value as { version?: unknown }).version === 1 &&
+      Array.isArray((value as { nodes?: unknown }).nodes);
+  } catch {
+    result = false;
+  }
+  if (SPEC_LOOKUP.size >= 32) {
+    const oldest = SPEC_LOOKUP.keys().next().value;
+    if (oldest !== undefined) SPEC_LOOKUP.delete(oldest);
+  }
+  SPEC_LOOKUP.set(raw, result);
+  return result;
 }
 
 /** Captures the session when the fence mounts, never at the later click. */
@@ -206,71 +245,12 @@ export function actionHandler(
   };
 }
 
-const REPAIR_SOURCE_LIMIT = 12_000;
-
-/** One explicit click sends the validator error and the rejected source back to
- * the captured session. No payload is logged and nothing is sent automatically. */
-export function repairHandler(
-  ctx: ClientContext,
-  sessionId: string | undefined,
-  error: string,
-  source: string,
-): (() => void) | undefined {
-  if (!sessionId) return undefined;
-  const conversation = ctx.sessions.scope(sessionId)?.get("conversation") as
-    { send?: (text: string) => Promise<unknown> } | undefined;
-  const send = conversation?.send;
-  if (!send) return undefined;
-  const truncated = source.length > REPAIR_SOURCE_LIMIT;
-  const clipped = truncated
-    ? `${source.slice(0, REPAIR_SOURCE_LIMIT)}\n…[truncated]`
-    : source;
-  let text: string;
-  try {
-    text = `[rich-ui-repair] ${JSON.stringify({
-      error: error.slice(0, 500),
-      source: clipped,
-      truncated,
-    })}`;
-  } catch {
-    return undefined;
-  }
-  if (text.length > 32_000) return undefined;
-  return () => {
-    void send(text).catch(() =>
-      console.warn("[rich-ui] Repair delivery failed"),
-    );
-  };
-}
-
-
-const autoRepairs = new Map<string, AutoRepair>();
-
-/** One guarded auto-repair channel per session; the send target is resolved at
- * delivery time because the conversation service can be recreated. */
-function autoRepairFor(
-  ctx: ClientContext,
-  sessionId: string | undefined,
-): AutoRepair | undefined {
-  if (!sessionId) return undefined;
-  const existing = autoRepairs.get(sessionId);
-  if (existing) return existing;
-  const created = createAutoRepair({
-    send: (text) => {
-      const conversation = ctx.sessions.scope(sessionId)?.get("conversation") as
-        { send?: (input: string) => Promise<unknown> } | undefined;
-      return conversation?.send ? conversation.send(text) : Promise.resolve();
-    },
-  });
-  autoRepairs.set(sessionId, created);
-  return created;
-}
-
 /** DOM channel follows the stock genui technique; no host/root slot replacement. */
 export function installDomRenderer(
   ctx: ClientContext,
   scope: HTMLElement = document.body,
   getSidebar?: () => ClientContext["sidebarRight"],
+  entityTabReady?: () => boolean,
 ): () => void {
   const mounts = new Map<HTMLElement, Mount>();
   let disposed = false;
@@ -312,9 +292,25 @@ export function installDomRenderer(
       // While the model is still writing, show only nodes whose JSON is fully
       // closed and that validate; the preview stays inert until it settles.
       const streaming = Boolean(source.closest("[data-streaming]"));
+      const sessionId = viewedSession(ctx);
+      // Every streamed token mutates the DOM. Reuse the exact parsed result
+      // when the text did not change; hidden/sibling repairs still run.
+      if (
+        mount &&
+        mount.raw === raw &&
+        mount.sessionId === sessionId &&
+        mount.streaming === streaming &&
+        !mount.failed
+      ) {
+        if (source.nextSibling !== mount.container)
+          source.after(mount.container);
+        if (!source.hidden) source.hidden = true;
+        continue;
+      }
       let spec: RichSpec | null = null;
       let error: string | undefined;
-      if (streaming) spec = parseStreamingSpec(raw);
+      if (streaming && raw.length <= maxSourceLength)
+        spec = parseStreamingSpec(raw);
       else {
         const result = parseFenceResult(raw);
         spec = result.spec ?? null;
@@ -325,34 +321,79 @@ export function installDomRenderer(
         if (mount) remove(source, mount);
         continue;
       }
-      const sessionId = viewedSession(ctx);
-      if (!spec && error && !streaming) {
-        autoRepairFor(ctx, sessionId)?.consider({
-          sessionId,
-          source: raw,
-          error,
-          streaming,
-        });
-      }
       const mode: Mount["mode"] = spec ? "rich" : "diagnostic";
-      const specKey = spec ? JSON.stringify(spec) : `diagnostic:${error}`;
       if (
-        mount?.raw === raw &&
+        mount &&
+        mount.mode === mode &&
+        !mount.failed &&
+        mount.raw === raw &&
         mount.sessionId === sessionId &&
-        mount.spec === specKey &&
-        mount.streaming === streaming &&
-        mount.mode === mode
+        mount.streaming === streaming
       ) {
         // Host reconciliation may remove the foreign sibling or reset hidden.
         if (source.nextSibling !== mount.container)
           source.after(mount.container);
-        if (!mount.failed && !source.hidden) source.hidden = true;
+        if (!source.hidden) source.hidden = true;
+        continue;
+      }
+      const paint = (target: Mount) => {
+        if (streaming) target.container.setAttribute("inert", "");
+        else target.container.removeAttribute("inert");
+        if (spec) {
+          target.root.render(
+            createElement(RenderBoundary, {
+              onFailure: () => {
+                target.failed = true;
+                source.hidden = target.hidden;
+              },
+              children: createElement(RichResponse, {
+                spec,
+                parsedSpec: spec,
+                preview: streaming,
+                // Actions and durable state begin only once the block is complete.
+                persistenceKey: streaming
+                  ? undefined
+                  : fencePersistenceKey(source, sessionId),
+                onAction: streaming ? undefined : actionHandler(ctx, sessionId),
+                onOpenEntity: streaming
+                  ? undefined
+                  : (entity, entities) =>
+                      openEntityInSidebar(
+                        { sidebarRight: getSidebar?.() },
+                        entity,
+                        entities,
+                        entityTabReady,
+                      ),
+              }),
+            }),
+          );
+        } else {
+          const reason = error ?? "Invalid document";
+          target.root.render(
+            createElement(Diagnostic, {
+              key: `${reason}:${raw}`,
+              error: reason,
+              source: raw,
+            }),
+          );
+        }
+      };
+      // Keep one root per fence. A streaming block changes on every token; a
+      // remount there recreates the whole tree and restarts every animation.
+      if (mount && mount.mode === mode && !mount.failed) {
+        mount.raw = raw;
+        mount.sessionId = sessionId;
+        mount.streaming = streaming;
+        mount.error = error;
+        if (source.nextSibling !== mount.container)
+          source.after(mount.container);
+        if (!source.hidden) source.hidden = true;
+        paint(mount);
         continue;
       }
       if (mount) remove(source, mount);
       const container = document.createElement("div");
       container.dataset.richUiRoot = "";
-      if (streaming) container.setAttribute("inert", "");
       const root = createRoot(container);
       const next: Mount = {
         container,
@@ -360,7 +401,6 @@ export function installDomRenderer(
         raw,
         hidden: source.hidden,
         streaming,
-        spec: specKey,
         mode,
         error,
         sessionId,
@@ -368,42 +408,7 @@ export function installDomRenderer(
       mounts.set(source, next);
       source.after(container);
       source.hidden = true;
-      if (spec) {
-        root.render(
-          createElement(RenderBoundary, {
-            key: `${raw}:${streaming}`,
-            onFailure: () => {
-              next.failed = true;
-              source.hidden = next.hidden;
-            },
-            children: createElement(RichResponse, {
-              spec,
-              // Actions and durable state begin only once the block is complete.
-              persistenceKey: streaming
-                ? undefined
-                : fencePersistenceKey(source, sessionId),
-              onAction: streaming ? undefined : actionHandler(ctx, sessionId),
-              onOpenEntity: streaming
-                ? undefined
-                : (entity, entities) =>
-                    openEntityInSidebar(
-                      { sidebarRight: getSidebar?.() },
-                      entity,
-                      entities,
-                    ),
-            }),
-          }),
-        );
-      } else {
-        const reason = error ?? "Invalid document";
-        root.render(
-          createElement(Diagnostic, {
-            error: reason,
-            source: raw,
-            onRepair: repairHandler(ctx, sessionId, reason, raw),
-          }),
-        );
-      }
+      paint(next);
     }
   };
   const observer = new MutationObserver((records) => {
@@ -418,7 +423,13 @@ export function installDomRenderer(
       return;
     if (!scheduled && !disposed) {
       scheduled = true;
-      queueMicrotask(scan);
+      // During streaming the host writes on every token. One paint per frame
+      // keeps parse/layout work bounded without delaying the settled block.
+      if (scope.querySelector("[data-streaming]")) {
+        if (typeof requestAnimationFrame === "function")
+          requestAnimationFrame(scan);
+        else setTimeout(scan, 16);
+      } else queueMicrotask(scan);
     }
   });
   observer.observe(scope, {
@@ -426,7 +437,7 @@ export function installDomRenderer(
     subtree: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ["data-streaming"],
+    attributeFilter: ["data-streaming", "hidden"],
   });
   scan();
   return () => {
@@ -443,15 +454,16 @@ export function apply(ctx: ClientContext): () => void {
     services.sidebar = injected.get("sidebarRight") as
       ClientContext["sidebarRight"] | undefined;
   });
-  let tab = () => {};
+  let entityTab: EntityTabHandle | undefined;
   // Slots are optional: a host without them keeps the in-page drawer.
   const seatSlots = ctx.inject?.(["slots"], (injected) => {
     const slots = injected.get("slots") as
       Parameters<typeof installEntityTab>[0]["slots"] | undefined;
     if (!slots) return;
-    tab();
+    entityTab?.dispose();
+    entityTab = undefined;
     try {
-      tab = installEntityTab(
+      entityTab = installEntityTab(
         {
           inject: (names, callback) =>
             ctx.inject ? ctx.inject(names, callback) : undefined,
@@ -467,11 +479,13 @@ export function apply(ctx: ClientContext): () => void {
     ctx,
     document.body,
     () => services.sidebar,
+    () => entityTab?.ready() ?? false,
   );
   return () => {
     seat?.();
     seatSlots?.();
-    tab();
+    entityTab?.dispose();
+    entityTab = undefined;
     dispose();
   };
 }

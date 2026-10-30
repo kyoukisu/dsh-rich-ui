@@ -1,13 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Check, Copy, Wrench } from "lucide-react";
+import { AlertTriangle, Check, Copy } from "lucide-react";
 
 export interface DiagnosticProps {
   /** Validator message; plain text, never HTML. */
   error: string;
-  /** Rejected fence source, shown behind a disclosure and sent back on repair. */
+  /** Rejected fence source, shown behind a disclosure and copied on request. */
   source: string;
-  /** Sends the error and source back to the owning session; absent without one. */
-  onRepair?: () => void;
 }
 
 const SHOWN = 20_000;
@@ -30,8 +28,7 @@ export function explain(error: string): string {
   if (/^Expected /.test(error)) return "Wrong value type.";
   if (/^Invalid enum value/.test(error))
     return "Value is not in the allowed set.";
-  if (/^Number out of bounds/.test(error))
-    return "Number is out of range.";
+  if (/^Number out of bounds/.test(error)) return "Number is out of range.";
   return "Document does not match the schema.";
 }
 
@@ -39,10 +36,13 @@ export function explain(error: string): string {
  * A claimed rich-ui fence that the strict parser rejected. The code block stays
  * hidden because this card carries the same source plus the actionable reason;
  * nothing is repaired or executed silently.
+ *
+ * There is deliberately no "ask the model" button: a browser plugin has no tool
+ * channel, so that button could only submit a visible user message. The model
+ * validates with the host-side `rich_ui_validate` tool before sending.
  */
-export function Diagnostic({ error, source, onRepair }: DiagnosticProps) {
+export function Diagnostic({ error, source }: DiagnosticProps) {
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
-  const [sent, setSent] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(timer.current), []);
   const copy = async () => {
@@ -65,7 +65,9 @@ export function Diagnostic({ error, source, onRepair }: DiagnosticProps) {
         <AlertTriangle size={18} aria-hidden="true" />
         <div>
           <strong>Rich block not parsed</strong>
-          <span>The document failed schema validation. The source is kept below.</span>
+          <span>
+            The document failed schema validation. The source is kept below.
+          </span>
         </div>
       </header>
       <p className="ru-diagnostic-summary">{explain(error)}</p>
@@ -83,29 +85,15 @@ export function Diagnostic({ error, source, onRepair }: DiagnosticProps) {
                 : "Copy error"}
           </span>
         </button>
-        {onRepair && (
-          <button
-            type="button"
-            className="ru-button ru-button-primary"
-            disabled={sent}
-            onClick={() => {
-              if (sent) return;
-              onRepair();
-              setSent(true);
-            }}
-          >
-            <Wrench size={14} />
-            {sent ? "Request sent" : "Ask the model to fix"}
-          </button>
-        )}
       </div>
       <details>
         <summary>Show the source JSON</summary>
         <pre>{visible}</pre>
       </details>
       <p className="ru-diagnostic-note">
-        Repair sends the error and the source into the current session — that is
-        a model request. The block was never executed or modified.
+        Nothing is sent automatically. A corrected document can be checked with
+        the rich_ui_validate tool before it is resent. The block was never
+        executed or modified.
       </p>
     </section>
   );

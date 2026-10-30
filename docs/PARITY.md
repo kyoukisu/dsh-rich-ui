@@ -30,7 +30,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Process / architecture flow                                           | Covered | `diagram`; ordered steps, connector labels, mobile reflow                         |
 | Syntax highlighting with copy                                         | Covered | `technical`; tokenizer for js/ts, Go, Python, shell, SQL, JSON, CSS                |
 | Support-matrix style table                                            | Covered | `table` inside `card`                                                             |
-| Same-turn repair: invalid fence returns diagnostics to the model      | Covered | diagnostic card with the exact error plus one guarded automatic request (once per document, twice per session per hour, never while streaming); manual button stays |
+| Same-turn repair: invalid fence returns diagnostics to the model      | Partial | the host `rich_ui_validate` tool catches errors before sending and returns `{valid,error}` as a tool result; a bad fence still has no automatic same-turn repair, and the diagnostic card only copies the error |
 | Panel that reflows the conversation column                            | Covered | native right-column tab in Harness; isolated host showed a 647px column, related navigation and axe clean; drawer fallback |
 | Citations attached to prose                                           | Partial | sources live in the entity panel, not inline                                      |
 | Inline entity chip inside a sentence                                  | Covered | `[[entityId]]` in text resolves a declared entity and opens the same host surface; unknown ids stay text |
@@ -44,7 +44,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Persistent panel / canvas across turns                                 | Missing | not implemented                                                                    |
 | Mini-apps with isolated runtime                                       | Missing | deliberately out of scope                                                          |
 
-Coverage: **20 / 27** scenarios covered, **1 partial**, **6 missing**.
+Coverage: **19 / 27** scenarios covered, **2 partial**, **6 missing**.
 
 ## Visual deviations (known, not yet fixed)
 
@@ -65,7 +65,7 @@ Coverage: **20 / 27** scenarios covered, **1 partial**, **6 missing**.
 
 Ordered by effect on daily use:
 
-1. The repair loop now closes by itself through the conversation service; the button remains for a manual retry.
+1. Keep the validation tool ahead of the fence; do not reintroduce a repair message.
 2. Inline citations inside prose.
 3. Scatter and richer chart options.
 4. Math, media nodes, artifacts and maps.

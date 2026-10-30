@@ -9,11 +9,20 @@ import type {
 } from "../../core/schema";
 import { resolveIcon } from "../icons";
 
-/** Grouping starts at five digits so a year (2014) never becomes "2 014". */
+/** Grouping starts at five digits so a year (2014) never becomes "2 014".
+ * Small values keep significant digits: rounding 0.001 to 0 turns a real
+ * metric into a fake zero. */
 export function formatNumber(value: number): string {
+  if (!Number.isFinite(value)) return "—";
+  const magnitude = Math.abs(value);
+  if (magnitude > 0 && magnitude < 1e-4) return value.toExponential(2);
+  if (magnitude > 0 && magnitude < 0.01)
+    return value.toLocaleString("en-US", {
+      maximumSignificantDigits: 3,
+    });
   return value.toLocaleString("en-US", {
     maximumFractionDigits: 2,
-    useGrouping: Math.abs(value) >= 10000,
+    useGrouping: magnitude >= 10000,
   });
 }
 

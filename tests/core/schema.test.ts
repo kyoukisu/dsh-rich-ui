@@ -288,9 +288,7 @@ describe("semantic icon colour and entity rows", () => {
   });
   it("validates checkbox, radio and segmented controls", () => {
     expect(
-      parseRichSpec(
-        spec({ type: "checkbox", stateKey: "ok", label: "Agree" }),
-      ),
+      parseRichSpec(spec({ type: "checkbox", stateKey: "ok", label: "Agree" })),
     ).toBeTruthy();
     expect(
       parseRichSpec(
@@ -577,9 +575,6 @@ describe("progress columns and thumbnail shape", () => {
     expect(parsed.entities?.[0]?.thumbShape).toBe("square");
   });
 
-
-
-
   it("accepts scatter points and media, and rejects their impossible shapes", () => {
     const parsed = parseRichSpec({
       version: 1,
@@ -594,7 +589,11 @@ describe("progress columns and thumbnail shape", () => {
           unit: "$k",
           xUnit: "price",
         },
-        { type: "video", src: "https://example.org/clip.mp4", poster: "https://example.org/p.jpg" },
+        {
+          type: "video",
+          src: "https://example.org/clip.mp4",
+          poster: "https://example.org/p.jpg",
+        },
         { type: "audio", src: "https://example.org/track.mp3", title: "Track" },
       ],
     });
@@ -610,7 +609,10 @@ describe("progress columns and thumbnail shape", () => {
       {
         type: "chart",
         kind: "scatter",
-        points: Array.from({ length: 201 }, (_, index) => ({ x: index, y: index })),
+        points: Array.from({ length: 201 }, (_, index) => ({
+          x: index,
+          y: index,
+        })),
       },
     ])
       expect(() => parseRichSpec(spec(node))).toThrow();
@@ -705,7 +707,10 @@ describe("progress columns and thumbnail shape", () => {
           {
             title: "one",
             layers: [
-              { title: "two", layers: [{ title: "three", layers: [{ title: "four" }] }] },
+              {
+                title: "two",
+                layers: [{ title: "three", layers: [{ title: "four" }] }],
+              },
             ],
           },
         ],
@@ -751,5 +756,191 @@ describe("progress columns and thumbnail shape", () => {
         nodes: [],
       }),
     ).toThrow();
+  });
+});
+
+describe("state budget and control coherence", () => {
+  it("counts inferred state keys across the whole document", () => {
+    const nodes = Array.from({ length: 129 }, (_, index) => ({
+      type: "switch",
+      stateKey: `key_${index}`,
+    }));
+    expect(() => parseRichSpec({ version: 1, nodes })).toThrow(
+      /Too many state keys/,
+    );
+  });
+
+  it("rejects an initial value that does not fit its control", () => {
+    for (const document of [
+      {
+        version: 1,
+        initialState: { amount: 500 },
+        nodes: [{ type: "slider", stateKey: "amount", min: 0, max: 10 }],
+      },
+      {
+        version: 1,
+        initialState: { amount: 3 },
+        nodes: [
+          { type: "slider", stateKey: "amount", min: 0, max: 10, step: 2 },
+        ],
+      },
+      {
+        version: 1,
+        initialState: { tab: "missing" },
+        nodes: [
+          {
+            type: "tabs",
+            stateKey: "tab",
+            tabs: [{ id: "a", label: "A", children: [] }],
+          },
+        ],
+      },
+      {
+        version: 1,
+        initialState: { checked: "yes" },
+        nodes: [{ type: "checkbox", stateKey: "checked", label: "Check" }],
+      },
+      {
+        version: 1,
+        initialState: { choice: "other" },
+        nodes: [
+          {
+            type: "select",
+            stateKey: "choice",
+            options: [{ label: "A", value: "a" }],
+          },
+        ],
+      },
+    ])
+      expect(() => parseRichSpec(document)).toThrow(
+        /Invalid initial value|conflicting control/,
+      );
+  });
+
+  it("rejects same-key controls whose ranges or option sets disagree", () => {
+    for (const document of [
+      {
+        version: 1,
+        nodes: [
+          { type: "slider", stateKey: "n", min: 0, max: 10 },
+          { type: "slider", stateKey: "n", min: 20, max: 30 },
+        ],
+      },
+      {
+        version: 1,
+        nodes: [
+          { type: "slider", stateKey: "n", min: 0, max: 10, step: 1 },
+          { type: "slider", stateKey: "n", min: 0, max: 10, step: 2 },
+        ],
+      },
+      {
+        version: 1,
+        nodes: [
+          {
+            type: "select",
+            stateKey: "choice",
+            options: [{ label: "A", value: "a" }],
+          },
+          {
+            type: "radio",
+            stateKey: "choice",
+            options: [{ label: "B", value: "b" }],
+          },
+        ],
+      },
+      {
+        version: 1,
+        nodes: [
+          {
+            type: "tabs",
+            stateKey: "tab",
+            tabs: [{ id: "a", label: "A", children: [] }],
+          },
+          {
+            type: "tabs",
+            stateKey: "tab",
+            tabs: [{ id: "b", label: "B", children: [] }],
+          },
+        ],
+      },
+      {
+        version: 1,
+        nodes: [
+          { type: "input", stateKey: "n", inputType: "number" },
+          { type: "slider", stateKey: "n", min: 0, max: 10 },
+        ],
+      },
+    ])
+      expect(() => parseRichSpec(document)).toThrow(
+        /conflicting control constraints/,
+      );
+  });
+
+  it("allows same-key controls that declare the same domain", () => {
+    expect(() =>
+      parseRichSpec({
+        version: 1,
+        nodes: [
+          { type: "slider", stateKey: "n", min: 0, max: 10, step: 2 },
+          { type: "slider", stateKey: "n", min: 0, max: 10, step: 2 },
+          {
+            type: "select",
+            stateKey: "choice",
+            options: [
+              { label: "A", value: "a" },
+              { label: "B", value: "b" },
+            ],
+          },
+          {
+            type: "radio",
+            stateKey: "choice",
+            options: [
+              { label: "B", value: "b" },
+              { label: "A", value: "a" },
+            ],
+          },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects empty tabs, conflicting state types and ambiguous charts", () => {
+    for (const document of [
+      {
+        version: 1,
+        nodes: [{ type: "tabs", stateKey: "tab", tabs: [] }],
+      },
+      {
+        version: 1,
+        nodes: [
+          { type: "switch", stateKey: "shared" },
+          { type: "slider", stateKey: "shared", min: 0, max: 1 },
+        ],
+      },
+      {
+        version: 1,
+        nodes: [
+          {
+            type: "chart",
+            kind: "scatter",
+            categories: ["a"],
+            points: [{ x: 1, y: 2 }],
+          },
+        ],
+      },
+      {
+        version: 1,
+        nodes: [
+          {
+            type: "chart",
+            kind: "bar",
+            data: [{ label: "A", value: 1 }],
+            categories: ["A"],
+            series: [{ label: "S", values: [1] }],
+          },
+        ],
+      },
+    ])
+      expect(() => parseRichSpec(document)).toThrow();
   });
 });

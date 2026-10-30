@@ -215,7 +215,7 @@ test("chart exposes axes, series legend and a hover readout", async ({
   page,
 }) => {
   await page.goto("/?demo=dashboard");
-  await expect(page.locator(".ru-chart .ru-axis-unit")).toHaveText("$k");
+  await expect(page.locator(".ru-chart .ru-chart-unit")).toHaveText("$k");
   await expect(page.locator(".ru-chart figcaption")).toContainText("Revenue");
   await page.locator(".ru-chart-hit").nth(3).hover();
   await expect(page.locator(".ru-chart-tip")).toContainText("Apr");
@@ -266,8 +266,11 @@ test("rejected block explains the error and reveals its source", async ({
   await page.getByText("Show the source JSON").click();
   await expect(page.locator(".ru-diagnostic pre")).toContainText('"stat"');
   await expect(
-    page.getByRole("button", { name: "Ask the model to fix" }),
+    page.getByRole("button", { name: "Copy error" }),
   ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Ask the model to fix" }),
+  ).toHaveCount(0);
 });
 
 test("progress columns expose values and product rows use square thumbnails", async ({

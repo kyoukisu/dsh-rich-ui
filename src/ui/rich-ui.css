@@ -41,9 +41,17 @@
   --ru-code-literal: #0f6b96;
   --ru-code-function: #7a3fbf;
   --ru-code-type: #0f6b96;
-  --ru-radius: 14px;
-  --ru-radius-sm: 9px;
+  --ru-space-1: 4px;
+  --ru-space-2: 8px;
+  --ru-space-3: 12px;
+  --ru-space-4: 16px;
+  --ru-space-5: 20px;
+  --ru-space-6: 24px;
+  --ru-radius: 16px;
+  --ru-radius-sm: 10px;
   --ru-shadow: 0 1px 2px rgb(0 0 0 / 4%), 0 8px 24px rgb(0 0 0 / 4%);
+  width: 100%;
+  min-width: 0;
   color: var(--ru-ink);
   font-family: inherit;
   font-size: 15px;
@@ -112,9 +120,56 @@
     var(--dsw-alias-bg-layer-1, #ffffff)
   );
   --ru-ink: var(--dsw-alias-label-primary, #171717);
+  --ru-ink-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #171717) 82%,
+    var(--dsw-alias-bg-layer-1, #ffffff)
+  );
   --ru-muted: var(--dsw-alias-label-secondary, #6b6b6b);
+  --ru-faint: var(--dsw-alias-label-tertiary, #6e6e6e);
+  --ru-caption-ink: var(
+    --dsw-alias-label-caption,
+    var(--dsw-alias-label-secondary, #5c5c60)
+  );
   --ru-border: var(--dsw-alias-border-l1, #e4e4e6);
+  --ru-border-strong: var(--dsw-alias-border-l2, #d3d3d6);
+  --ru-grid: var(--dsw-alias-border-l1, #ededee);
   --ru-accent: var(--dsw-alias-state-business-primary, #1f7a63);
+  --ru-accent-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-state-business-primary, #1f7a63) 12%,
+    var(--dsw-alias-bg-layer-1, #ffffff)
+  );
+  --ru-success: var(--dsw-alias-state-business-primary, #177a4f);
+  --ru-success-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-state-business-primary, #177a4f) 12%,
+    var(--dsw-alias-bg-layer-1, #ffffff)
+  );
+  --ru-warning: var(--dsw-alias-state-warn-primary, #92600f);
+  --ru-warning-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-state-warn-primary, #92600f) 12%,
+    var(--dsw-alias-bg-layer-1, #ffffff)
+  );
+  --ru-danger: var(--dsw-alias-state-error-primary, #b03529);
+  --ru-danger-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-state-error-primary, #b03529) 10%,
+    var(--dsw-alias-bg-layer-1, #ffffff)
+  );
+  --ru-info: #2f6db0;
+  --ru-info-soft: color-mix(
+    in srgb,
+    #2f6db0 10%,
+    var(--dsw-alias-bg-layer-1, #ffffff)
+  );
+  --ru-chart-1: var(--dsw-alias-state-business-primary, #1f7a63);
+  --ru-chart-2: #3f6fc4;
+  --ru-chart-3: #a16ba6;
+  --ru-chart-4: #c08a35;
+  --ru-chart-5: #b5524c;
+  --ru-chart-6: #4a9490;
   --ru-code-bg: var(--dsw-alias-markdown-code-block, var(--ru-surface));
   font-size: var(--dsh-content-font-size, 15px);
   font-family: inherit;
@@ -122,6 +177,11 @@
 
 body[data-ds-dark-theme] .rich-ui {
   --ru-bg: var(--dsw-alias-bg-layer-1, #212121);
+  --ru-elevated: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #ececec) 7%,
+    var(--dsw-alias-bg-layer-1, #212121)
+  );
   --ru-surface: color-mix(
     in srgb,
     var(--dsw-alias-label-primary, #ececec) 6%,
@@ -133,10 +193,66 @@ body[data-ds-dark-theme] .rich-ui {
     var(--dsw-alias-bg-layer-1, #212121)
   );
   --ru-ink: var(--dsw-alias-label-primary, #ececec);
+  --ru-ink-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #ececec) 82%,
+    var(--dsw-alias-bg-layer-1, #212121)
+  );
   --ru-muted: var(--dsw-alias-label-secondary, #a3a3a5);
+  --ru-faint: var(--dsw-alias-label-tertiary, #8b8b8e);
+  --ru-caption-ink: var(
+    --dsw-alias-label-caption,
+    var(--dsw-alias-label-secondary, #b8b8ba)
+  );
   --ru-border: var(--dsw-alias-border-l1, #3a3a3c);
+  --ru-border-strong: var(--dsw-alias-border-l2, #4a4a4d);
+  --ru-grid: var(--dsw-alias-border-l1, #343436);
   --ru-accent: var(--dsw-alias-state-business-primary, #6fc5a6);
+  --ru-accent-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-state-business-primary, #6fc5a6) 18%,
+    var(--dsw-alias-bg-layer-1, #212121)
+  );
+  --ru-success: var(--dsw-alias-state-business-primary, #74c79f);
+  --ru-success-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-state-business-primary, #74c79f) 18%,
+    var(--dsw-alias-bg-layer-1, #212121)
+  );
+  --ru-warning: var(--dsw-alias-state-warn-primary, #e0b062);
+  --ru-warning-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-state-warn-primary, #e0b062) 16%,
+    var(--dsw-alias-bg-layer-1, #212121)
+  );
+  --ru-danger: var(--dsw-alias-state-error-primary, #f08a80);
+  --ru-danger-soft: color-mix(
+    in srgb,
+    var(--dsw-alias-state-error-primary, #f08a80) 14%,
+    var(--dsw-alias-bg-layer-1, #212121)
+  );
+  --ru-info: #85b6ee;
+  --ru-info-soft: color-mix(
+    in srgb,
+    #85b6ee 14%,
+    var(--dsw-alias-bg-layer-1, #212121)
+  );
+  --ru-chart-1: var(--dsw-alias-state-business-primary, #6fc5a6);
+  --ru-chart-2: #86aaea;
+  --ru-chart-3: #d0a0d4;
+  --ru-chart-4: #e2b977;
+  --ru-chart-5: #e58e86;
+  --ru-chart-6: #82cbc5;
   --ru-code-bg: var(--dsw-alias-markdown-code-block, #1b1b1c);
+  --ru-code-ink: #e6e6e6;
+  --ru-code-keyword: #d99ad9;
+  --ru-code-string: #8fd3aa;
+  --ru-code-number: #e6c07b;
+  --ru-code-comment: #8d8d90;
+  --ru-code-literal: #86c8ec;
+  --ru-code-function: #c9a8f2;
+  --ru-code-type: #86c8ec;
+  --ru-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px rgb(0 0 0 / 24%);
   color-scheme: dark;
 }
 
@@ -178,32 +294,40 @@ body[data-ds-dark-theme] .rich-ui {
   margin: 0;
 }
 .rich-ui h2 {
-  margin: 0 0 14px;
-  font-size: 23px;
+  margin: 0 0 var(--ru-space-4);
+  font-size: 24px;
   line-height: 1.28;
   font-weight: 640;
   letter-spacing: -0.022em;
 }
 .rich-ui h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 620;
   line-height: 1.4;
 }
 .rich-ui .ru-section-title {
-  font-size: 14.5px;
+  font-size: 16px;
   font-weight: 620;
   letter-spacing: -0.01em;
-  margin-bottom: -4px;
+  margin-bottom: 0;
 }
 
 /* Rhythm ------------------------------------------------------------------ */
 
-.ru-response-body,
+.ru-response-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ru-space-5);
+  min-width: 0;
+}
+.ru-response-body > * {
+  min-width: 0;
+}
 .ru-stack {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--ru-space-3);
 }
 .ru-row {
   display: flex;
@@ -248,24 +372,24 @@ body[data-ds-dark-theme] .rich-ui {
 .ru-grid {
   display: grid;
   grid-template-columns: repeat(var(--ru-columns, 2), minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--ru-space-4);
 }
-.ru-stack {
-  gap: 12px;
+.ru-grid > .ru-section-title {
+  grid-column: 1 / -1;
 }
 .ru-card {
   border: 1px solid var(--ru-border);
   border-radius: var(--ru-radius);
-  padding: 18px;
+  padding: var(--ru-space-4);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--ru-space-3);
   min-width: 0;
   background: var(--ru-bg);
 }
 .ru-card > .ru-card {
   background: var(--ru-surface);
-  padding: 14px;
+  padding: var(--ru-space-3);
 }
 
 /* Text -------------------------------------------------------------------- */
@@ -276,10 +400,10 @@ body[data-ds-dark-theme] .rich-ui {
 .ru-body {
   font-size: 15px;
   line-height: 1.68;
-  color: var(--ru-ink-soft);
+  color: var(--ru-ink);
 }
 .ru-title {
-  font-size: 20px;
+  font-size: 21px;
   line-height: 1.32;
   letter-spacing: -0.02em;
   font-weight: 620;
@@ -291,7 +415,7 @@ body[data-ds-dark-theme] .rich-ui {
   color: var(--ru-ink);
 }
 .ru-caption {
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.55;
   color: var(--ru-caption-ink);
 }
@@ -315,7 +439,7 @@ body[data-ds-dark-theme] .rich-ui {
 .ru-eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.4;
   color: var(--ru-muted);
   font-weight: 600;
@@ -667,8 +791,8 @@ body[data-ds-dark-theme] .rich-ui {
 .ru-stat {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 15px 16px 16px;
+  gap: var(--ru-space-2);
+  padding: var(--ru-space-4);
   border: 1px solid var(--ru-border);
   border-radius: var(--ru-radius);
   background: var(--ru-bg);
@@ -693,7 +817,7 @@ body[data-ds-dark-theme] .rich-ui {
   text-overflow: ellipsis;
 }
 .ru-stat-value {
-  font-size: 29px;
+  font-size: 30px;
   line-height: 1.15;
   font-weight: 650;
   letter-spacing: -0.03em;
@@ -783,9 +907,9 @@ body[data-ds-dark-theme] .rich-ui {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 9px 3px 8px;
+  padding: 4px 10px 4px 9px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
   font-weight: 550;
   white-space: nowrap;
@@ -930,9 +1054,12 @@ body[data-ds-dark-theme] .rich-ui {
 /* Table ------------------------------------------------------------------- */
 
 .ru-table-wrap {
-  overflow-x: auto;
+  overflow: auto;
   max-width: 100%;
   min-width: 0;
+  /* A bounded scroll region is what makes the sticky header useful; without a
+     height limit the header scrolls away with the page. */
+  max-height: min(70vh, 560px);
   overscroll-behavior-x: contain;
   border: 1px solid var(--ru-border);
   border-radius: 12px;
@@ -1025,6 +1152,9 @@ body[data-ds-dark-theme] .rich-ui {
   color: var(--ru-muted);
 }
 .rich-ui th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   font-weight: 550;
   color: var(--ru-muted);
   font-size: 11.5px;
@@ -1231,6 +1361,9 @@ body[data-ds-dark-theme] .rich-ui {
 
 /* Chart ------------------------------------------------------------------- */
 
+.ru-chart-shell {
+  min-width: 0;
+}
 .ru-chart {
   margin: 0;
   min-width: 0;
@@ -1246,14 +1379,14 @@ body[data-ds-dark-theme] .rich-ui {
   overflow: hidden;
 }
 .ru-chart-unit {
-  margin: 0 0 2px;
-  font-size: 11px;
+  margin: 0 0 var(--ru-space-1);
+  font-size: 11.5px;
   line-height: 1.3;
   color: var(--ru-faint);
 }
 .ru-axis {
   fill: var(--ru-muted);
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-variant-numeric: tabular-nums;
 }
 .ru-donut-value {
@@ -1308,8 +1441,8 @@ body[data-ds-dark-theme] .rich-ui {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 16px;
-  margin-top: 8px;
-  font-size: 11.5px;
+  margin-top: var(--ru-space-3);
+  font-size: 12.5px;
   color: var(--ru-muted);
 }
 .ru-chart figcaption span {
@@ -1330,7 +1463,7 @@ body[data-ds-dark-theme] .rich-ui {
 }
 .ru-chart-caption {
   flex-basis: 100%;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--ru-faint);
 }
 .ru-sr-only {
@@ -1498,6 +1631,25 @@ body[data-ds-dark-theme] .rich-ui {
   text-align: center;
   padding: 12px;
 }
+/* A broken poster must not reserve a 2:3 empty billboard. Keep the card
+   compact and let the row thumbnail stay the size of a real thumbnail. */
+.ru-image-fallback.ru-poster {
+  aspect-ratio: auto;
+  min-height: 120px;
+  max-height: 160px;
+}
+.ru-image-fallback.ru-poster-thumb {
+  width: 52px;
+  height: 74px;
+  min-height: 0;
+  padding: 4px;
+}
+.ru-image-fallback.ru-poster-thumb span {
+  display: none;
+}
+.ru-image-fallback.ru-poster-square {
+  height: 52px;
+}
 .rich-ui img {
   max-width: 100%;
 }
@@ -1567,10 +1719,10 @@ body[data-ds-dark-theme] .rich-ui {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 3px 8px;
-  font-size: 12px;
+  gap: 4px 10px;
+  font-size: 13px;
   line-height: 1.5;
-  color: var(--ru-muted);
+  color: var(--ru-caption-ink);
 }
 .ru-meta-item {
   display: inline-flex;
@@ -1627,8 +1779,8 @@ body[data-ds-dark-theme] .rich-ui {
 .ru-carousel-controls {
   display: flex;
   justify-content: flex-end;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: var(--ru-space-2);
+  margin-bottom: var(--ru-space-3);
 }
 .ru-carousel-controls button,
 .ru-detail-top button {
@@ -1649,21 +1801,21 @@ body[data-ds-dark-theme] .rich-ui {
 }
 .ru-carousel-track {
   display: flex;
-  gap: 12px;
+  gap: var(--ru-space-4);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;
   padding-bottom: 6px;
 }
 .ru-carousel-track > * {
-  flex: 0 0 206px;
+  flex: 0 0 min(280px, 78vw);
   scroll-snap-align: start;
 }
 .ru-entity-card {
   padding: 0;
   border: 1px solid var(--ru-border);
   background: var(--ru-bg);
-  border-radius: 13px;
+  border-radius: var(--ru-radius);
   overflow: hidden;
   text-align: left;
   display: flex;
@@ -1684,7 +1836,7 @@ body[data-ds-dark-theme] .rich-ui {
   width: 100%;
   aspect-ratio: 2 / 3;
   height: auto;
-  object-fit: contain;
+  object-fit: cover;
   background: var(--ru-surface);
 }
 .ru-entity-meta {
@@ -1692,16 +1844,16 @@ body[data-ds-dark-theme] .rich-ui {
   flex: 1;
   flex-direction: column;
   gap: 4px;
-  padding: 12px 13px 13px;
+  padding: var(--ru-space-3) var(--ru-space-3) var(--ru-space-4);
 }
 .ru-entity-meta > strong {
-  font-size: 14.5px;
+  font-size: 15.5px;
   font-weight: 620;
   line-height: 1.3;
   color: var(--ru-ink);
 }
 .ru-entity-meta > span:not(.ru-eyebrow) {
-  font-size: 11.5px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--ru-caption-ink);
 }
@@ -1990,7 +2142,7 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
     font-size: 26px;
   }
   .ru-carousel-track > * {
-    flex-basis: 178px;
+    flex-basis: 240px;
   }
   .ru-detail {
     width: 100%;
@@ -2042,28 +2194,28 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   }
   .rich-ui th,
   .rich-ui td {
-    padding: 6px 5px;
-    font-size: 11.5px;
+    padding: 7px 6px;
+    font-size: 12px;
   }
   .rich-ui th {
-    font-size: 9.5px;
-    letter-spacing: 0;
+    font-size: 10.5px;
+    letter-spacing: 0.01em;
   }
   .rich-ui th:first-child,
   .rich-ui td:first-child {
     padding-left: 8px;
   }
   .rich-ui td .ru-status-pill {
-    padding: 2px 5px;
+    padding: 3px 6px;
     gap: 4px;
-    font-size: 10.5px;
+    font-size: 11.5px;
   }
   .rich-ui td .ru-status-pill i {
     display: none;
   }
   .ru-table-progress output {
-    min-width: 26px;
-    font-size: 10.5px;
+    min-width: 28px;
+    font-size: 11.5px;
   }
   .ru-th-button svg {
     display: none;
@@ -2090,8 +2242,8 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
 .ru-diagnostic {
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  padding: 14px 16px;
+  gap: var(--ru-space-3);
+  padding: var(--ru-space-4);
   border: 1px solid color-mix(in srgb, var(--ru-danger) 34%, transparent);
   border-radius: 12px;
   background: var(--ru-danger-soft);
@@ -2108,12 +2260,12 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   gap: 1px;
 }
 .ru-diagnostic-head strong {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 620;
   color: var(--ru-ink);
 }
 .ru-diagnostic-head span {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--ru-muted);
 }
 .ru-diagnostic-error {
@@ -2124,7 +2276,7 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   background: var(--ru-bg);
   color: var(--ru-danger);
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -2135,11 +2287,11 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   gap: 8px;
 }
 .ru-diagnostic .ru-button {
-  min-height: 34px;
-  font-size: 12px !important;
+  min-height: 36px;
+  font-size: 12.5px !important;
 }
 .ru-diagnostic details {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--ru-muted);
 }
 .ru-diagnostic summary {
@@ -2156,13 +2308,13 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   background: var(--ru-bg);
   color: var(--ru-ink);
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .ru-diagnostic-note {
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
   color: var(--ru-muted);
 }
@@ -2424,6 +2576,21 @@ button.ru-inline-entity:hover {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+}
+.ru-media-fallback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 14px;
+  border: 1px dashed var(--ru-border-strong);
+  border-radius: 12px;
+  background: var(--ru-surface);
+  color: var(--ru-muted);
+  font-size: 13px;
+}
+.ru-media-fallback a {
+  color: var(--ru-accent);
 }
 .ru-media-video {
   width: 100%;

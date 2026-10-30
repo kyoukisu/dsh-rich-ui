@@ -83,7 +83,8 @@ describe("native entity tab", () => {
       ),
       slots: { inject: slotInject, register: slotRegister },
     };
-    const dispose = installEntityTab(ctx as never);
+    const handle = installEntityTab(ctx as never);
+    expect(handle.ready()).toBe(true);
     expect(register).toHaveBeenCalledWith(
       expect.objectContaining({ id: ENTITY_TAB_ID, kind: ENTITY_TAB_KIND }),
     );
@@ -96,11 +97,76 @@ describe("native entity tab", () => {
       name: "sidebar.right.pane.tab.title",
       key: ENTITY_TAB_ID,
     });
-    dispose();
+    handle.dispose();
+    expect(handle.ready()).toBe(false);
     expect(disposeSeat).toHaveBeenCalled();
     expect(releaseType).toHaveBeenCalled();
     expect(releaseBody).toHaveBeenCalled();
     expect(releaseTitle).toHaveBeenCalled();
+  });
+
+  it("keeps the body registered when the tab type is re-injected", () => {
+    const releaseBody = vi.fn();
+    const releaseTitle = vi.fn();
+    let injectTabType: (() => void) | undefined;
+    const register = vi.fn(() => vi.fn());
+    const ctx = {
+      inject: vi.fn(
+        (
+          _names: string[],
+          callback: (injected: { get(name: string): unknown }) => void,
+        ) => {
+          injectTabType = () => callback({ get: () => ({ register }) });
+          injectTabType();
+          return vi.fn();
+        },
+      ),
+      slots: {
+        inject: vi.fn((_name: string, callback: () => () => void) =>
+          callback(),
+        ),
+        register: vi
+          .fn()
+          .mockReturnValueOnce(releaseBody)
+          .mockReturnValueOnce(releaseTitle),
+      },
+    };
+    const handle = installEntityTab(ctx as never);
+    expect(handle.ready()).toBe(true);
+    expect(releaseBody).not.toHaveBeenCalled();
+    // The service re-injects: only the type is replaced, not the pane body.
+    injectTabType!();
+    expect(handle.ready()).toBe(true);
+    expect(releaseBody).not.toHaveBeenCalled();
+    expect(releaseTitle).not.toHaveBeenCalled();
+    handle.dispose();
+    expect(handle.ready()).toBe(false);
+    expect(releaseBody).toHaveBeenCalledTimes(1);
+    expect(releaseTitle).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses to open the sidebar until its body and title are registered", () => {
+    const openTab = vi.fn();
+    let ready = false;
+    expect(
+      openEntityInSidebar(
+        { sidebarRight: { openTab } },
+        one,
+        [one],
+        () => ready,
+      ),
+    ).toBe(false);
+    expect(openTab).not.toHaveBeenCalled();
+    ready = true;
+    expect(
+      openEntityInSidebar(
+        { sidebarRight: { openTab } },
+        one,
+        [one],
+        () => ready,
+      ),
+    ).toBe(true);
+    expect(openTab).toHaveBeenCalledTimes(1);
   });
 
   it("renders the shared details and follows related entities in the same tab", async () => {

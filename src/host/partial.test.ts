@@ -52,6 +52,33 @@ describe("streaming prefix", () => {
     expect(spec?.nodes).toHaveLength(1);
     expect(spec?.entities).toEqual([]);
   });
+  it("renders a complete document whose entity array is empty", () => {
+    const empty = JSON.stringify({
+      version: 1,
+      entities: [],
+      nodes: [{ type: "text", content: "No entities" }],
+    });
+    expect(parseStreamingSpec(empty)?.nodes).toHaveLength(1);
+  });
+  it("keeps title and initialState in the preview", () => {
+    const document = JSON.stringify({
+      version: 1,
+      title: "Stateful",
+      initialState: { n: 2 },
+      entities: [],
+      nodes: [{ type: "computed", expr: { state: "n" } }],
+    });
+    const spec = parseStreamingSpec(document);
+    expect(spec?.title).toBe("Stateful");
+    expect(spec?.initialState).toEqual({ n: 2 });
+    expect(spec?.entities).toEqual([]);
+  });
+  it("withholds completed nodes while a later initialState is unfinished", () => {
+    const prefix =
+      '{"version":1,"nodes":[{"type":"text","content":"ok"}],"initialState":{"n":';
+    expect(parseStreamingSpec(prefix)).toBeNull();
+    expect(parseStreamingSpec(`${prefix}2}}`)?.initialState).toEqual({ n: 2 });
+  });
   it("rejects a document without a finished version field", () => {
     expect(parseStreamingSpec('{"vers')).toBeNull();
     expect(parseStreamingSpec("")).toBeNull();

@@ -183,8 +183,11 @@ export function evaluate(
 /** Explicit initial state wins; infer deterministic defaults for uninitialized controls.
  * Returns a fresh null-prototype record. Conditional branches/tabs are initialized too.
  */
-export function getInitialState(input: RichSpec): Record<string, Scalar> {
-  const spec = parseRichSpec(input);
+export function getInitialState(
+  input: RichSpec,
+  parsed = false,
+): Record<string, Scalar> {
+  const spec = parsed ? input : parseRichSpec(input);
   const state: Record<string, Scalar> = Object.create(null);
   for (const [key, value] of Object.entries(spec.initialState ?? {}))
     state[key] = value;
@@ -203,6 +206,13 @@ export function getInitialState(input: RichSpec): Record<string, Scalar> {
           set(node.stateKey, node.inputType === "number" ? 0 : "");
           break;
         case "select":
+          set(node.stateKey, node.options[0]?.value ?? null);
+          break;
+        case "checkbox":
+          set(node.stateKey, false);
+          break;
+        case "radio":
+        case "segmented":
           set(node.stateKey, node.options[0]?.value ?? null);
           break;
         case "slider":

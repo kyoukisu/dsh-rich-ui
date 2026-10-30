@@ -109,6 +109,105 @@ describe("RichResponse regressions", () => {
     expect(host.textContent).toContain("Healthy sibling");
     expect(host.querySelectorAll('[role="alert"]')).toHaveLength(2);
   });
+  it("survives a chart that becomes invalid after a successful render", () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { divisor: 1 },
+      nodes: [
+        {
+          type: "slider",
+          stateKey: "divisor",
+          min: 0,
+          max: 10,
+          label: "Divisor",
+        },
+        {
+          type: "chart",
+          kind: "bar",
+          data: [
+            {
+              label: "Ratio",
+              value: { op: "div", args: [1, { state: "divisor" }] },
+            },
+          ],
+        },
+        { type: "text", content: "Healthy sibling" },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelector(".ru-chart")).not.toBeNull();
+    const slider = host.querySelector<HTMLInputElement>('input[type="range"]')!;
+    act(() => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!;
+      setter.call(slider, "0");
+      slider.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(host.textContent).toContain("Healthy sibling");
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+      "Could not render the chart",
+    );
+  });
+
+  it("renders scatter points with huge coordinates without hanging", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "chart",
+          kind: "scatter",
+          points: [
+            { x: 999999999999.9999, y: 1 },
+            { x: 1000000000000, y: 2 },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelectorAll("circle.ru-scatter-point")).toHaveLength(2);
+  });
+
+  it("keeps significant digits for small numbers", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [{ type: "stat", label: "Rate", value: 0.001 }],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelector(".ru-stat-value")?.textContent).toBe("0.001");
+  });
+
+  it("keeps numeric calculations valid when a number input is cleared", () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { count: 5 },
+      nodes: [
+        {
+          type: "input",
+          stateKey: "count",
+          inputType: "number",
+          label: "Count",
+        },
+        {
+          type: "computed",
+          expr: { op: "mul", args: [{ state: "count" }, 2] },
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const input = host.querySelector<HTMLInputElement>('input[type="number"]')!;
+    act(() => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!;
+      setter.call(input, "");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(host.querySelector("output")?.textContent).toBe("0");
+  });
+
   it("reports failed actions without unhandled rejection or state corruption", async () => {
     const spec: RichSpec = {
       version: 1,
@@ -131,6 +230,150 @@ describe("RichResponse regressions", () => {
     );
     expect(host.querySelector("output")?.textContent).toBe("4");
   });
+  it("rejects a set action that would leave the tabs without a valid selection", async () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { tab: "a" },
+      nodes: [
+        {
+          type: "tabs",
+          stateKey: "tab",
+          tabs: [
+            { id: "a", label: "A", children: [] },
+            { id: "b", label: "B", children: [] },
+          ],
+        },
+        {
+          type: "button",
+          label: "Break tabs",
+          action: { type: "set", key: "tab", value: "missing" },
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    await act(async () => button("Break tabs").click());
+    expect(host.querySelector('[role="status"]')?.textContent).toContain(
+      "Action failed",
+    );
+    expect(
+      host.querySelector('[role="tab"][aria-selected="true"]')?.textContent,
+    ).toBe("A");
+    expect(host.querySelectorAll('[role="tab"][tabindex="0"]').length).toBe(1);
+  });
+
+  it("keeps truthiness semantics for a toggle on an unbound key", async () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { details: "yes" },
+      nodes: [
+        { type: "computed", expr: { state: "details" } },
+        {
+          type: "button",
+          label: "Toggle details",
+          action: { type: "toggle", key: "details" },
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelector("output")?.textContent).toBe("yes");
+    await act(async () => button("Toggle details").click());
+    expect(host.querySelector("output")?.textContent).toBe("false");
+    await act(async () => button("Toggle details").click());
+    expect(host.querySelector("output")?.textContent).toBe("true");
+  });
+
+  it("rejects a set action outside the slider range", async () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        { type: "slider", stateKey: "n", min: 0, max: 10 },
+        { type: "computed", expr: { state: "n" } },
+        {
+          type: "button",
+          label: "Out of range",
+          action: { type: "set", key: "n", value: 99 },
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const slider = host.querySelector<HTMLInputElement>('input[type="range"]')!;
+    expect(slider.value).toBe("0");
+    await act(async () => button("Out of range").click());
+    expect(host.querySelector('[role="status"]')?.textContent).toContain(
+      "Action failed",
+    );
+    expect(slider.value).toBe("0");
+    expect(host.querySelector("output")?.textContent).toBe("0");
+  });
+
+  it("gives separate tab and radio nodes unique ids even with one state key", () => {
+    const tabs = {
+      type: "tabs" as const,
+      stateKey: "tab",
+      tabs: [{ id: "a", label: "A", children: [] }],
+    };
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { tab: "a", choice: "x" },
+      nodes: [
+        tabs,
+        { ...tabs, tabs: [{ ...tabs.tabs[0]!, children: [] }] },
+        {
+          type: "radio",
+          stateKey: "choice",
+          options: [
+            { label: "X", value: "x" },
+            { label: "Y", value: "y" },
+          ],
+        },
+        {
+          type: "radio",
+          stateKey: "choice",
+          options: [
+            { label: "X", value: "x" },
+            { label: "Y", value: "y" },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const ids = Array.from(host.querySelectorAll('[role="tab"]')).map(
+      (tab) => tab.id,
+    );
+    expect(new Set(ids).size).toBe(ids.length);
+    const panelIds = Array.from(host.querySelectorAll('[role="tabpanel"]')).map(
+      (panel) => panel.id,
+    );
+    expect(new Set(panelIds).size).toBe(panelIds.length);
+    const names = Array.from(host.querySelectorAll('input[type="radio"]')).map(
+      (input) => input.getAttribute("name"),
+    );
+    expect(new Set(names).size).toBe(2);
+  });
+
+  it("derives streaming preview state from a late-arriving initialState", () => {
+    const without = {
+      version: 1 as const,
+      nodes: [{ type: "computed" as const, expr: { state: "n" } }],
+    };
+    act(() =>
+      root.render(
+        <RichResponse spec={without} preview persistenceKey="late" />,
+      ),
+    );
+    expect(host.querySelector("output")?.textContent).toBe("");
+    act(() =>
+      root.render(
+        <RichResponse
+          spec={{ ...without, initialState: { n: 2 } }}
+          preview
+          persistenceKey="late"
+        />,
+      ),
+    );
+    expect(host.querySelector("output")?.textContent).toBe("2");
+  });
+
   it("keeps scalar select options distinct despite equal string representations", () => {
     const spec: RichSpec = {
       version: 1,
@@ -231,6 +474,22 @@ describe("RichResponse regressions", () => {
       ),
     );
     expect(document.activeElement).toBe(document.querySelector(".ru-source"));
+  });
+  it("inerts the page behind a modal and restores it on close", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [{ type: "entity-ref", entityId: "one" }],
+      entities: [{ id: "one", kind: "test", title: "One" }],
+    };
+    act(() => root.render(<RichResponse spec={spec} detailMode="modal" />));
+    click(button("One"));
+    expect(host.hasAttribute("inert")).toBe(true);
+    act(() =>
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      ),
+    );
+    expect(host.hasAttribute("inert")).toBe(false);
   });
   it("defaults desktop to a non-modal drawer: no lock, no trap, Escape closes", () => {
     const spec: RichSpec = {
@@ -386,14 +645,69 @@ describe("dashboard vocabulary", () => {
     expect(points.length).toBe(2);
     expect(points[0]!.getAttribute("tabindex")).toBe("0");
     expect(points[0]!.getAttribute("aria-label")).toContain("2 $k");
-    act(() => points[0]!.dispatchEvent(new FocusEvent("focusin", { bubbles: true })));
+    act(() =>
+      points[0]!.dispatchEvent(new FocusEvent("focusin", { bubbles: true })),
+    );
     expect(host.querySelector(".ru-chart-tip")?.textContent).toContain("A");
-    expect(host.querySelector(".ru-chart-scatter .ru-sr-only table")).not.toBeNull();
+    expect(
+      host.querySelector(".ru-chart-scatter .ru-sr-only table"),
+    ).not.toBeNull();
     const video = host.querySelector("video");
     expect(video?.getAttribute("src")).toBe("https://example.org/clip.mp4");
     expect(video?.hasAttribute("controls")).toBe(true);
     expect(video?.hasAttribute("autoplay")).toBe(false);
+    expect(video?.getAttribute("aria-label")).toBe("Clip");
     expect(host.querySelector("audio")?.hasAttribute("controls")).toBe(true);
+    act(() => video!.dispatchEvent(new Event("error", { bubbles: false })));
+    expect(host.querySelector(".ru-media-fallback")?.textContent).toContain(
+      "Video unavailable.",
+    );
+    expect(
+      host.querySelector(".ru-media-fallback a")?.getAttribute("href"),
+    ).toBe("https://example.org/clip.mp4");
+    act(() =>
+      root.render(
+        <RichResponse
+          spec={{
+            ...spec,
+            nodes: [
+              spec.nodes[0]!,
+              {
+                type: "video",
+                src: "https://example.org/fixed.mp4",
+                title: "Fixed",
+              },
+              { type: "audio", src: "https://example.org/track.mp3" },
+            ],
+          }}
+        />,
+      ),
+    );
+    expect(host.querySelector("video")?.getAttribute("src")).toBe(
+      "https://example.org/fixed.mp4",
+    );
+    expect(host.querySelector(".ru-media-fallback")).toBeNull();
+  });
+
+  it("labels small scatter ticks with significant digits", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "chart",
+          kind: "scatter",
+          points: [
+            { x: 0.001, y: 0.001 },
+            { x: 0.002, y: 0.002 },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const labels = [...host.querySelectorAll("text.ru-axis")].map(
+      (node) => node.textContent,
+    );
+    expect(labels).toContain("0.001");
   });
 
   it("sorts a table locally and reports the sort direction", () => {

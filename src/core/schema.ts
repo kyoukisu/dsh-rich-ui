@@ -261,6 +261,163 @@ export interface TabsNode extends NodeBase {
   stateKey: string;
   tabs: { id: string; label: string; icon?: string; children: RichNode[] }[];
 }
+/** Control constraints shared by every control that writes one state key. */
+export type StateDomain =
+  | { kind: "boolean" }
+  | { kind: "number"; min?: number; max?: number; step?: number }
+  | { kind: "option"; values: Scalar[] }
+  | { kind: "string"; ids?: string[] };
+
+function scalarKey(value: Scalar): string {
+  return `${typeof value}:${JSON.stringify(value)}`;
+}
+
+function optionSet(values: Scalar[]): string[] {
+  return [...new Set(values.map(scalarKey))].sort();
+}
+
+export function sameStateDomain(
+  left: StateDomain,
+  right: StateDomain,
+): boolean {
+  if (left.kind !== right.kind) return false;
+  switch (left.kind) {
+    case "boolean":
+      return true;
+    case "number": {
+      const other = right as typeof left;
+      return (
+        left.min === other.min &&
+        left.max === other.max &&
+        left.step === other.step
+      );
+    }
+    case "option": {
+      const a = optionSet(left.values);
+      const b = optionSet((right as typeof left).values);
+      return a.length === b.length && a.every((value, i) => value === b[i]);
+    }
+    case "string": {
+      const other = right as typeof left;
+      const a = left.ids ? [...left.ids].sort() : undefined;
+      const b = other.ids ? [...other.ids].sort() : undefined;
+      if (!a || !b) return a === b;
+      return a.length === b.length && a.every((id, i) => id === b[i]);
+    }
+  }
+}
+
+/** Value-level guard for actions. Schema validation cannot evaluate an
+ * expression ahead of a click, so the renderer checks the result here. */
+export function stateValueFits(domain: StateDomain, value: Scalar): boolean {
+  switch (domain.kind) {
+    case "boolean":
+      return typeof value === "boolean";
+    case "number": {
+      if (typeof value !== "number" || !Number.isFinite(value)) return false;
+      if (domain.min !== undefined && value < domain.min) return false;
+      if (domain.max !== undefined && value > domain.max) return false;
+      if (domain.step) {
+        const steps = (value - (domain.min ?? 0)) / domain.step;
+        if (
+          !Number.isFinite(steps) ||
+          Math.abs(steps - Math.round(steps)) > 1e-7
+        )
+          return false;
+      }
+      return true;
+    }
+    case "option":
+      return domain.values.some((option) => option === value);
+    case "string":
+      return (
+        typeof value === "string" && (!domain.ids || domain.ids.includes(value))
+      );
+  }
+}
+
+function domainOfControl(control: {
+  kind: "boolean" | "option" | "number" | "string";
+  values?: Scalar[];
+  min?: number;
+  max?: number;
+  step?: number;
+  ids?: string[];
+}): StateDomain {
+  switch (control.kind) {
+    case "boolean":
+      return { kind: "boolean" };
+    case "option":
+      return { kind: "option", values: control.values ?? [] };
+    case "number":
+      return {
+        kind: "number",
+        min: control.min,
+        max: control.max,
+        step: control.step,
+      };
+    case "string":
+      return { kind: "string", ids: control.ids };
+  }
+}
+
+/** Constraints for every state key that has a control, in document order. */
+export function collectStateDomains(spec: RichSpec): Map<string, StateDomain> {
+  const domains = new Map<string, StateDomain>();
+  const add = (key: string, domain: StateDomain) => {
+    const previous = domains.get(key);
+    if (!previous) domains.set(key, domain);
+    else if (!sameStateDomain(previous, domain))
+      throw new Error(`State key "${key}" has conflicting control constraints`);
+  };
+  const walk = (nodes: RichNode[]) => {
+    for (const node of nodes) {
+      switch (node.type) {
+        case "input":
+          add(node.stateKey, {
+            kind: node.inputType === "number" ? "number" : "string",
+          });
+          break;
+        case "checkbox":
+        case "switch":
+          add(node.stateKey, { kind: "boolean" });
+          break;
+        case "radio":
+        case "segmented":
+        case "select":
+          add(node.stateKey, {
+            kind: "option",
+            values: node.options.map((option) => option.value),
+          });
+          break;
+        case "slider":
+          add(node.stateKey, {
+            kind: "number",
+            min: node.min,
+            max: node.max,
+            step: node.step ?? 1,
+          });
+          break;
+        case "tabs":
+          add(node.stateKey, {
+            kind: "string",
+            ids: node.tabs.map((tab) => tab.id),
+          });
+          for (const tab of node.tabs) walk(tab.children);
+          break;
+        case "conditional":
+          walk(node.children);
+          if (node.elseChildren) walk(node.elseChildren);
+          break;
+      }
+      if ("children" in node && node.type !== "conditional")
+        walk(node.children);
+    }
+  };
+  walk(spec.nodes);
+  return domains;
+}
+
 export type TableFormat = "text" | "number" | "status" | "progress";
 export interface TableColumn {
   key: string;
@@ -626,6 +783,17 @@ export function parseRichSpec(input: unknown): RichSpec {
   const entityIds = new Set<string>();
   const refs: string[] = [];
   const nodeIds = new Set<string>();
+  const stateKeys = new Map<string, string>();
+  const controls: Array<{
+    key: string;
+    kind: "boolean" | "option" | "number" | "string";
+    values?: Scalar[];
+    min?: number;
+    max?: number;
+    step?: number;
+    inputType?: "text" | "number" | "date";
+    ids?: string[];
+  }> = [];
   let nodeCount = 0;
   if (root.entities !== undefined)
     arr(root.entities, (v) => {
@@ -696,6 +864,35 @@ export function parseRichSpec(input: unknown): RichSpec {
     for (const [k, v] of Object.entries(state)) {
       assertSafeKey(k);
       scalar(v);
+      stateKeys.set(k, "initial");
+    }
+  }
+  /** State keys are budgeted across the whole document, not just the root
+   * object. Two controls may share a key only when they expect the same type:
+   * a switch and a slider writing to one key would silently corrupt it. */
+  function stateKey(
+    v: unknown,
+    kind: "boolean" | "option" | "number" | "string",
+  ): void {
+    key(v);
+    const name = v as string;
+    const previous = stateKeys.get(name);
+    if (previous && previous !== kind && previous !== "initial")
+      fail(`State key "${name}" has conflicting control types`);
+    if (!previous && stateKeys.size >= LIMITS.stateKeys)
+      fail("Too many state keys");
+    stateKeys.set(name, kind);
+  }
+  function initialValue(value: Scalar, kind: string): boolean {
+    switch (kind) {
+      case "boolean":
+        return typeof value === "boolean";
+      case "number":
+        return typeof value === "number";
+      case "string":
+        return typeof value === "string";
+      default:
+        return true;
     }
   }
   function node(value: unknown): void {
@@ -854,13 +1051,11 @@ export function parseRichSpec(input: unknown): RichSpec {
           if (entries.length > 6) fail("Too many layers");
           arr(entries, (entry) => {
             const layer = obj(entry);
-            fields(layer, ["title"], [
-              "detail",
-              "icon",
-              "tone",
-              "items",
-              "layers",
-            ]);
+            fields(
+              layer,
+              ["title"],
+              ["detail", "icon", "tone", "items", "layers"],
+            );
             str(layer.title);
             if (layer.detail !== undefined) str(layer.detail);
             if (layer.icon !== undefined) str(layer.icon);
@@ -937,24 +1132,32 @@ export function parseRichSpec(input: unknown): RichSpec {
           choice(o.variant, ["primary", "secondary", "ghost"]);
         if (o.disabled !== undefined) validateExpr(o.disabled);
         break;
-      case "input":
+      case "input": {
         check(["stateKey"], ["label", "placeholder", "inputType"]);
-        key(o.stateKey);
+        const kind = o.inputType === "number" ? "number" : "string";
+        stateKey(o.stateKey, kind);
+        controls.push({
+          key: o.stateKey as string,
+          kind,
+          inputType: (o.inputType as "text" | "number" | "date") ?? "text",
+        });
         if (o.label !== undefined) str(o.label);
         if (o.placeholder !== undefined) str(o.placeholder);
         if (o.inputType !== undefined)
           choice(o.inputType, ["text", "number", "date"]);
         break;
+      }
       case "checkbox":
         check(["stateKey", "label"]);
-        key(o.stateKey);
+        stateKey(o.stateKey, "boolean");
+        controls.push({ key: o.stateKey as string, kind: "boolean" });
         str(o.label);
         break;
       case "radio":
       case "segmented":
-      case "select":
+      case "select": {
         check(["stateKey", "options"], ["label", "layout"]);
-        key(o.stateKey);
+        stateKey(o.stateKey, "option");
         if (o.label !== undefined) str(o.label);
         if (o.layout !== undefined) {
           if (o.type !== "radio") fail("layout is only valid on radio");
@@ -969,20 +1172,34 @@ export function parseRichSpec(input: unknown): RichSpec {
           scalar(p.value);
           if (p.value === null) fail("Option value cannot be null");
         });
+        controls.push({
+          key: o.stateKey as string,
+          kind: "option",
+          values: (o.options as Array<{ value: Scalar }>).map((x) => x.value),
+        });
         break;
+      }
       case "slider":
         check(["stateKey", "min", "max"], ["label", "step"]);
-        key(o.stateKey);
+        stateKey(o.stateKey, "number");
         num(o.min);
         num(o.max);
         if ((o.min as number) >= (o.max as number))
           fail("Invalid slider range");
         if (o.step !== undefined) num(o.step, Number.MIN_VALUE);
+        controls.push({
+          key: o.stateKey as string,
+          kind: "number",
+          min: o.min as number,
+          max: o.max as number,
+          step: (o.step as number | undefined) ?? 1,
+        });
         if (o.label !== undefined) str(o.label);
         break;
       case "switch":
         check(["stateKey"], ["label"]);
-        key(o.stateKey);
+        stateKey(o.stateKey, "boolean");
+        controls.push({ key: o.stateKey as string, kind: "boolean" });
         if (o.label !== undefined) str(o.label);
         break;
       case "computed":
@@ -998,7 +1215,9 @@ export function parseRichSpec(input: unknown): RichSpec {
         break;
       case "tabs": {
         check(["stateKey", "tabs"]);
-        key(o.stateKey);
+        stateKey(o.stateKey, "string");
+        if (!Array.isArray(o.tabs) || o.tabs.length === 0)
+          fail("Tabs cannot be empty");
         const ids = new Set<string>();
         arr(o.tabs, (t) => {
           const p = obj(t);
@@ -1013,6 +1232,11 @@ export function parseRichSpec(input: unknown): RichSpec {
           if (ids.has(p.id as string)) fail("Duplicate tab id");
           ids.add(p.id as string);
           arr(p.children, node);
+        });
+        controls.push({
+          key: o.stateKey as string,
+          kind: "string",
+          ids: [...ids],
         });
         break;
       }
@@ -1077,19 +1301,26 @@ export function parseRichSpec(input: unknown): RichSpec {
         break;
       }
       case "chart": {
-        check(["kind"], [
-          "data",
-          "categories",
-          "series",
-          "points",
-          "unit",
-          "xUnit",
-          "caption",
-        ]);
+        check(
+          ["kind"],
+          [
+            "data",
+            "categories",
+            "series",
+            "points",
+            "unit",
+            "xUnit",
+            "caption",
+          ],
+        );
         choice(o.kind, ["bar", "line", "area", "donut", "scatter"]);
         if (o.kind === "scatter") {
-          if (o.data !== undefined || o.series !== undefined)
-            fail("Scatter uses points, not data or series");
+          if (
+            o.data !== undefined ||
+            o.series !== undefined ||
+            o.categories !== undefined
+          )
+            fail("Scatter uses points only");
           if (!Array.isArray(o.points) || o.points.length === 0)
             fail("Scatter needs points");
           if ((o.points as unknown[]).length > 200)
@@ -1108,8 +1339,12 @@ export function parseRichSpec(input: unknown): RichSpec {
         }
         if (o.points !== undefined) fail("points require kind: scatter");
         if (o.xUnit !== undefined) fail("xUnit requires kind: scatter");
+        if (o.data !== undefined && o.series !== undefined)
+          fail("Chart uses data or series, not both");
         if (o.data === undefined && o.series === undefined)
           fail("Chart needs data or series");
+        if (o.categories !== undefined && o.series === undefined)
+          fail("categories require series");
         if (o.data !== undefined) {
           if (!Array.isArray(o.data) || o.data.length === 0)
             fail("Chart data cannot be empty");
@@ -1166,6 +1401,41 @@ export function parseRichSpec(input: unknown): RichSpec {
     }
   }
   arr(root.nodes, node);
+  // Controls may share a state key only when every one of them accepts the same
+  // values. A switch/slider pair is rejected by stateKey(); this second pass
+  // catches compatible kinds with incompatible ranges or option domains, which
+  // otherwise leave a control showing a clamped value the calculation never saw.
+  const sharedDomains = new Map<string, StateDomain>();
+  for (const control of controls) {
+    const domain = domainOfControl(control);
+    const previous = sharedDomains.get(control.key);
+    if (!previous) sharedDomains.set(control.key, domain);
+    else if (!sameStateDomain(previous, domain))
+      fail(`State key "${control.key}" has conflicting control constraints`);
+  }
+  if (root.initialState !== undefined) {
+    const state = root.initialState as Record<string, Scalar>;
+    for (const control of controls) {
+      if (!Object.hasOwn(state, control.key)) continue;
+      const value = state[control.key]!;
+      let valid = initialValue(value, control.kind);
+      if (valid && control.kind === "option")
+        valid = Boolean(control.values?.some((option) => option === value));
+      if (valid && control.kind === "number" && typeof value === "number") {
+        valid =
+          value >= (control.min ?? -1e12) && value <= (control.max ?? 1e12);
+        if (valid && control.step) {
+          const steps = (value - (control.min ?? 0)) / control.step;
+          valid =
+            Number.isFinite(steps) &&
+            Math.abs(steps - Math.round(steps)) < 1e-7;
+        }
+      }
+      if (valid && control.ids)
+        valid = typeof value === "string" && control.ids.includes(value);
+      if (!valid) fail(`Invalid initial value for "${control.key}"`);
+    }
+  }
   for (const id of refs) if (!entityIds.has(id)) fail(`Unknown entity: ${id}`);
   return root as unknown as RichSpec;
 }

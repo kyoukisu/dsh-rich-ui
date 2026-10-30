@@ -117,3 +117,35 @@ describe("reactive evaluator", () => {
     expect(spec.initialState?.amount).toBe(5);
   });
 });
+
+describe("control defaults", () => {
+  it("initializes checkbox, radio and segmented controls", () => {
+    const parsed = parseRichSpec({
+      version: 1,
+      nodes: [
+        { type: "checkbox", stateKey: "agree", label: "Agree" },
+        {
+          type: "radio",
+          stateKey: "plan",
+          options: [
+            { label: "Free", value: "free" },
+            { label: "Pro", value: "pro" },
+          ],
+        },
+        {
+          type: "segmented",
+          stateKey: "mode",
+          options: [
+            { label: "Day", value: 1 },
+            { label: "Night", value: 2 },
+          ],
+        },
+      ],
+    });
+    expect(getInitialState(parsed)).toEqual({
+      agree: false,
+      plan: "free",
+      mode: 1,
+    });
+  });
+});

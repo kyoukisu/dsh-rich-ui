@@ -161,9 +161,9 @@ flowchart LR
   F -- explicit button --> G["rich-ui action message"]
 ```
 
-- **Node half** registers one always-on system-prompt section with the whole contract and the absolute path of the reference files. No skill, no tool call: the model can answer on the first attempt, and opens references only after a rejected block.
+- **Node half** registers one always-on system-prompt section with the whole contract and the absolute path of the reference files, plus the `rich_ui_validate` tool. The model can validate the exact JSON before emitting it; a schema error comes back as a tool result, not a visible user message.
 - **Browser half** validates the fence and mounts into a plugin-owned root. While the model is still writing, closed nodes render in an inert preview and become interactive when the block settles.
-- A malformed document is never patched in place: it shows a diagnostic card with the exact error, the rejected JSON and one guarded request for a corrected block (once per document, twice per session per hour), plus a button for a manual retry. Unfinished streams stay code until the model closes them.
+- A malformed document is never patched in place and never triggers an automatic message: it shows a diagnostic card with the exact error and the rejected JSON, plus a copy button. A browser plugin has no tool channel, so the card deliberately has no "ask the model" button. Unfinished streams stay code until the model closes them.
 
 ## Safety
 
@@ -178,21 +178,21 @@ flowchart LR
 
 ## Parity with the reference
 
-Measured, not claimed: **20 of 27** reference scenarios reproduced, **1 partial**, **6 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: Mermaid/ER graphs, math, maps, artifacts, persistent panels and mini-apps.
+Measured, not claimed: **19 of 27** reference scenarios reproduced, **2 partial**, **6 missing** — with an itemised deviation list in [docs/PARITY.md](docs/PARITY.md). Missing today: Mermaid/ER graphs, math, maps, artifacts, persistent panels and mini-apps.
 
 Known limitation: the fence label is not preserved by Harness, so an unlabelled block is claimed only when its payload looks like a spec document and passes the strict parser. A `json`-labelled block is never claimed.
 
 ## Troubleshooting
 
-**The block stayed as code.** The JSON did not pass the schema — usually an unknown field (`title` inside a node that has none, or `items` from another plugin's syntax). A claimed fence shows the exact error, the rejected source and one guarded request for a corrected block. Nothing is executed or rewritten in place; the model is asked again, at most twice per session per hour.
+**The block stayed as code.** The JSON did not pass the schema — usually an unknown field (`title` inside a node that has none, or `items` from another plugin's syntax). A claimed fence shows the exact error and the rejected source, and copies them on request. Nothing is executed, rewritten or sent automatically. The model should call `rich_ui_validate` before sending; if it did not, ask it to fix the document and validate it.
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagnostic-dark.png">
-    <img alt="Diagnostic card: rich block not parsed, missing value, copy error and ask the model to fix" src="docs/images/diagnostic-light.png" width="820">
+    <img alt="Diagnostic card: rich block not parsed, missing value, and copy error" src="docs/images/diagnostic-light.png" width="820">
   </picture>
   <br>
-  <em>A rejected block explains itself and offers a one-click repair request instead of raw JSON.</em>
+  <em>A rejected block explains itself and copies the exact error and source. Nothing is sent automatically.</em>
 </p>
 
 
@@ -207,7 +207,7 @@ npm ci
 npm run dev            # lab at http://127.0.0.1:4173, HMR, no Harness needed
 npm run build          # typecheck + lab build
 npm run build:plugin   # the two real bundle artifacts
-npm test               # 121 unit, schema and DOM tests
+npm test               # 170 unit, schema and DOM tests
 npm run test:browser   # Playwright desktop + mobile (goldens never auto-update)
 ```
 

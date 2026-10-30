@@ -180,3 +180,40 @@ describe("opt-in tab-local persistence", () => {
     expect(range().value).toBe("6");
   });
 });
+
+describe("control persistence coverage", () => {
+  it("restores checkbox, radio and mixed-type select values", () => {
+    const spec = parseRichSpec({
+      version: 1,
+      nodes: [
+        { type: "checkbox", stateKey: "checked", label: "Checked" },
+        {
+          type: "radio",
+          stateKey: "plan",
+          options: [
+            { label: "One", value: 1 },
+            { label: "Two", value: 2 },
+          ],
+        },
+        {
+          type: "select",
+          stateKey: "choice",
+          options: [
+            { label: "Text", value: "a" },
+            { label: "Number", value: 2 },
+          ],
+        },
+      ],
+    });
+    savePersistedState(spec, "controls", {
+      checked: true,
+      plan: 2,
+      choice: 2,
+    });
+    expect(loadPersistedState(spec, "controls")).toMatchObject({
+      checked: true,
+      plan: 2,
+      choice: 2,
+    });
+  });
+});

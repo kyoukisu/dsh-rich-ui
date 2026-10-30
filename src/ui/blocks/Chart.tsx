@@ -1,6 +1,7 @@
-import React, { useEffect, useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { evaluate } from "../../core/evaluator";
 import type { ChartNode, Scalar } from "../../core/schema";
+import { formatNumber } from "./Metrics";
 
 const COLORS = [
   "var(--ru-chart-1)",
@@ -12,26 +13,27 @@ const COLORS = [
 ];
 
 /**
- * SVG text scales with the viewBox, so a 680-unit chart squeezed into a phone
- * turns 10px labels into 5px ones. Narrow screens get their own coordinate
- * system instead of a shrunken desktop one.
+ * SVG text scales with the viewBox, so a 680-unit chart squeezed into a narrow
+ * column turns 10px labels into 5px ones. Measure the actual container instead
+ * of the viewport: a 320px answer column on a 1200px screen has the same
+ * problem as a phone.
  */
-function useCompact(): boolean {
-  const [compact, setCompact] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 600px)").matches,
-  );
+function useContainerWidth(ref: React.RefObject<HTMLElement | null>): number {
+  const [width, setWidth] = useState(0);
   useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(max-width: 600px)");
-    const change = () => setCompact(query.matches);
-    change();
-    query.addEventListener("change", change);
-    return () => query.removeEventListener("change", change);
-  }, []);
-  return compact;
+    const element = ref.current;
+    if (!element) return;
+    const update = () => setWidth(element.getBoundingClientRect().width);
+    update();
+    if (typeof ResizeObserver === "function") {
+      const observer = new ResizeObserver(update);
+      observer.observe(element);
+      return () => observer.disconnect();
+    }
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [ref]);
+  return width;
 }
 
 interface Series {
@@ -69,7 +71,8 @@ function ticksFor(min: number, max: number, count = 5) {
 }
 
 function compact(value: number): string {
-  if (Math.abs(value) < 1000) return String(Math.round(value * 100) / 100);
+  if (!Number.isFinite(value)) return "—";
+  if (Math.abs(value) < 1000) return formatNumber(value);
   return new Intl.NumberFormat("en-US", {
     notation: "compact",
     maximumFractionDigits: 1,
@@ -77,8 +80,23 @@ function compact(value: number): string {
 }
 
 function readable(value: number, unit?: string): string {
-  const text = value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  const text = formatNumber(value);
   return unit ? `${text} ${unit}` : text;
+}
+
+/** Charts need finite numbers. A missing state key or a text value must be an
+ * error, not a plausible zero: silently flattening data is worse than saying
+ * the chart could not be rendered. */
+function chartNumber(value: Scalar): number {
+  const numeric =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim() !== ""
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isFinite(numeric) || Math.abs(numeric) > 1e12)
+    throw new Error("Chart value is not a finite number");
+  return numeric;
 }
 
 /** Resolve both the single-series and the multi-series shape into one model. */
@@ -91,8 +109,8 @@ function readSeries(
       categories: node.categories,
       series: node.series.map((entry) => ({
         label: entry.label,
-        values: entry.values.map(
-          (value) => Number(evaluate(value, state)) || 0,
+        values: entry.values.map((value) =>
+          chartNumber(evaluate(value, state)),
         ),
       })),
     };
@@ -102,7 +120,7 @@ function readSeries(
     series: [
       {
         label: node.kind === "donut" ? "Share" : "Value",
-        values: data.map((entry) => Number(evaluate(entry.value, state)) || 0),
+        values: data.map((entry) => chartNumber(evaluate(entry.value, state))),
       },
     ],
   };
@@ -115,10 +133,13 @@ export function Chart({
   node: ChartNode;
   state: Record<string, Scalar>;
 }) {
+  const shell = useRef<HTMLDivElement>(null);
+  const measured = useContainerWidth(shell);
   const gradient = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
-  const narrow = useCompact();
-  const W = narrow ? 360 : 680;
+  const W =
+    measured > 0 ? Math.min(680, Math.max(280, Math.round(measured))) : 680;
+  const narrow = W < 520;
   const H = narrow ? 236 : 254;
   const M = narrow
     ? { top: 16, right: 12, bottom: 32, left: 44 }
@@ -126,20 +147,26 @@ export function Chart({
   const plotW = W - M.left - M.right;
   const plotH = H - M.top - M.bottom;
   if (node.kind === "scatter") {
-    return <Scatter node={node} narrow={narrow} W={W} H={H} M={M} />;
+    return (
+      <div className="ru-chart-shell" ref={shell}>
+        <Scatter node={node} narrow={narrow} W={W} H={H} M={M} />
+      </div>
+    );
   }
   let model: { categories: string[]; series: Series[] };
   try {
     model = readSeries(node, state);
   } catch {
     return (
-      <p role="alert" className="ru-evaluation-error">
-        Could not render the chart.
-      </p>
+      <div className="ru-chart-shell" ref={shell}>
+        <p role="alert" className="ru-evaluation-error">
+          Could not render the chart.
+        </p>
+      </div>
     );
   }
   const { categories, series } = model;
-  const values = useMemo(() => allValues(series), [series]);
+  const values = allValues(series);
   const total = series.reduce(
     (sum, entry) =>
       sum +
@@ -173,253 +200,261 @@ export function Chart({
   }: ${categories.length} categories${multi ? `, ${series.length} series` : ""}`;
 
   if (categories.length === 0)
-    return <p className="ru-empty">No data for the chart.</p>;
+    return (
+      <div className="ru-chart-shell" ref={shell}>
+        <p className="ru-empty">No data for the chart.</p>
+      </div>
+    );
 
   return (
-    <figure className="ru-chart" aria-label={description}>
-      {node.kind !== "donut" && node.unit ? (
-        <div className="ru-chart-unit">{node.unit}</div>
-      ) : null}
-      <div className="ru-chart-canvas">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={description}>
-          {node.kind === "donut" ? (
-            <Donut
-              categories={categories}
-              values={series[0]?.values ?? []}
-              total={total}
-              unit={node.unit}
-              centerX={W / 2}
-              centerY={H / 2 - 6}
-            />
-          ) : (
-            <>
-              {ticks.map((tick) => (
-                <g key={tick}>
-                  <line
-                    x1={M.left}
-                    x2={W - M.right}
-                    y1={y(tick)}
-                    y2={y(tick)}
-                    stroke="var(--ru-grid)"
-                    strokeWidth="1"
-                  />
-                  <text
-                    x={M.left - 10}
-                    y={y(tick) + 3.5}
-                    textAnchor="end"
-                    className="ru-axis"
-                  >
-                    {compact(tick)}
-                  </text>
-                </g>
-              ))}
-              {categories.map((label, index) =>
-                index % labelEvery === 0 ? (
-                  <text
-                    key={`${label}-${index}`}
-                    x={x(index)}
-                    y={H - M.bottom + 20}
-                    textAnchor="middle"
-                    className="ru-axis"
-                  >
-                    {label.length > (narrow ? 8 : 14)
-                      ? `${label.slice(0, narrow ? 7 : 13)}…`
-                      : label}
-                  </text>
-                ) : null,
-              )}
-              {node.kind === "bar"
-                ? categories.map((label, index) => {
-                    const groupWidth = slot * 0.66;
-                    const barWidth = Math.max(
-                      3,
-                      groupWidth / Math.max(1, series.length),
-                    );
-                    return series.map((entry, s) => {
-                      const value = entry.values[index] ?? 0;
-                      const barHeight = Math.abs(y(value) - y(0));
-                      return (
-                        <rect
-                          key={`${label}-${s}`}
-                          x={
-                            x(index) -
-                            groupWidth / 2 +
-                            s * barWidth +
-                            (series.length > 1 ? 1 : 0)
-                          }
-                          y={value >= 0 ? y(value) : y(0)}
-                          width={Math.max(
-                            2,
-                            barWidth - (series.length > 1 ? 2 : 0),
-                          )}
-                          height={Math.max(0, barHeight)}
-                          rx="4"
-                          fill={COLORS[s % COLORS.length]}
-                          opacity={hover === null || hover === index ? 1 : 0.45}
-                        />
+    <div className="ru-chart-shell" ref={shell}>
+      <figure className="ru-chart" aria-label={description}>
+        {node.kind !== "donut" && node.unit ? (
+          <div className="ru-chart-unit">{node.unit}</div>
+        ) : null}
+        <div className="ru-chart-canvas">
+          <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={description}>
+            {node.kind === "donut" ? (
+              <Donut
+                categories={categories}
+                values={series[0]?.values ?? []}
+                total={total}
+                unit={node.unit}
+                centerX={W / 2}
+                centerY={H / 2 - 6}
+              />
+            ) : (
+              <>
+                {ticks.map((tick) => (
+                  <g key={tick}>
+                    <line
+                      x1={M.left}
+                      x2={W - M.right}
+                      y1={y(tick)}
+                      y2={y(tick)}
+                      stroke="var(--ru-grid)"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={M.left - 10}
+                      y={y(tick) + 3.5}
+                      textAnchor="end"
+                      className="ru-axis"
+                    >
+                      {compact(tick)}
+                    </text>
+                  </g>
+                ))}
+                {categories.map((label, index) =>
+                  index % labelEvery === 0 ? (
+                    <text
+                      key={`${label}-${index}`}
+                      x={x(index)}
+                      y={H - M.bottom + 20}
+                      textAnchor="middle"
+                      className="ru-axis"
+                    >
+                      {label.length > (narrow ? 8 : 14)
+                        ? `${label.slice(0, narrow ? 7 : 13)}…`
+                        : label}
+                    </text>
+                  ) : null,
+                )}
+                {node.kind === "bar"
+                  ? categories.map((label, index) => {
+                      const groupWidth = slot * 0.66;
+                      const barWidth = Math.max(
+                        3,
+                        groupWidth / Math.max(1, series.length),
                       );
-                    });
-                  })
-                : series.map((entry, s) => {
-                    const points = entry.values.map((value, index) => ({
-                      px: x(index),
-                      py: y(value),
-                      value,
-                    }));
-                    const line = points
-                      .map(
-                        (point, index) =>
-                          `${index === 0 ? "M" : "L"} ${point.px} ${point.py}`,
-                      )
-                      .join(" ");
-                    return (
-                      <g key={entry.label}>
-                        {node.kind === "area" && (
-                          <>
-                            <defs>
-                              <linearGradient
-                                id={`${gradient}-${s}`}
-                                x1="0"
-                                y1="0"
-                                x2="0"
-                                y2="1"
-                              >
-                                <stop
-                                  offset="0%"
-                                  stopColor={COLORS[s % COLORS.length]}
-                                  stopOpacity="0.28"
-                                />
-                                <stop
-                                  offset="100%"
-                                  stopColor={COLORS[s % COLORS.length]}
-                                  stopOpacity="0"
-                                />
-                              </linearGradient>
-                            </defs>
-                            <path
-                              d={`${line} L ${points[points.length - 1]?.px ?? M.left} ${y(lo)} L ${points[0]?.px ?? M.left} ${y(lo)} Z`}
-                              fill={`url(#${gradient}-${s})`}
-                            />
-                          </>
-                        )}
-                        <path
-                          d={line}
-                          fill="none"
-                          stroke={COLORS[s % COLORS.length]}
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        {points.map((point, index) => (
-                          <circle
-                            key={index}
-                            cx={point.px}
-                            cy={point.py}
-                            r={hover === index ? 5.5 : 4}
-                            fill="var(--ru-bg)"
+                      return series.map((entry, s) => {
+                        const value = entry.values[index] ?? 0;
+                        const barHeight = Math.abs(y(value) - y(0));
+                        return (
+                          <rect
+                            key={`${label}-${s}`}
+                            x={
+                              x(index) -
+                              groupWidth / 2 +
+                              s * barWidth +
+                              (series.length > 1 ? 1 : 0)
+                            }
+                            y={value >= 0 ? y(value) : y(0)}
+                            width={Math.max(
+                              2,
+                              barWidth - (series.length > 1 ? 2 : 0),
+                            )}
+                            height={Math.max(0, barHeight)}
+                            rx="4"
+                            fill={COLORS[s % COLORS.length]}
+                            opacity={
+                              hover === null || hover === index ? 1 : 0.45
+                            }
+                          />
+                        );
+                      });
+                    })
+                  : series.map((entry, s) => {
+                      const points = entry.values.map((value, index) => ({
+                        px: x(index),
+                        py: y(value),
+                        value,
+                      }));
+                      const line = points
+                        .map(
+                          (point, index) =>
+                            `${index === 0 ? "M" : "L"} ${point.px} ${point.py}`,
+                        )
+                        .join(" ");
+                      return (
+                        <g key={entry.label}>
+                          {node.kind === "area" && (
+                            <>
+                              <defs>
+                                <linearGradient
+                                  id={`${gradient}-${s}`}
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="0%"
+                                    stopColor={COLORS[s % COLORS.length]}
+                                    stopOpacity="0.28"
+                                  />
+                                  <stop
+                                    offset="100%"
+                                    stopColor={COLORS[s % COLORS.length]}
+                                    stopOpacity="0"
+                                  />
+                                </linearGradient>
+                              </defs>
+                              <path
+                                d={`${line} L ${points[points.length - 1]?.px ?? M.left} ${y(lo)} L ${points[0]?.px ?? M.left} ${y(lo)} Z`}
+                                fill={`url(#${gradient}-${s})`}
+                              />
+                            </>
+                          )}
+                          <path
+                            d={line}
+                            fill="none"
                             stroke={COLORS[s % COLORS.length]}
                             strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
                           />
-                        ))}
-                      </g>
-                    );
-                  })}
-              {categories.map((label, index) => (
-                <rect
-                  key={`hit-${label}-${index}`}
-                  x={M.left + slot * index}
-                  y={M.top}
-                  width={slot}
-                  height={plotH}
-                  fill="transparent"
-                  tabIndex={0}
-                  role="img"
-                  aria-label={`${label}: ${series
-                    .map(
-                      (entry) =>
-                        `${entry.label} ${readable(entry.values[index] ?? 0, node.unit)}`,
-                    )
-                    .join(", ")}`}
-                  onPointerEnter={() => setHover(index)}
-                  onPointerLeave={() => setHover(null)}
-                  onFocus={() => setHover(index)}
-                  onBlur={() => setHover(null)}
-                  className="ru-chart-hit"
-                />
-              ))}
-            </>
-          )}
-        </svg>
-        {hover !== null && node.kind !== "donut" && (
-          <div
-            className="ru-chart-tip"
-            style={{
-              left: `${Math.min(86, Math.max(14, (x(hover) / W) * 100))}%`,
-            }}
-          >
-            <strong>{categories[hover]}</strong>
-            {series.map((entry) => (
-              <span key={entry.label}>
-                <i
-                  style={{
-                    background: COLORS[series.indexOf(entry) % COLORS.length],
-                  }}
-                />
-                {multi ? `${entry.label}: ` : ""}
-                {readable(entry.values[hover] ?? 0, node.unit)}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-      <figcaption>
-        {node.kind === "donut"
-          ? categories.map((label, index) => (
-              <span key={label}>
-                <i style={{ background: COLORS[index % COLORS.length] }} />
-                {label}
-                <strong>
-                  {readable(series[0]?.values[index] ?? 0, node.unit)}
-                  {total > 0
-                    ? ` · ${Math.round(((series[0]?.values[index] ?? 0) / total) * 100)}%`
-                    : ""}
-                </strong>
-              </span>
-            ))
-          : multi
-            ? series.map((entry, index) => (
+                          {points.map((point, index) => (
+                            <circle
+                              key={index}
+                              cx={point.px}
+                              cy={point.py}
+                              r={hover === index ? 5.5 : 4}
+                              fill="var(--ru-bg)"
+                              stroke={COLORS[s % COLORS.length]}
+                              strokeWidth="2.5"
+                            />
+                          ))}
+                        </g>
+                      );
+                    })}
+                {categories.map((label, index) => (
+                  <rect
+                    key={`hit-${label}-${index}`}
+                    x={M.left + slot * index}
+                    y={M.top}
+                    width={slot}
+                    height={plotH}
+                    fill="transparent"
+                    tabIndex={0}
+                    role="img"
+                    aria-label={`${label}: ${series
+                      .map(
+                        (entry) =>
+                          `${entry.label} ${readable(entry.values[index] ?? 0, node.unit)}`,
+                      )
+                      .join(", ")}`}
+                    onPointerEnter={() => setHover(index)}
+                    onPointerLeave={() => setHover(null)}
+                    onFocus={() => setHover(index)}
+                    onBlur={() => setHover(null)}
+                    className="ru-chart-hit"
+                  />
+                ))}
+              </>
+            )}
+          </svg>
+          {hover !== null && node.kind !== "donut" && (
+            <div
+              className="ru-chart-tip"
+              style={{
+                left: `${Math.min(86, Math.max(14, (x(hover) / W) * 100))}%`,
+              }}
+            >
+              <strong>{categories[hover]}</strong>
+              {series.map((entry) => (
                 <span key={entry.label}>
+                  <i
+                    style={{
+                      background: COLORS[series.indexOf(entry) % COLORS.length],
+                    }}
+                  />
+                  {multi ? `${entry.label}: ` : ""}
+                  {readable(entry.values[hover] ?? 0, node.unit)}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <figcaption>
+          {node.kind === "donut"
+            ? categories.map((label, index) => (
+                <span key={label}>
                   <i style={{ background: COLORS[index % COLORS.length] }} />
-                  {entry.label}
+                  {label}
+                  <strong>
+                    {readable(series[0]?.values[index] ?? 0, node.unit)}
+                    {total > 0
+                      ? ` · ${Math.round(((series[0]?.values[index] ?? 0) / total) * 100)}%`
+                      : ""}
+                  </strong>
                 </span>
               ))
-            : null}
-        {node.caption && <p className="ru-chart-caption">{node.caption}</p>}
-      </figcaption>
-      <div className="ru-sr-only">
-        <table>
-          <caption>{description}</caption>
-          <thead>
-            <tr>
-              <th>Category</th>
-              {series.map((entry) => (
-                <th key={entry.label}>{entry.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((label, index) => (
-              <tr key={label}>
-                <th>{label}</th>
+            : multi
+              ? series.map((entry, index) => (
+                  <span key={entry.label}>
+                    <i style={{ background: COLORS[index % COLORS.length] }} />
+                    {entry.label}
+                  </span>
+                ))
+              : null}
+          {node.caption && <p className="ru-chart-caption">{node.caption}</p>}
+        </figcaption>
+        <div className="ru-sr-only">
+          <table>
+            <caption>{description}</caption>
+            <thead>
+              <tr>
+                <th>Category</th>
                 {series.map((entry) => (
-                  <td key={entry.label}>{entry.values[index] ?? 0}</td>
+                  <th key={entry.label}>{entry.label}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </figure>
+            </thead>
+            <tbody>
+              {categories.map((label, index) => (
+                <tr key={label}>
+                  <th>{label}</th>
+                  {series.map((entry) => (
+                    <td key={entry.label}>{entry.values[index] ?? 0}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </figure>
+    </div>
   );
 }
 
@@ -518,7 +553,8 @@ function Scatter({
   const plotW = W - M.left - M.right;
   const plotH = H - M.top - M.bottom;
   const sx = (value: number) => M.left + ((value - xLo) / (xHi - xLo)) * plotW;
-  const sy = (value: number) => M.top + plotH - ((value - yLo) / (yHi - yLo)) * plotH;
+  const sy = (value: number) =>
+    M.top + plotH - ((value - yLo) / (yHi - yLo)) * plotH;
   const xTicks = niceTicks(xLo, xHi);
   const yTicks = niceTicks(yLo, yHi);
   const label = (value: number) => formatTick(value);
@@ -668,27 +704,38 @@ function Scatter({
   );
 }
 
-/** Round axis steps so labels read 0, 25, 50 instead of 35.52 and 51.76. */
+/** Round axis steps so labels read 0, 25, 50 instead of 35.52 and 51.76.
+ *
+ * Generate ticks by index, never by repeated addition: at 1e12 a 5e-5 step is
+ * absorbed by the float and `value += step` stops making progress. A bounded
+ * count also keeps a pathological span from allocating forever.
+ */
 function niceTicks(lo: number, hi: number, count = 5): number[] {
-  const span = hi - lo || 1;
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [];
+  const span = hi - lo;
+  if (!(span > 0)) return [lo];
   const raw = span / count;
-  const magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  if (!Number.isFinite(magnitude) || magnitude <= 0) return [lo, hi];
   const normalized = raw / magnitude;
   const step =
     (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) *
     magnitude;
+  if (!Number.isFinite(step) || step <= 0) return [lo, hi];
   const start = Math.ceil(lo / step) * step;
   const ticks: number[] = [];
-  for (let value = start; value <= hi + step * 0.001; value += step) {
-    ticks.push(Number(value.toPrecision(12)));
+  for (let index = 0; index <= count + 1; index += 1) {
+    const value = start + index * step;
+    if (!Number.isFinite(value) || value > hi + step * 0.001) break;
+    const rounded = Number(value.toPrecision(12));
+    if (!ticks.length || rounded !== ticks[ticks.length - 1])
+      ticks.push(rounded);
   }
-  return ticks;
+  return ticks.length > 1 ? ticks : [lo, hi];
 }
 
-/** Small tick formatter: two decimals at most, grouping above 10k. */
+/** Tick formatter: keeps significant digits for small values instead of
+ * rounding 0.001 to 0. */
 function formatTick(value: number): string {
-  const rounded = Math.round(value * 100) / 100;
-  return Math.abs(rounded) >= 10000
-    ? rounded.toLocaleString("en-US", { maximumFractionDigits: 2 })
-    : String(rounded);
+  return formatNumber(value);
 }

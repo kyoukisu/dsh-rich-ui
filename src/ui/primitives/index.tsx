@@ -22,6 +22,43 @@ export function Popover({ label, children }: PopoverProps) {
   const container = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  /** Keep the panel inside the viewport: a right-edge trigger must flip or
+   * shift instead of widening the document. */
+  useEffect(() => {
+    if (!open) return;
+    const element = panel.current;
+    const anchor = trigger.current;
+    if (!element || !anchor) return;
+    const place = () => {
+      element.style.insetBlockStart = "";
+      element.style.insetBlockEnd = "";
+      element.style.transform = "";
+      const panelRect = element.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+      const margin = 8;
+      let shift = 0;
+      if (panelRect.right > window.innerWidth - margin)
+        shift = window.innerWidth - margin - panelRect.right;
+      if (panelRect.left + shift < margin) shift = margin - panelRect.left;
+      if (shift) element.style.transform = `translateX(${shift}px)`;
+      if (
+        panelRect.bottom > window.innerHeight - margin &&
+        anchorRect.top - panelRect.height - 6 >= margin
+      ) {
+        element.style.insetBlockStart = "auto";
+        element.style.insetBlockEnd = "calc(100% + 0.4rem)";
+      }
+    };
+    place();
+    window.addEventListener("resize", place);
+    const observer =
+      typeof ResizeObserver === "function" ? new ResizeObserver(place) : null;
+    observer?.observe(element);
+    return () => {
+      window.removeEventListener("resize", place);
+      observer?.disconnect();
+    };
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     (

@@ -55,14 +55,9 @@ function storage(): Storage | undefined {
 function rules(spec: RichSpec): Map<string, ((v: Scalar) => boolean)[]> {
   const result = new Map<string, ((v: Scalar) => boolean)[]>();
   const excluded = new Set<string>();
-  const initial = getInitialState(spec);
   const add = (key: string, valid: (v: Scalar) => boolean) => {
     assertSafeKey(key);
-    const sameType = (v: Scalar) =>
-      typeof v === typeof initial[key] &&
-      (v === null) === (initial[key] === null) &&
-      valid(v);
-    result.set(key, [...(result.get(key) ?? []), sameType]);
+    result.set(key, [...(result.get(key) ?? []), valid]);
   };
   function walk(nodes: RichNode[]): void {
     for (const node of nodes) {
@@ -71,9 +66,12 @@ function rules(spec: RichSpec): Map<string, ((v: Scalar) => boolean)[]> {
           excluded.add(node.stateKey);
           break;
         case "switch":
+        case "checkbox":
           add(node.stateKey, (v) => typeof v === "boolean");
           break;
         case "select":
+        case "radio":
+        case "segmented":
           add(node.stateKey, (v) => node.options.some((o) => o.value === v));
           break;
         case "tabs":

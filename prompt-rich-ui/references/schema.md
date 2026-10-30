@@ -49,6 +49,8 @@ Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?:
 
 ## Actions
 
+Controls that share one `stateKey` must accept the same values: identical slider `min`/`max`/`step`, the same option value set, or the same tab IDs. A free number input and a slider cannot share a key. A `set` or `toggle` result outside the shared domain is rejected locally and leaves the state unchanged.
+
 - `{type:"set",key:KEY,value:Expr}`: update one state scalar locally.
 - `{type:"toggle",key:KEY}`: invert local truthiness.
 - `{type:"reset"}`: restore document defaults and clear saved state.

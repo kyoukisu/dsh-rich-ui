@@ -12,13 +12,17 @@ import {
   X,
 } from "lucide-react";
 import {
+  collectStateDomains,
   parseRichSpec,
+  stateValueFits,
   type Entity,
   type Expr,
+  type RadioNode,
   type RichAction,
   type RichNode,
   type RichSpec,
   type Scalar,
+  type TabsNode,
 } from "../core/schema";
 import { evaluate, getInitialState } from "../core/evaluator";
 import {
@@ -52,10 +56,126 @@ const TONE_ICONS = {
   info: Info,
 } as const;
 
+type Update = (key: string, value: Scalar) => void;
+type RenderNode = (node: RichNode, key: number | string) => React.ReactNode;
+
+/** One radio/segmented group has one DOM name. Deriving it inside the component
+ * keeps two groups with the same stateKey from sharing (and clearing) each
+ * other's selection. */
+function ChoiceBlock({
+  node,
+  state,
+  update,
+}: {
+  node: RadioNode;
+  state: Record<string, Scalar>;
+  update: Update;
+}) {
+  const uid = useId();
+  const current = state[node.stateKey];
+  return (
+    <fieldset
+      className={`ru-choice ru-${node.type}`}
+      aria-label={node.label}
+      data-layout={node.layout}
+    >
+      {node.label && <legend>{node.label}</legend>}
+      <div className="ru-choice-options">
+        {node.options.map((option, index) => (
+          <label key={index}>
+            <input
+              type="radio"
+              name={`${uid}-group`}
+              value={index}
+              checked={current === option.value}
+              onChange={() => update(node.stateKey, option.value)}
+            />
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** Tab ids are local to one tabs node, never to the shared state key. */
+function TabsBlock({
+  node,
+  state,
+  update,
+  render,
+}: {
+  node: TabsNode;
+  state: Record<string, Scalar>;
+  update: Update;
+  render: RenderNode;
+}) {
+  const uid = useId();
+  const requested = String(state[node.stateKey] ?? node.tabs[0]?.id);
+  const current = node.tabs.some((tab) => tab.id === requested)
+    ? requested
+    : (node.tabs[0]?.id ?? "");
+  return (
+    <div>
+      <div className="ru-tabs" role="tablist">
+        {node.tabs.map((tab, index) => (
+          <button
+            key={tab.id}
+            id={`${uid}-${tab.id}`}
+            role="tab"
+            aria-selected={current === tab.id}
+            aria-controls={`${uid}-panel`}
+            tabIndex={current === tab.id ? 0 : -1}
+            onClick={() => update(node.stateKey, tab.id)}
+            onKeyDown={(event) => {
+              if (
+                !["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)
+              )
+                return;
+              event.preventDefault();
+              const next =
+                event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? node.tabs.length - 1
+                    : (index +
+                        (event.key === "ArrowRight" ? 1 : -1) +
+                        node.tabs.length) %
+                      node.tabs.length;
+              update(node.stateKey, node.tabs[next]!.id);
+              (
+                event.currentTarget.parentElement?.children[next] as HTMLElement
+              )?.focus();
+            }}
+          >
+            {(() => {
+              const Glyph = tab.icon ? resolveIcon(tab.icon) : undefined;
+              return Glyph ? <Glyph size={14} aria-hidden="true" /> : null;
+            })()}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div
+        role="tabpanel"
+        id={`${uid}-panel`}
+        aria-labelledby={`${uid}-${current}`}
+        className="ru-tabpanel"
+      >
+        {node.tabs.find((tab) => tab.id === current)?.children.map(render)}
+      </div>
+    </div>
+  );
+}
+
 export interface RichResponseProps {
   spec: RichSpec;
+  /** Already-validated document from a host that parsed it. Avoids a second full validation per streamed token. */
+  parsedSpec?: RichSpec;
   /** Opt-in sessionStorage identity; include owning session and response/block. Inputs never persist. */
   persistenceKey?: string;
+  /** Streaming preview: inert and short-lived, so it must not reload control state per token. */
+  preview?: boolean;
   /** Desktop defaults to non-modal fixed drawer; host owns surrounding layout reflow. Mobile uses a modal sheet. */
   detailMode?: "drawer" | "modal";
   /**
@@ -68,29 +188,46 @@ export interface RichResponseProps {
 
 export function RichResponse({
   spec: raw,
+  parsedSpec,
   onAction,
   onOpenEntity,
   persistenceKey,
+  preview = false,
   detailMode = "drawer",
 }: RichResponseProps) {
-  const spec = React.useMemo(() => parseRichSpec(raw), [raw]);
-  const [state, setState] = useState<Record<string, Scalar>>(() =>
-    loadPersistedState(spec, persistenceKey),
+  const spec = React.useMemo(
+    () => parsedSpec ?? parseRichSpec(raw),
+    [parsedSpec, raw],
   );
+  const [interactiveState, setInteractiveState] = useState<
+    Record<string, Scalar>
+  >(() =>
+    preview
+      ? getInitialState(spec, true)
+      : loadPersistedState(spec, persistenceKey),
+  );
+  // A streaming preview is inert, so it can always show the document's actual
+  // initial state. Deriving it here, rather than only in the mount state, makes
+  // a late-arriving initialState visible without resetting a live response.
+  const state = React.useMemo(
+    () => (preview ? getInitialState(spec, true) : interactiveState),
+    [preview, spec, interactiveState],
+  );
+  const domains = React.useMemo(() => collectStateDomains(spec), [spec]);
   const [selected, setSelected] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
-  const uid = useId();
   const root = useRef<HTMLElement>(null);
   const closePanel = React.useCallback(() => setSelected(null), []);
   const update = (key: string, value: Scalar) => {
     const next = { ...state, [key]: value };
-    setState(next);
+    setInteractiveState(next);
     savePersistedState(spec, persistenceKey, next);
   };
   useEffect(() => {
-    setState(loadPersistedState(spec, persistenceKey));
+    if (preview) return;
+    setInteractiveState(loadPersistedState(spec, persistenceKey));
     setSelected(null);
-  }, [spec, persistenceKey]);
+  }, [spec, persistenceKey, preview]);
   const ev = (expr: Expr) => evaluate(expr, state);
   const openEntity = React.useCallback(
     (id: string) => {
@@ -103,14 +240,26 @@ export function RichResponse({
   const act = async (action: RichAction) => {
     try {
       switch (action.type) {
-        case "set":
-          update(action.key, ev(action.value));
+        case "set": {
+          const value = ev(action.value);
+          const domain = domains.get(action.key);
+          if (domain && !stateValueFits(domain, value))
+            throw new Error(`value is not valid for "${action.key}"`);
+          update(action.key, value);
           break;
-        case "toggle":
-          update(action.key, !state[action.key]);
+        }
+        case "toggle": {
+          // Unbound keys keep the documented truthiness semantics. A key that
+          // owns a control is held to that control's domain instead.
+          const next = !state[action.key];
+          const domain = domains.get(action.key);
+          if (domain && !stateValueFits(domain, next))
+            throw new Error(`value is not valid for "${action.key}"`);
+          update(action.key, next);
           break;
+        }
         case "reset":
-          setState(getInitialState(spec));
+          setInteractiveState(getInitialState(spec, true));
           clearPersistedState(persistenceKey);
           break;
         case "open-entity":
@@ -135,8 +284,12 @@ export function RichResponse({
             onAction("send-message", { text: String(ev(action.text)) });
           break;
       }
-    } catch {
-      setNotice("Action failed: calculation error.");
+    } catch (error) {
+      setNotice(
+        `Action failed: ${
+          error instanceof Error ? error.message : "calculation error"
+        }.`,
+      );
     }
   };
   const render = (n: RichNode, i: number | string): React.ReactNode => {
@@ -318,7 +471,7 @@ export function RichResponse({
                     n.stateKey,
                     n.inputType === "number"
                       ? event.target.value === ""
-                        ? ""
+                        ? 0
                         : Number(event.target.value)
                       : event.target.value,
                   )
@@ -397,100 +550,26 @@ export function RichResponse({
             </label>
           );
         case "radio":
-        case "segmented": {
-          const current = state[n.stateKey];
-          const name = `${uid}-${n.stateKey}`;
+        case "segmented":
           return (
-            <fieldset
-              key={key}
-              className={`ru-choice ru-${n.type}`}
-              aria-label={n.label}
-              data-layout={n.layout}
-            >
-              {n.label && <legend>{n.label}</legend>}
-              <div className="ru-choice-options">
-                {n.options.map((option, index) => (
-                  <label key={index}>
-                    <input
-                      type="radio"
-                      name={name}
-                      value={index}
-                      checked={current === option.value}
-                      onChange={() => update(n.stateKey, option.value)}
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <ChoiceBlock key={key} node={n} state={state} update={update} />
           );
-        }
         case "conditional":
           return (
             <React.Fragment key={key}>
               {(ev(n.when) ? n.children : (n.elseChildren ?? [])).map(render)}
             </React.Fragment>
           );
-        case "tabs": {
-          const current = String(state[n.stateKey] ?? n.tabs[0]?.id);
+        case "tabs":
           return (
-            <div key={key}>
-              <div className="ru-tabs" role="tablist">
-                {n.tabs.map((tab, index) => (
-                  <button
-                    key={tab.id}
-                    id={`${uid}-${n.stateKey}-${tab.id}`}
-                    role="tab"
-                    aria-selected={current === tab.id}
-                    aria-controls={`${uid}-${n.stateKey}-panel`}
-                    tabIndex={current === tab.id ? 0 : -1}
-                    onClick={() => update(n.stateKey, tab.id)}
-                    onKeyDown={(event) => {
-                      if (
-                        !["ArrowRight", "ArrowLeft", "Home", "End"].includes(
-                          event.key,
-                        )
-                      )
-                        return;
-                      event.preventDefault();
-                      const next =
-                        event.key === "Home"
-                          ? 0
-                          : event.key === "End"
-                            ? n.tabs.length - 1
-                            : (index +
-                                (event.key === "ArrowRight" ? 1 : -1) +
-                                n.tabs.length) %
-                              n.tabs.length;
-                      update(n.stateKey, n.tabs[next].id);
-                      (
-                        event.currentTarget.parentElement?.children[
-                          next
-                        ] as HTMLElement
-                      )?.focus();
-                    }}
-                  >
-                    {(() => {
-                      const Glyph = tab.icon ? resolveIcon(tab.icon) : undefined;
-                      return Glyph ? (
-                        <Glyph size={14} aria-hidden="true" />
-                      ) : null;
-                    })()}
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-              <div
-                role="tabpanel"
-                id={`${uid}-${n.stateKey}-panel`}
-                aria-labelledby={`${uid}-${n.stateKey}-${current}`}
-                className="ru-tabpanel"
-              >
-                {n.tabs.find((tab) => tab.id === current)?.children.map(render)}
-              </div>
-            </div>
+            <TabsBlock
+              key={key}
+              node={n}
+              state={state}
+              update={update}
+              render={render}
+            />
           );
-        }
         case "table":
           return <SortableTable key={key} node={n} state={state} />;
         case "chart":
@@ -771,6 +850,14 @@ function EntityPanel({
     const previous = document.activeElement as HTMLElement;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // aria-modal alone does not stop programmatic or virtual-cursor focus from
+    // reaching the page behind the dialog. Inert the siblings while it is open.
+    const overlay = ref.current?.parentElement;
+    const behind = [...document.body.children].filter(
+      (element) => element !== overlay,
+    );
+    const wasInert = behind.map((element) => element.hasAttribute("inert"));
+    for (const element of behind) element.setAttribute("inert", "");
     close.current?.focus();
     const listener = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -800,6 +887,9 @@ function EntityPanel({
     return () => {
       document.body.style.overflow = overflow;
       document.removeEventListener("keydown", listener);
+      behind.forEach((element, index) => {
+        if (!wasInert[index]) element.removeAttribute("inert");
+      });
       if (previous?.isConnected) previous.focus();
     };
   }, [modal]);

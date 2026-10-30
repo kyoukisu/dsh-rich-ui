@@ -144,10 +144,11 @@ export function EntityDetails({
             ))}
           </section>
         )}
-        <p className="ru-provenance">
-          All details come from the listed sources. Demo data is not a live
-          offer.
-        </p>
+        {entity.sources?.length ? (
+          <p className="ru-provenance">
+            Details on this panel are linked to the sources above.
+          </p>
+        ) : null}
       </div>
     </>
   );

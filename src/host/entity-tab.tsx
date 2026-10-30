@@ -47,9 +47,13 @@ export function openEntityInSidebar(
   ctx: SidebarHost,
   entity: Entity,
   entities: Entity[],
+  isReady?: () => boolean,
 ): boolean {
   const sidebar = ctx.sidebarRight;
   if (!sidebar?.openTab) return false;
+  // Never open a tab whose body is not registered: the host would show its
+  // empty-pane fallback. Returning false keeps the in-page drawer instead.
+  if (isReady && !isReady()) return false;
   try {
     sidebar.openTab(ENTITY_TAB_KIND, { params: { entity, entities } });
     return true;
@@ -74,20 +78,22 @@ export function makeEntityTabBody(
     if (!entity || typeof entity.id !== "string" || !entity.title)
       return <p className="ru-empty">No entity data.</p>;
     return (
-      <section
-        className="rich-ui ru-entity-tab"
-        data-rich-ui-entity-tab=""
-        aria-label={`Details: ${entity.title}`}
-      >
-        <EntityDetails
-          entity={entity}
-          entities={entities}
-          onSelect={(id) => {
-            const next = entities.find((entry) => entry.id === id);
-            if (next) open(next, entities);
-          }}
-        />
-      </section>
+      <div data-rich-ui-root="">
+        <section
+          className="rich-ui ru-entity-tab"
+          data-rich-ui-entity-tab=""
+          aria-label={`Details: ${entity.title}`}
+        >
+          <EntityDetails
+            entity={entity}
+            entities={entities}
+            onSelect={(id) => {
+              const next = entities.find((entry) => entry.id === id);
+              if (next) open(next, entities);
+            }}
+          />
+        </section>
+      </div>
     );
   };
 }
@@ -100,76 +106,117 @@ export function makeEntityTabTitle() {
   };
 }
 
+/** Live registration state, so a click can fall back instead of opening an empty tab. */
+export interface EntityTabHandle {
+  dispose(): void;
+  ready(): boolean;
+}
+
 /**
  * Register the tab type, its body and its chip title. The service appears after
  * this plugin's apply, so registration waits for it, exactly like the shipped
  * right-sidebar integrations.
+ *
+ * The body and title slots are registered once. The tab type may be
+ * re-injected while the plugin runs; disposing the slots inside that callback
+ * leaves the pane without a body for an already-open tab, which is exactly the
+ * empty-panel failure. `ready()` describes the real registration state rather
+ * than assuming that a successful `openTab` call means a rendered body.
  */
 export function installEntityTab(
   ctx: SidebarHost,
   getSidebar?: () => SidebarHost["sidebarRight"],
-): () => void {
-  if (typeof ctx.inject !== "function" || !ctx.slots) return () => {};
+): EntityTabHandle {
+  if (typeof ctx.inject !== "function" || !ctx.slots)
+    return { dispose() {}, ready: () => false };
   const slots = ctx.slots;
-  let disposers: Array<() => void> = [];
-  const cleanup = () => {
-    for (const dispose of disposers) {
+  let bodyReady = false;
+  let titleReady = false;
+  let typeReady = false;
+  let disposed = false;
+  const ready = () => !disposed && bodyReady && titleReady && typeReady;
+  const body = makeEntityTabBody((entity, entities) =>
+    openEntityInSidebar(
+      { sidebarRight: getSidebar?.() },
+      entity,
+      entities,
+      ready,
+    ),
+  );
+  const title = makeEntityTabTitle();
+  const registerSlot = (
+    name: string,
+    component: React.ComponentType<Record<string, unknown>>,
+    mark: (value: boolean) => void,
+  ) =>
+    slots.inject(name, () => {
       try {
-        dispose();
-      } catch {
-        /* A failing release must not mask the others. */
+        const release = slots.register(
+          {
+            name,
+            key: ENTITY_TAB_ID,
+            inject: (sessionId) => ({ sessionId }),
+          },
+          component,
+        );
+        mark(true);
+        return () => {
+          mark(false);
+          release();
+        };
+      } catch (error) {
+        console.warn(`[rich-ui] ${name} unavailable`, error);
+        return () => {};
       }
-    }
-    disposers = [];
-  };
+    });
+  const slotDisposers = [
+    registerSlot("sidebar.right.pane.tab", body, (value) => {
+      bodyReady = value;
+    }),
+    registerSlot("sidebar.right.pane.tab.title", title, (value) => {
+      titleReady = value;
+    }),
+  ];
+  let typeDispose: (() => void) | undefined;
   const seat = ctx.inject(["sidebarRightTabs"], (injected) => {
     const tabs = injected.get("sidebarRightTabs") as
       { register?: (definition: object) => () => void } | undefined;
+    typeDispose?.();
+    typeDispose = undefined;
+    typeReady = false;
     if (!tabs?.register) return;
-    cleanup();
-    const body = makeEntityTabBody((entity, entities) =>
-      openEntityInSidebar({ sidebarRight: getSidebar?.() }, entity, entities),
-    );
-    const title = makeEntityTabTitle();
+    let release: (() => void) | undefined;
     try {
-      disposers.push(
-        tabs.register({
-          id: ENTITY_TAB_ID,
-          kind: ENTITY_TAB_KIND,
-          keepMounted: true,
-          title: () => "Entity",
-        }),
-      );
-      disposers.push(
-        slots.inject("sidebar.right.pane.tab", () =>
-          slots.register(
-            {
-              name: "sidebar.right.pane.tab",
-              key: ENTITY_TAB_ID,
-              inject: (sessionId) => ({ sessionId }),
-            },
-            body,
-          ),
-        ),
-      );
-      disposers.push(
-        slots.inject("sidebar.right.pane.tab.title", () =>
-          slots.register(
-            {
-              name: "sidebar.right.pane.tab.title",
-              key: ENTITY_TAB_ID,
-              inject: (sessionId) => ({ sessionId }),
-            },
-            title,
-          ),
-        ),
-      );
-    } catch {
-      cleanup();
+      release = tabs.register({
+        id: ENTITY_TAB_ID,
+        kind: ENTITY_TAB_KIND,
+        keepMounted: true,
+        title: () => "Entity",
+      });
+      typeReady = true;
+    } catch (error) {
+      console.warn("[rich-ui] entity tab type unavailable", error);
+      return;
     }
+    typeDispose = () => {
+      typeReady = false;
+      release?.();
+    };
   });
-  return () => {
-    seat?.();
-    cleanup();
+  return {
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      seat?.();
+      typeDispose?.();
+      for (const dispose of slotDisposers) {
+        try {
+          dispose?.();
+        } catch {
+          /* A failing release must not mask the others. */
+        }
+      }
+    },
+    ready,
   };
 }

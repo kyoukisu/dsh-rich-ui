@@ -10,6 +10,8 @@ import { parseRichSpec, type RichNode, type RichSpec } from "../core/schema.ts";
 
 interface Scan {
   version?: unknown;
+  title?: unknown;
+  initialState?: unknown;
   entities?: unknown;
   nodes?: unknown[];
   /** True when the whole root object closed, so nothing is left to stream. */
@@ -18,23 +20,33 @@ interface Scan {
 
 /** Walk a JSON value starting at `start`, returning the end index or -1. */
 function valueEnd(raw: string, start: number): number {
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  for (let i = start; i < raw.length; i++) {
-    const ch = raw[i];
-    if (inString) {
-      if (escaped) escaped = false;
-      else if (ch === "\\") escaped = true;
-      else if (ch === '"') inString = false;
-      continue;
+  const first = raw[start];
+  if (first === '"') return stringEnd(raw, start);
+  if (first === "{" || first === "[") {
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let i = start; i < raw.length; i++) {
+      const ch = raw[i];
+      if (inString) {
+        if (escaped) escaped = false;
+        else if (ch === "\\") escaped = true;
+        else if (ch === '"') inString = false;
+        continue;
+      }
+      if (ch === '"') inString = true;
+      else if (ch === "{" || ch === "[") depth++;
+      else if (ch === "}" || ch === "]") {
+        depth--;
+        if (depth === 0) return i + 1;
+      }
     }
-    if (ch === '"') inString = true;
-    else if (ch === "{" || ch === "[") depth++;
-    else if (ch === "}" || ch === "]") {
-      depth--;
-      if (depth === 0) return i + 1;
-    } else if (ch === "," && depth === 0) return i;
+    return -1;
+  }
+  // Primitive value: stop at the member or array delimiter.
+  for (let i = start; i < raw.length; i++) {
+    const ch = raw[i]!;
+    if (ch === "," || ch === "}" || ch === "]" || /\s/.test(ch)) return i;
   }
   return -1;
 }
@@ -71,6 +83,7 @@ function completeElements(
 ): { items: unknown[]; complete: boolean } {
   const items: unknown[] = [];
   let index = skipSpace(raw, open + 1);
+  if (raw[index] === "]") return { items, complete: true };
   for (;;) {
     if (index >= raw.length) return { items, complete: false };
     const end = valueEnd(raw, index);
@@ -108,23 +121,29 @@ export function scanPrefix(raw: string): Scan {
       result.nodes = items;
       if (!complete) return result;
       // An array closed but the root may continue (e.g. entities after nodes).
-      const after = skipSpace(
-        text,
-        valueEnd(text, index) === -1 ? text.length : valueEnd(text, index),
-      );
-      if (after >= text.length) return result;
-      index = after;
+      const end = valueEnd(text, index);
+      if (end === -1) return result;
+      index = skipSpace(text, end);
     } else if (key === "entities" && text[index] === "[") {
       const { items, complete } = completeElements(text, index);
       if (!complete) return result;
       result.entities = items;
-      index = skipSpace(text, index + (valueEnd(text, index)! - index));
-    } else {
       const end = valueEnd(text, index);
       if (end === -1) return result;
+      index = skipSpace(text, end);
+    } else {
+      const end = valueEnd(text, index);
+      // An initialState after nodes is part of the answer's meaning. Do not
+      // paint completed nodes without it: that briefly shows wrong computed
+      // values and conditional branches.
+      if (end === -1)
+        return key === "initialState" ? { complete: false } : result;
       const value = tryJson(text, index, end);
-      if (value === undefined) return result;
+      if (value === undefined)
+        return key === "initialState" ? { complete: false } : result;
       if (key === "version") result.version = value;
+      else if (key === "title") result.title = value;
+      else if (key === "initialState") result.initialState = value;
       index = skipSpace(text, end);
     }
     if (text[index] === ",") {
@@ -153,20 +172,31 @@ export function parseStreamingSpec(raw: string): RichSpec | null {
   )
     return null;
   const entities = Array.isArray(scan.entities) ? scan.entities : [];
-  const kept: RichNode[] = [];
-  for (const node of scan.nodes) {
-    const candidate = { version: 1, entities, nodes: [...kept, node] };
+  const nodes = scan.nodes as RichNode[];
+  const base: Record<string, unknown> = { version: 1, entities };
+  if (scan.title !== undefined) base.title = scan.title;
+  if (scan.initialState !== undefined) base.initialState = scan.initialState;
+  // A node can be rejected only after the prefix that contains it, so valid
+  // prefixes are monotonic. Binary search finds the longest one with O(log n)
+  // full validations instead of validating every prefix on every frame.
+  const valid = (count: number) => {
     try {
-      parseRichSpec(candidate);
+      parseRichSpec({ ...base, nodes: nodes.slice(0, count) });
+      return true;
     } catch {
-      break;
+      return false;
     }
-    kept.push(node as RichNode);
+  };
+  let low = 0;
+  let high = nodes.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    if (valid(mid)) low = mid;
+    else high = mid - 1;
   }
-  if (kept.length === 0) return null;
-  const spec = { version: 1, entities, nodes: kept } as RichSpec;
+  if (low === 0) return null;
   try {
-    return parseRichSpec(spec);
+    return parseRichSpec({ ...base, nodes: nodes.slice(0, low) });
   } catch {
     return null;
   }

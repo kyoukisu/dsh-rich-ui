@@ -8,7 +8,6 @@ import {
   installDomRenderer,
   parseFence,
   parseFenceResult,
-  repairHandler,
   type ClientContext,
 } from "./client";
 
@@ -30,7 +29,8 @@ const ctx = (send = vi.fn().mockResolvedValue(undefined)): ClientContext => ({
 let dispose: (() => void) | undefined;
 async function tick() {
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Streaming paints once per animation frame instead of every token.
+    await new Promise((resolve) => setTimeout(resolve, 25));
   });
 }
 /** Mirrors the live harness markup: banner span inside data-code-wrap. */
@@ -71,13 +71,13 @@ afterEach(async () => {
 
 describe("diagnostic copy", () => {
   it("explains common validator errors in English", () => {
-    expect(explain("Missing value")).toBe(
-      "Missing required field \"value\".",
-    );
+    expect(explain("Missing value")).toBe('Missing required field "value".');
     expect(explain("Unknown field: colour")).toContain('"colour"');
     expect(explain("Unknown node type")).toContain("Unknown block type");
     expect(explain("Invalid URL")).toContain("Invalid link");
-    expect(explain("weird internal failure")).toContain("does not match the schema");
+    expect(explain("weird internal failure")).toContain(
+      "does not match the schema",
+    );
   });
 });
 
@@ -215,7 +215,7 @@ describe("installed-host DOM contract", () => {
     await tick();
     expect(row.querySelector("[data-rich-ui-root]")).toBeNull();
   });
-  it("offers one explicit repair send with the error and source", async () => {
+  it("keeps rejected source local: no automatic or click-driven repair message", async () => {
     const send = vi.fn().mockResolvedValue(undefined);
     const { block } = source(
       '{"version":1,"nodes":[{"type":"text"}]}',
@@ -225,19 +225,18 @@ describe("installed-host DOM contract", () => {
     dispose = installDomRenderer(ctx(send));
     await tick();
     expect(block.hidden).toBe(true);
-    const button = [...document.querySelectorAll("button")].find((item) =>
-      item.textContent?.includes("Ask the model to fix"),
-    )!;
+    expect(send).not.toHaveBeenCalled();
+    const buttons = [
+      ...document.querySelectorAll<HTMLButtonElement>(".ru-diagnostic button"),
+    ];
+    expect(buttons.map((button) => button.textContent?.trim())).toEqual([
+      "Copy error",
+    ]);
     await act(async () => {
-      button.click();
+      buttons[0]!.click();
     });
     await tick();
-    expect(send).toHaveBeenCalledTimes(1);
-    const message = send.mock.calls[0]![0] as string;
-    expect(message.startsWith("[rich-ui-repair] ")).toBe(true);
-    expect(message).toContain("content");
-    expect(message).toContain('"source"');
-    expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(send).not.toHaveBeenCalled();
   });
   it("keeps an unfinished malformed stream as native code", async () => {
     const { row, block } = source("{", "assistant-step", "rich-ui");
@@ -246,9 +245,6 @@ describe("installed-host DOM contract", () => {
     await tick();
     expect(document.querySelector(".ru-diagnostic")).toBeNull();
     expect(block.hidden).toBe(false);
-  });
-  it("sends no repair without a captured session", () => {
-    expect(repairHandler(ctx(), undefined, "x", "{}")).toBeUndefined();
   });
   it("sends an action through the captured scoped conversation, not current UI routing", async () => {
     const send = vi.fn().mockResolvedValue(undefined);
@@ -275,6 +271,26 @@ describe("live fence label rules", () => {
     dispose = installDomRenderer(ctx());
     await tick();
     expect(document.querySelector("[data-rich-ui-root]")).not.toBeNull();
+    expect(block.hidden).toBe(true);
+  });
+  it("recognizes a valid spec whose version is not the first key", async () => {
+    const { block } = source(
+      JSON.stringify({ nodes: sample.nodes, version: 1 }),
+      "assistant-step",
+      "Code block",
+    );
+    dispose = installDomRenderer(ctx());
+    await tick();
+    expect(block.hidden).toBe(true);
+    expect(document.querySelector("[data-rich-ui-root]")).not.toBeNull();
+  });
+  it("re-hides the source when the host resets its hidden attribute", async () => {
+    const { block } = source();
+    dispose = installDomRenderer(ctx());
+    await tick();
+    expect(block.hidden).toBe(true);
+    block.hidden = false;
+    await tick();
     expect(block.hidden).toBe(true);
   });
   it("keeps an explicitly labelled json block as code even if it parses", async () => {
@@ -329,6 +345,38 @@ describe("streaming preview", () => {
     expect(settled!.hasAttribute("inert")).toBe(false);
     expect(settled!.textContent).toContain("Second");
   });
+  it("reuses one rich root while a streamed document keeps changing", async () => {
+    const { row, pre } = source(
+      '{"version":1,"nodes":[{"type":"text","content":"First"}]}',
+      "assistant-step",
+      "Code block",
+    );
+    row.dataset.streaming = "true";
+    dispose = installDomRenderer(ctx());
+    await tick();
+    const first = document.querySelector("[data-rich-ui-root]");
+    expect(first).not.toBeNull();
+    pre.textContent =
+      '{"version":1,"nodes":[{"type":"text","content":"Second"}]}';
+    await tick();
+    const second = document.querySelector("[data-rich-ui-root]");
+    expect(second).toBe(first);
+    expect(second?.textContent).toContain("Second");
+  });
+
+  it("does not preview a stream above the source-size cap", async () => {
+    const { row, block } = source(
+      `{"version":1,"nodes":[{"type":"text","content":"${"x".repeat(256001)}"}]}`,
+      "assistant-step",
+      "Code block",
+    );
+    row.dataset.streaming = "true";
+    dispose = installDomRenderer(ctx());
+    await tick();
+    expect(document.querySelector("[data-rich-ui-root]")).toBeNull();
+    expect(block.hidden).toBe(false);
+  });
+
   it("keeps the source visible while no complete node exists", async () => {
     const { row, block } = source(
       '{"version":1,"nodes":[{"type":"te',
