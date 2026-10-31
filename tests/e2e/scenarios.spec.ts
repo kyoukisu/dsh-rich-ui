@@ -22,11 +22,13 @@ test("film detail panel opens, navigates related entity, and restores focus", as
   await expect(
     dialog.getByRole("heading", { name: "Interstellar", exact: true }),
   ).toBeVisible();
-  await dialog.getByRole("button", { name: "Image 2" }).click();
-  await expect(dialog.getByRole("button", { name: "Image 2" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
+  // Two portrait photos share the panel width, as in the reference.
+  const photos = dialog.locator(".ru-detail-page .ru-detail-photo");
+  await expect(photos).toHaveCount(2);
+  const boxes = await photos.evaluateAll((nodes) =>
+    nodes.map((node) => node.getBoundingClientRect().top),
   );
+  expect(new Set(boxes.map((top) => Math.round(top))).size).toBe(1);
   await dialog.getByRole("button", { name: "Arrival", exact: true }).click();
   await expect(
     dialog.getByRole("heading", { name: "Arrival", exact: true }),
@@ -498,4 +500,23 @@ test("carousel arrows respect reduced motion and move one card at a time", async
   expect(result.calls.at(-1)?.behavior).toBe("auto");
   expect(result.left).toBeGreaterThan(result.card * 0.8);
   expect(result.left).toBeLessThan(result.card * 1.4);
+});
+
+test("a table that continues right shows a hint until it reaches the end", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("/?demo=dashboard");
+  const frame = page.locator(".ru-table-frame").first();
+  const scroller = frame.locator(".ru-table-wrap");
+  expect(
+    await scroller.evaluate(
+      (el) => el.scrollWidth > el.clientWidth && el.tabIndex === 0,
+    ),
+  ).toBe(true);
+  await expect(frame.locator(".ru-table-more")).toHaveText("Scroll →");
+  await scroller.evaluate((el) => {
+    el.scrollLeft = el.scrollWidth;
+  });
+  await expect(frame.locator(".ru-table-more")).toHaveCount(0);
 });

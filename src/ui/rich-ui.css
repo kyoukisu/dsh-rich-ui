@@ -1130,6 +1130,23 @@ body[data-ds-dark-theme] .rich-ui {
   background: var(--ru-border-strong);
   border-radius: 999px;
 }
+.ru-table-frame {
+  position: relative;
+  min-width: 0;
+}
+.ru-table-more {
+  display: block;
+  margin-top: 4px;
+  text-align: right;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--ru-muted);
+  pointer-events: none;
+}
+.ru-table-wrap:focus-visible {
+  outline: 2px solid var(--ru-accent);
+  outline-offset: 2px;
+}
 .ru-table-block {
   display: flex;
   flex-direction: column;
@@ -2007,6 +2024,22 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
 .ru-detail-gallery {
   background: var(--ru-surface);
   padding: 14px 14px 10px;
+  position: relative;
+}
+/* Two portrait photos share the panel width; the dots sit on the image. */
+.ru-detail-gallery-pair {
+  padding: 0;
+}
+.ru-detail-gallery-pair .ru-detail-page {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+}
+.ru-detail-gallery-pair .ru-detail-photo {
+  height: auto;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 0;
 }
 .ru-detail-photo {
   width: 100%;
@@ -2015,36 +2048,37 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   display: block;
   border-radius: 10px;
 }
-.ru-thumbs {
+.ru-detail-dots {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
-  overflow-x: auto;
-  padding-bottom: 2px;
+  gap: 1px;
+  padding: 2px 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ru-bg) 72%, transparent);
+  backdrop-filter: blur(8px);
 }
-.ru-thumbs button {
+.ru-detail-dots button {
+  width: 22px;
+  height: 22px;
   padding: 0;
-  border: 1px solid var(--ru-border);
-  background: var(--ru-bg);
-  border-radius: 8px;
-  overflow: hidden;
-  width: 58px;
-  height: 58px;
-  flex-shrink: 0;
+  border: 0;
+  background: none;
+  display: grid;
+  place-items: center;
 }
-.ru-thumbs button img,
-.ru-thumbs button .ru-image-fallback {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 0;
-  min-height: 0;
-  font-size: 0;
-  padding: 0;
+.ru-detail-dots button::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ru-muted);
+  opacity: 0.55;
 }
-.ru-thumbs button[aria-pressed="true"] {
-  border-color: var(--ru-ink);
-  box-shadow: 0 0 0 1px var(--ru-ink);
+.ru-detail-dots button[aria-pressed="true"]::after {
+  background: var(--ru-ink);
+  opacity: 1;
 }
 .ru-detail-body {
   padding: 22px 24px 32px;
@@ -2119,14 +2153,16 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   overflow-x: auto;
 }
 .ru-cast > li {
-  flex: 0 0 82px;
+  flex: 1 1 82px;
   min-width: 0;
+  max-width: 120px;
 }
 .ru-cast-photo,
 .ru-cast-initial {
   display: flex;
-  width: 82px;
-  height: 82px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
   border-radius: 9px;
   object-fit: cover;
   background: var(--ru-surface-2);
@@ -2154,6 +2190,8 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   font-size: 12px;
   font-weight: 600;
   color: var(--ru-ink);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .ru-cast-copy small {
   font-size: 11px;
@@ -2364,16 +2402,16 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   .ru-th-button svg {
     display: none;
   }
-  /* A permanent fade hides the last column even after the reader scrolls to
-     the end. Let the page scroll instead of nesting a vertical scroller, and
-     let header labels wrap so four short columns fit a phone without a swipe. */
+  /* No nested vertical scroller on a phone, and no permanent fade: a header
+     keeps one line so words are not split, and the scroll hint appears only
+     while content really continues to the right. */
   .ru-table-wrap {
     max-height: none;
   }
   .rich-ui th {
     position: static;
-    white-space: normal;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow-wrap: normal;
     font-size: 11.5px;
   }
   .ru-table-filter {

@@ -24,40 +24,52 @@ export function EntityDetails({
   titleId,
   titleRef,
 }: EntityDetailsProps) {
-  const [photo, setPhoto] = useState(0);
+  const [page, setPage] = useState(0);
   const fallbackId = useId();
   const id = titleId ?? fallbackId;
-  useEffect(() => setPhoto(0), [entity.id]);
+  useEffect(() => setPage(0), [entity.id]);
   const images = entity.images?.length
     ? entity.images
     : entity.image
       ? [entity.image]
       : [];
+  // The observed reference shows two portrait photos side by side, with dots
+  // for further pages. One photo keeps the wider single-hero treatment.
+  const perPage = images.length > 1 ? 2 : 1;
+  const pages = Math.ceil(images.length / perPage);
+  const first = page * perPage;
+  const visible = images.slice(first, first + perPage);
   const related = (entity.related ?? [])
     .map((entry) => entities.find((candidate) => candidate.id === entry))
     .filter((entry): entry is Entity => Boolean(entry));
   return (
     <>
       {images.length > 0 && (
-        <div className="ru-detail-gallery">
-          <Picture
-            key={images[photo]}
-            src={images[photo]!}
-            alt={`${entity.title} — image ${photo + 1}`}
-            className="ru-detail-photo"
-          />
-          {images.length > 1 && (
-            <div className="ru-thumbs">
-              {images.map((source, index) => (
+        <div
+          className={`ru-detail-gallery${
+            visible.length > 1 ? " ru-detail-gallery-pair" : ""
+          }`}
+        >
+          <div className="ru-detail-page">
+            {visible.map((source, index) => (
+              <Picture
+                key={source}
+                src={source}
+                alt={`${entity.title} — image ${first + index + 1}`}
+                className="ru-detail-photo"
+              />
+            ))}
+          </div>
+          {pages > 1 && (
+            <div className="ru-detail-dots">
+              {Array.from({ length: pages }, (_, index) => (
                 <button
-                  key={source}
+                  key={index}
                   type="button"
-                  aria-label={`Image ${index + 1}`}
-                  aria-pressed={photo === index}
-                  onClick={() => setPhoto(index)}
-                >
-                  <Picture src={source} alt="" />
-                </button>
+                  aria-label={`Gallery page ${index + 1} of ${pages}`}
+                  aria-pressed={page === index}
+                  onClick={() => setPage(index)}
+                />
               ))}
             </div>
           )}
@@ -112,26 +124,13 @@ export function EntityDetails({
                     </span>
                   )}
                   <span className="ru-cast-copy">
-                    <strong>{member.name}</strong>
-                    {member.role && <small>{member.role}</small>}
+                    <strong title={member.name}>{member.name}</strong>
+                    {member.role && <small title={member.role}>{member.role}</small>}
                   </span>
                 </li>
               ))}
             </ul>
           </section>
-        ) : null}
-        {entity.sources?.length ? (
-          <div className="ru-detail-actions">
-            <a
-              className="ru-button ru-button-primary"
-              href={entity.sources[0]!.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open source
-              <ArrowUpRight size={15} />
-            </a>
-          </div>
         ) : null}
         {entity.sources?.length ? (
           <section>

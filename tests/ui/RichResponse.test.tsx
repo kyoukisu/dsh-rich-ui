@@ -1112,6 +1112,61 @@ describe("host entity surface", () => {
   });
 });
 
+describe("entity detail gallery", () => {
+  const spec: RichSpec = {
+    version: 1,
+    nodes: [{ type: "entity-ref", entityId: "three" }],
+    entities: [
+      {
+        id: "three",
+        kind: "Film",
+        title: "Three",
+        images: [
+          "https://example.org/1.jpg",
+          "https://example.org/2.jpg",
+          "https://example.org/3.jpg",
+        ],
+      },
+    ],
+  };
+
+  it("shows two photos per page and pages with the dots", () => {
+    act(() => root.render(<RichResponse spec={spec} />));
+    click(document.querySelector('[aria-label="Details: Three"]')!);
+    const photos = () =>
+      document.querySelectorAll(".ru-detail-page .ru-detail-photo");
+    expect(photos()).toHaveLength(2);
+    const dots = document.querySelectorAll(".ru-detail-dots button");
+    expect(dots).toHaveLength(2);
+    click(dots[1]!);
+    expect(photos()).toHaveLength(1);
+    expect(photos()[0]!.getAttribute("alt")).toBe("Three — image 3");
+    expect(
+      document.querySelector(".ru-detail-dots button[aria-pressed='true']"),
+    ).toBe(dots[1]);
+  });
+
+  it("keeps the single hero when there is one photo", () => {
+    const one: RichSpec = {
+      version: 1,
+      nodes: [{ type: "entity-ref", entityId: "one" }],
+      entities: [
+        {
+          id: "one",
+          kind: "Film",
+          title: "One",
+          image: "https://example.org/one.jpg",
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={one} />));
+    click(document.querySelector('[aria-label="Details: One"]')!);
+    expect(document.querySelector(".ru-detail-gallery-pair")).toBeNull();
+    expect(document.querySelectorAll(".ru-detail-dots")).toHaveLength(0);
+    expect(document.querySelectorAll(".ru-detail-photo")).toHaveLength(1);
+  });
+});
+
 describe("inline entity chips", () => {
   const spec: RichSpec = {
     version: 1,
@@ -1344,5 +1399,74 @@ describe("local state isolation", () => {
     click(toggle);
     expect(header().getAttribute("aria-sort")).toBe("none");
     expect(rows()).toEqual(["First"]);
+  });
+});
+
+describe("wide table affordance", () => {
+  const spec: RichSpec = {
+    version: 1,
+    nodes: [
+      {
+        type: "table",
+        columns: [
+          { key: "a", label: "A" },
+          { key: "b", label: "B" },
+        ],
+        rows: [{ a: 1, b: 2 }],
+      },
+    ],
+  };
+
+  it("shows the hint only while content continues to the right", () => {
+    const scrollWidth = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "scrollWidth",
+    );
+    const clientWidth = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "clientWidth",
+    );
+    const scrollLeft = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "scrollLeft",
+    );
+    let left = 0;
+    Object.defineProperty(HTMLElement.prototype, "scrollWidth", {
+      configurable: true,
+      get: () => 600,
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get: () => 300,
+    });
+    Object.defineProperty(HTMLElement.prototype, "scrollLeft", {
+      configurable: true,
+      get: () => left,
+      set: () => undefined,
+    });
+    try {
+      act(() => root.render(<RichResponse spec={spec} />));
+      expect(host.querySelector(".ru-table-more")).not.toBeNull();
+      expect(host.querySelector<HTMLElement>(".ru-table-wrap")!.tabIndex).toBe(
+        0,
+      );
+      left = 300;
+      act(() => {
+        host
+          .querySelector(".ru-table-wrap")!
+          .dispatchEvent(new Event("scroll"));
+      });
+      expect(host.querySelector(".ru-table-more")).toBeNull();
+    } finally {
+      for (const [name, original] of [
+        ["scrollWidth", scrollWidth],
+        ["clientWidth", clientWidth],
+        ["scrollLeft", scrollLeft],
+      ] as const) {
+        if (original)
+          Object.defineProperty(HTMLElement.prototype, name, original);
+        else delete (HTMLElement.prototype as never)[name];
+      }
+    }
   });
 });

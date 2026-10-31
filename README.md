@@ -105,8 +105,8 @@ Things worth trying: *"build a budget calculator with three sliders"*, *"show th
 |---|---|
 | Layout | `stack`, `row`, `grid`, `card`, `divider`, `meta` |
 | Text | `text` with inline `code`, **bold**, links and `[[entityId]]` chips; `callout` with optional title; `code` with syntax colour, language label, line numbers and copy |
-| Objects | `entity-ref`, ``entity-list` with poster or square row thumbnails; entity details dock in the native right column or fall back to an in-page drawer |
-| Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status and progress columns), `chart` (bar / line / area / donut / scatter, 1–6 series, units, tooltips), `computed` |
+| Objects | `entity-ref`, `entity-list` with poster or square row thumbnails; entity details dock in the native right column or fall back to an in-page drawer, with a two-up photo gallery and cast |
+| Data | `stat` (KPI card), `progress`, `status`, `table` (sortable, filterable, status and progress columns, scroll hint when it overflows), `chart` (bar / line / area / donut / scatter, 1–6 series, units, tooltips), `computed` |
 | Flow | `diagram` with ordered steps, connector labels and branch depth; `layers` for boxes-inside-boxes architecture with member chips |
 | Media | `image` with caption, `image-group`, `video` and `audio` with native controls, gallery lightbox, popover, tooltip |
 | Controls | `input` (text / number / date), `select`, `slider`, `switch`, `checkbox`, `radio`, `segmented`, `tabs` |
@@ -207,8 +207,8 @@ npm ci
 npm run dev            # lab at http://127.0.0.1:4173, HMR, no Harness needed
 npm run build          # typecheck + lab build
 npm run build:plugin   # the two real bundle artifacts
-npm test               # 197 unit, schema and DOM tests
-npm run test:browser   # Playwright desktop + mobile (goldens never auto-update)
+npm test               # 200 unit, schema and DOM tests
+npm run test:browser   # 54 Playwright desktop + mobile checks (goldens never auto-update)
 ```
 
 Browser tests run in a pinned container so no system libraries are required:

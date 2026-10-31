@@ -17,7 +17,7 @@ Reference screenshots and our captures are compared at the same viewport width; 
 | Reference scenario                                                    | Status  | Evidence / gap                                                                    |
 | --------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------- |
 | Technical explanation with icon rows, inline code, divider            | Covered | `technical`; light+dark screenshots; axe clean                                    |
-| Movie collection with rows, posters, detail panel, gallery, related   | Covered | `films`; browser test opens panel, switches photo, follows related, restores focus |
+| Movie collection with rows, posters, detail panel, gallery, related   | Covered | `films`; browser test opens the panel, checks two photos share a row, follows related, restores focus |
 | Marketplace listing: meta strip, price, highlight badge               | Covered | `listing`; meta + badge nodes, schema tests                                       |
 | Local calculator with instant recompute                               | Covered | `calculator`; browser test asserts value and reset                                |
 | Reactive configurator: input, switch, tabs, conditional sections      | Covered | `configurator`; browser test                                                      |
@@ -54,7 +54,6 @@ Coverage: **19 / 27** scenarios covered, **2 partial**, **6 missing**.
 | 2   | Wide tables scroll horizontally on a phone; the demo four-column table now fits             | S3       |
 | 3   | Chart series colours are fixed; no per-series palette override                              | S3       |
 | 4   | Entity detail is a modal sheet on a phone; the observed reference keeps a right-edge panel | S2       |
-| 5   | Detail gallery is one hero image with a thumbnail strip; the observed reference used a two-up row | S3       |
 
 ## What we are not measuring
 
@@ -68,7 +67,7 @@ Ordered by effect on daily use:
 
 1. Keep the validation tool ahead of the fence; do not reintroduce a repair message.
 2. Inline citations inside prose.
-3. Entity detail: two-up gallery, panel geometry on a phone, denser cast and source blocks.
+3. Entity detail on a phone: keep the title above the fold, verify the panel height and close/focus order.
 4. Richer chart options: per-series palette override and more chart kinds.
 5. Math, artifacts and maps.
 6. Provider-backed entity data with provenance and empty/error states.

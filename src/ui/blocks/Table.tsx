@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, Search } from "lucide-react";
 import type { Scalar, TableColumn, TableNode, Tone } from "../../core/schema";
 import { evaluate } from "../../core/evaluator";
@@ -37,6 +37,62 @@ function compare(left: Scalar, right: Scalar): number {
   if (typeof left === "boolean" || typeof right === "boolean")
     return Number(left) - Number(right);
   return String(left).localeCompare(String(right), "en", { numeric: true });
+}
+
+/** Horizontal scroll frame. The hint is a visual affordance only: it appears
+ * when content continues to the right and disappears at the end, so the last
+ * column is never permanently dimmed. The scroller stays keyboard reachable. */
+function TableFrame({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+    const measure = () => {
+      const overflow = element.scrollWidth - element.clientWidth > 1;
+      const atEnd =
+        element.scrollLeft + element.clientWidth >= element.scrollWidth - 1;
+      setMore(overflow && !atEnd);
+    };
+    measure();
+    element.addEventListener("scroll", measure, { passive: true });
+    const table = element.firstElementChild;
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(measure);
+    if (observer) {
+      observer.observe(element);
+      if (table) observer.observe(table);
+    }
+    return () => {
+      element.removeEventListener("scroll", measure);
+      observer?.disconnect();
+    };
+  }, []);
+  return (
+    <div className="ru-table-frame">
+      <div
+        className="ru-table-wrap"
+        ref={scroller}
+        tabIndex={0}
+        aria-label={label}
+      >
+        {children}
+      </div>
+      {more && (
+        <span className="ru-table-more" aria-hidden="true">
+          Scroll →
+        </span>
+      )}
+    </div>
+  );
 }
 
 export function SortableTable({
@@ -93,7 +149,7 @@ export function SortableTable({
   if (rows.length === 0)
     return <p className="ru-empty">{node.empty ?? "No data"}</p>;
   const table = (
-    <div className="ru-table-wrap">
+    <TableFrame label={node.caption ?? "Table"}>
       <table>
         {node.caption && <caption>{node.caption}</caption>}
         <thead>
@@ -224,7 +280,7 @@ export function SortableTable({
           )}
         </tbody>
       </table>
-    </div>
+    </TableFrame>
   );
   if (!node.filterable) return table;
   return (

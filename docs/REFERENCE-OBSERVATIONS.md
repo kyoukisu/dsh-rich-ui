@@ -28,4 +28,4 @@ The same shared conversation (source B) loaded its entity panel anonymously at 2
 - The title and italic subtitle form one block, followed by dense prose, a cast section with three square photo thumbnails and truncated labels, and further prose sections.
 - The panel is visually part of the app shell: a thin left border, no floating card shadow, and no rounded outer container.
 
-This is one observed state, not a full component specification. Mobile geometry, dark theme, keyboard focus order and the gallery's full swipe behaviour were not captured. The current renderer still differs in two visible ways: its detail surface is modal on narrow screens, and its gallery is a single hero image with a thumbnail strip rather than a two-up row.
+This is one observed state, not a full component specification. Mobile geometry, dark theme, keyboard focus order and the gallery's full swipe behaviour were not captured. The detail gallery now follows that observation: two portrait photos share the row and further pages use dots. The remaining visible difference is the detail surface: it is modal on narrow screens, while the reference keeps a right-edge panel.
