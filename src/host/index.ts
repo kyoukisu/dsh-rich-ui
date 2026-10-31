@@ -64,7 +64,7 @@ export function buildValidateTool(): ValidateTool {
   return {
     name: "rich_ui_validate",
     description:
-      "Validate a complete rich-ui v1 JSON document before sending it as a ```rich-ui fence — the default format for product, film, anime, book or place collections, comparisons, dashboards and local calculators. Pass the exact JSON object as a string in document, without the fence markers. Returns {valid:true,title?,nodes,entities} or {valid:false,error}. Fix the reported field and validate again. This is a tool call, not a chat message: it does not ask the user, does not edit the answer, and leaves no repair prompt in the conversation.",
+      "Validate a complete rich-ui v1 JSON document before sending it as a ```rich-ui fence — the default format for product, film, anime, book or place collections, comparisons, dashboards and local calculators. Pass the exact JSON object as a string in document, without the fence markers. Returns {valid:true,title?,nodes,entities} or {valid:false,error}. Fix the reported field and validate again. Call it only immediately before sending a block, not to decide whether rich-ui fits. This is a tool call, not a chat message: it does not ask the user, does not edit the answer, and leaves no repair prompt in the conversation.",
     parameters: {
       type: "object",
       properties: {

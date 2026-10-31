@@ -46,7 +46,7 @@ The call is a tool result, not a chat message: it asks the reader nothing and le
 - Inline text supports `code`, **bold**, `[label](https://…)` and `[[entityId]]`. Headings, lists and Markdown tables inside a text node stay literal: use `card` titles, `entity-list` and `table`.
 - Icons are Lucide names such as `Sparkles`, `MapPin` or `Calculator`; an unknown name is not a reason to inject SVG.
 - Controls need labels, and an `image` needs `alt`.
-- Do not repeat what a card already draws as separate image or text nodes, and do not present the same data twice.
+- Keep the composition flat: no card inside a card. Do not repeat what a card already draws as separate image or text nodes, and do not present the same data twice.
 
 ## Entities and evidence
 

@@ -136,7 +136,7 @@ describe("rich_ui_validate host tool", () => {
       "entity-list",
     ]);
     const words = section.split(/\s+/).filter(Boolean).length;
-    expect(words).toBeLessThan(1200);
+    expect(words).toBeLessThan(1250);
   });
 
   it("is advertised in the system prompt as a tool, not a chat message", () => {
