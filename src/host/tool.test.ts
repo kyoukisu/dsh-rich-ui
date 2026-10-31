@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { apply, buildSection, buildValidateTool } from "./index";
+import { parseRichSpec } from "../core/schema";
 
 const valid = JSON.stringify({
   version: 1,
@@ -110,13 +111,32 @@ describe("rich_ui_validate host tool", () => {
     );
   });
 
-  it("makes collections the default before explaining the syntax", () => {
+  it("makes collections the default and keeps one decision ladder", () => {
     const section = buildSection();
-    expect(section).toContain("Use it for collections and comparisons");
-    expect(section).toContain("do not answer with a Markdown table");
+    expect(section).toContain("## Choose the surface");
+    expect(section).toContain(
+      "Do not answer a collection with a Markdown table",
+    );
     expect(section).toContain("collections and comparisons by default");
     expect(section).toContain("anime");
+    expect(section).toContain("Stop after two failed validations");
+    expect(section).toContain('"entity-list"');
     expect(section).not.toContain("Use this skill for");
+    expect(section).not.toContain("Do not force every answer into UI");
+  });
+
+  it("keeps the inline example valid and the prompt within budget", () => {
+    const section = buildSection();
+    const block = /```rich-ui\n([\s\S]*?)\n```/.exec(section)?.[1];
+    expect(block).toBeTruthy();
+    const spec = parseRichSpec(JSON.parse(block!));
+    expect(spec.entities).toHaveLength(1);
+    expect(spec.nodes.map((node) => node.type)).toEqual([
+      "text",
+      "entity-list",
+    ]);
+    const words = section.split(/\s+/).filter(Boolean).length;
+    expect(words).toBeLessThan(1200);
   });
 
   it("is advertised in the system prompt as a tool, not a chat message", () => {
