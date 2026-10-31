@@ -2,9 +2,22 @@
 
 Turn verified content into a compact, interactive answer using the installed `rich-ui` renderer. This is a declarative JSON language, not HTML, React source, JavaScript, or the separate `dsh-ui` language.
 
-## Choose the right surface
+## Use it for collections and comparisons
 
-Use prose for a simple explanation. Use rich-ui when an entity collection, comparison, local calculator, tabs, or related-entity exploration helps the user. Do not force every answer into UI. Prefer one coherent response with a small number of purposeful sections over a wall of cards. Follow the conversation's language for visible text; examples below are English only to demonstrate field syntax.
+Use rich-ui by default when the user asks to find, show, list, compare, shortlist, choose or recommend real things:
+
+- products, films, anime, books, games, places, tools, courses, people → `entities` plus `entity-list` (or a `card`/`grid` of `entity-ref`);
+- metrics or a report → `stat`, `chart` and `table`;
+- a budget, quote or configurator → controls with `stateKey` and `computed`;
+- a process or architecture → `diagram` or `layers`.
+
+For the first group, do not answer with a Markdown table or a plain bullet list: Markdown cannot carry photos, prices, facts, a highlight badge or a detail panel. A ranked "best X" list, a shopping shortlist, a watchlist, a "what should I pick?" question and a "what to buy/watch/read" request all belong here. Ten items are still an entity list; the rows scroll and each item keeps its detail panel.
+
+Markdown prose, tables and bullets remain the fallback for a single fact, a one-step instruction, code, or something already clear in one short paragraph — and for a collection where no image, price, fact or source exists. An explanation with citations uses prose plus `[[entityId]]` chips. Do not force every answer into UI, but do not fall back to a Markdown table for a comparison the reader will act on.
+
+## Composition rules
+
+Prefer one coherent response with a small number of purposeful sections over a wall of cards. Follow the conversation's language for visible text; examples below are English only to demonstrate field syntax.
 
 Exact field names, enums and limits live in `references/schema.md`; complete working documents live in `references/examples.md`. Open them only when a block was rejected or the node is genuinely unfamiliar — never pre-emptively. Examples are executable fixtures checked against the parser, not an invitation to invent fields.
 
@@ -24,7 +37,7 @@ When `rich_ui_validate` is available, call it once with the complete JSON object
 
 ## Compose content and entities
 
-Use `stack`, `row`, `grid` and `card` with `children`; use `carousel` for an intentionally browsable collection, `meta` for a compact summary strip (`items` of `{text, icon?}`, rendered with separators), and `entity-list` for full-width rows of 2–5 comparable objects. A number the reader should remember belongs in `stat`, a process or architecture flow in `diagram` with 1–12 ordered steps, nested boxes-inside-boxes in `layers` (a layer holds either `items` chips or nested `layers`, three levels at most), and comparison rows in `table` (add `sortable: true` when order matters; use `format: "status"` with a `tones` map for state columns, `format: "progress"` for completion bars, and `filterable: true` for long lists). Set `thumbShape: "square"` on product entities so row photos are not cropped like film posters. Charts take one `data` series, `categories` plus `series`, or `points` for a scatter; never invent axis options. Media is a direct `video` or `audio` file, never an embed frame. An entity may carry `badge: {label, tone?}` for one short highlight such as "Cheapest". Entity objects belong in root `entities` and contain `id`, `kind`, `title`, plus optional descriptions, images, facts, sources and related entity IDs. Place an `entity-ref` node where the entity chip should appear; opening it shows the entity detail panel. The card already draws the entity's poster, kind, title, subtitle and description, so never repeat them as separate `image` or `text` nodes beside it. `related` and `open-entity` targets must exist in the same document. Provide actual source URLs, not invented provenance. Mark uncertainty in text. An image URL is a reference, not evidence that you visually inspected it.
+Use `stack`, `row`, `grid` and `card` with `children`; use `carousel` for an intentionally browsable collection, `meta` for a compact summary strip (`items` of `{text, icon?}`, rendered with separators), and `entity-list` for full-width rows of comparable objects (2–5 is a comfortable set; a longer ranked list is fine). A number the reader should remember belongs in `stat`, a process or architecture flow in `diagram` with 1–12 ordered steps, nested boxes-inside-boxes in `layers` (a layer holds either `items` chips or nested `layers`, three levels at most), and comparison rows in `table` (add `sortable: true` when order matters; use `format: "status"` with a `tones` map for state columns, `format: "progress"` for completion bars, and `filterable: true` for long lists). Set `thumbShape: "square"` on product entities so row photos are not cropped like film posters. Charts take one `data` series, `categories` plus `series`, or `points` for a scatter; never invent axis options. Media is a direct `video` or `audio` file, never an embed frame. An entity may carry `badge: {label, tone?}` for one short highlight such as "Cheapest". Entity objects belong in root `entities` and contain `id`, `kind`, `title`, plus optional descriptions, images, facts, sources and related entity IDs. Place an `entity-ref` node where the entity chip should appear; opening it shows the entity detail panel. The card already draws the entity's poster, kind, title, subtitle and description, so never repeat them as separate `image` or `text` nodes beside it. `related` and `open-entity` targets must exist in the same document. Provide actual source URLs, not invented provenance. Mark uncertainty in text. An image URL is a reference, not evidence that you visually inspected it.
 
 Use built-in icons by Lucide name such as `Sparkles`, `MapPin`, `Calculator`, `Check`, `ArrowRight`; an unsupported icon name does not justify injecting SVG or script. HTTP(S) images and links only, without embedded credentials. Never emit HTML, arbitrary CSS, script URLs, event-handler strings, property paths, or secret-entry forms.
 
@@ -52,8 +65,6 @@ Structure is not decoration. Reach for a block when it makes the answer easier t
 
 Check exact fields against the reference, valid entity targets, finite numeric values, operation arities, initialized state and sensible ranges. Keep documents comfortably below the host's 256,000-character source cap and parser budgets. Keep ordinary code as a `code` node, not executable content. Ensure controls have clear labels and images have alt text. Cite the actual information sources inside entities or surrounding prose. A malformed/unsupported block should be corrected as a complete new block, not excused as a working UI.
 
-## Activation examples
+## Trigger examples
 
-Use this skill for: “Make these sourced destination findings browsable with detail panels”; “Show an interactive quote calculator with a quantity slider”; “Use rich-ui for this product comparison.”
-
-Do not activate for: “Explain this error in one sentence”; “Build a React website”; “Render this using dsh-ui”; “Which command lists files?”
+"Find three robot vacuums under €400" · "Show me ten anime like this one" · "Compare these two laptops" · "Which phone should I buy?" · "Plan a monthly budget" — these are rich-ui requests. A one-sentence factual answer, a shell command or a code explanation is not.

@@ -110,6 +110,15 @@ describe("rich_ui_validate host tool", () => {
     );
   });
 
+  it("makes collections the default before explaining the syntax", () => {
+    const section = buildSection();
+    expect(section).toContain("Use it for collections and comparisons");
+    expect(section).toContain("do not answer with a Markdown table");
+    expect(section).toContain("collections and comparisons by default");
+    expect(section).toContain("anime");
+    expect(section).not.toContain("Use this skill for");
+  });
+
   it("is advertised in the system prompt as a tool, not a chat message", () => {
     const section = buildSection();
     expect(section).toContain("rich_ui_validate");

@@ -64,7 +64,7 @@ export function buildValidateTool(): ValidateTool {
   return {
     name: "rich_ui_validate",
     description:
-      "Validate a complete rich-ui v1 JSON document before sending it as a ```rich-ui fence. Pass the exact JSON object as a string in document, without the fence markers. Returns {valid:true,title?,nodes,entities} or {valid:false,error}. Fix the reported field and validate again. This is a tool call, not a chat message: it does not ask the user, does not edit the answer, and leaves no repair prompt in the conversation.",
+      "Validate a complete rich-ui v1 JSON document before sending it as a ```rich-ui fence — the default format for product, film, anime, book or place collections, comparisons, dashboards and local calculators. Pass the exact JSON object as a string in document, without the fence markers. Returns {valid:true,title?,nodes,entities} or {valid:false,error}. Fix the reported field and validate again. This is a tool call, not a chat message: it does not ask the user, does not edit the answer, and leaves no repair prompt in the conversation.",
     parameters: {
       type: "object",
       properties: {
@@ -156,7 +156,7 @@ const PROMPT_PATH = resolve(SKILL_DIR, "prompt.md");
 export function buildSection(hasTool = true): string {
   const body = readFileSync(PROMPT_PATH, "utf8").trim();
   return [
-    "Use a fenced rich-ui block when entity exploration, comparisons or local interaction meaningfully improve the answer; keep simple answers as prose. This language is NOT dsh-ui.",
+    "Use a fenced rich-ui block for collections and comparisons by default: product, film, anime, book or place lists, dashboards, quotes and calculators. Keep single facts and short explanations as prose. This language is NOT dsh-ui.",
     body,
     `Reference files, opened only if a block was rejected or you need an unfamiliar node: ${SKILL_DIR}/references/schema.md and ${SKILL_DIR}/references/examples.md. Do not read them pre-emptively.`,
     hasTool
