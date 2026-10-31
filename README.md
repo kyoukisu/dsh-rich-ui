@@ -30,7 +30,7 @@ A model can describe a comparison, but a wall of Markdown makes the reader do th
 The renderer is a real React tree behind a strict schema. There is no generated HTML, no `eval`, no shell access, and no page-level JavaScript from the model. Local controls recompute in the browser; the model is only called again when the reader explicitly asks.
 
 <p align="center">
-  <img alt="Film collection reflowed beside an open detail panel with poster, facts and sources" src="docs/images/films-desktop.png" width="860">
+  <img alt="Film collection reflowed beside an open detail panel with two posters, facts, cast and sources" src="docs/images/films-desktop.png" width="860">
   <br>
   <em>In the lab the answer reflows beside the open panel. In Harness the same entity opens as a native right-column tab, so the conversation narrows instead of being covered — see <a href="docs/DSH-INTEGRATION.md">the integration notes</a>.</em>
 </p>
@@ -209,6 +209,7 @@ npm run build          # typecheck + lab build
 npm run build:plugin   # the two real bundle artifacts
 npm test               # 200 unit, schema and DOM tests
 npm run test:browser   # 54 Playwright desktop + mobile checks (goldens never auto-update)
+# Interaction timings: docs/PERFORMANCE.md
 ```
 
 Browser tests run in a pinned container so no system libraries are required:
