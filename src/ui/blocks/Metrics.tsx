@@ -145,14 +145,14 @@ export function Diagram({
           >
             {index > 0 &&
               (vertical ? (
-                <span className="ru-diagram-edge" aria-hidden="true">
-                  <ArrowRight size={14} />
+                <span className="ru-diagram-edge">
+                  <ArrowRight size={14} aria-hidden="true" />
                   {step.connector && <em>{step.connector}</em>}
                 </span>
               ) : (
-                <span className="ru-diagram-link" aria-hidden="true">
+                <span className="ru-diagram-link">
                   {step.connector && <em>{step.connector}</em>}
-                  <ArrowRight size={15} />
+                  <ArrowRight size={15} aria-hidden="true" />
                 </span>
               ))}
             <div className="ru-diagram-card">

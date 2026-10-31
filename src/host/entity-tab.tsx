@@ -5,6 +5,43 @@ import { EntityDetails } from "../ui/EntityDetails";
 export const ENTITY_TAB_KIND = "rich-ui-entity";
 export const ENTITY_TAB_ID = "@kyoukisu/dsh-rich-ui/entity";
 
+/** Last opened entity, used only when the host restores the tab without its
+ * navigation params after a reload. It is a display fallback, not a source of
+ * truth: the next click from a response replaces it. */
+const ENTITY_FALLBACK_KEY = "dsh-rich-ui:entity-tab:v1";
+const ENTITY_FALLBACK_LIMIT = 200_000;
+
+function rememberEntity(entity: Entity, entities: Entity[]): void {
+  try {
+    const value = JSON.stringify({ entity, entities });
+    if (value.length <= ENTITY_FALLBACK_LIMIT)
+      sessionStorage.setItem(ENTITY_FALLBACK_KEY, value);
+  } catch {
+    /* Session storage is optional. */
+  }
+}
+
+function recallEntity(): TabParams | undefined {
+  try {
+    const raw = sessionStorage.getItem(ENTITY_FALLBACK_KEY);
+    if (!raw || raw.length > ENTITY_FALLBACK_LIMIT) return undefined;
+    const value: unknown = JSON.parse(raw);
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      return undefined;
+    const params = value as TabParams;
+    if (
+      !params.entity ||
+      typeof params.entity.id !== "string" ||
+      !params.entity.title ||
+      !Array.isArray(params.entities)
+    )
+      return undefined;
+    return params;
+  } catch {
+    return undefined;
+  }
+}
+
 interface TabParams {
   entity?: Entity;
   entities?: Entity[];
@@ -56,6 +93,7 @@ export function openEntityInSidebar(
   if (isReady && !isReady()) return false;
   try {
     sidebar.openTab(ENTITY_TAB_KIND, { params: { entity, entities } });
+    rememberEntity(entity, entities);
     return true;
   } catch {
     // No mounted session or a host-side refusal: keep the in-page drawer.
@@ -72,7 +110,7 @@ export function makeEntityTabBody(
   open: (entity: Entity, entities: Entity[]) => boolean,
 ) {
   return function EntityTabBody({ useTabInfo }: TabProps) {
-    const params = paramsOf(useTabInfo?.());
+    const params = paramsOf(useTabInfo?.()) ?? recallEntity();
     const entity = params?.entity;
     const entities = params?.entities ?? (entity ? [entity] : []);
     if (!entity || typeof entity.id !== "string" || !entity.title)
@@ -135,6 +173,13 @@ export function installEntityTab(
   let typeReady = false;
   let disposed = false;
   const ready = () => !disposed && bodyReady && titleReady && typeReady;
+  const safeRelease = (release: (() => void) | undefined) => {
+    try {
+      release?.();
+    } catch (error) {
+      console.warn("[rich-ui] right sidebar release failed", error);
+    }
+  };
   const body = makeEntityTabBody((entity, entities) =>
     openEntityInSidebar(
       { sidebarRight: getSidebar?.() },
@@ -150,6 +195,7 @@ export function installEntityTab(
     mark: (value: boolean) => void,
   ) =>
     slots.inject(name, () => {
+      if (disposed) return () => {};
       try {
         const release = slots.register(
           {
@@ -162,60 +208,83 @@ export function installEntityTab(
         mark(true);
         return () => {
           mark(false);
-          release();
+          safeRelease(release);
         };
       } catch (error) {
         console.warn(`[rich-ui] ${name} unavailable`, error);
         return () => {};
       }
     });
-  const slotDisposers = [
-    registerSlot("sidebar.right.pane.tab", body, (value) => {
-      bodyReady = value;
-    }),
-    registerSlot("sidebar.right.pane.tab.title", title, (value) => {
-      titleReady = value;
-    }),
-  ];
+
+  // Registration is transactional enough to survive a partially available
+  // host: either both slots are installed or the first one is released before
+  // the plugin reports that the native tab is unavailable.
+  const slotDisposers: Array<() => void> = [];
+  try {
+    slotDisposers.push(
+      registerSlot("sidebar.right.pane.tab", body, (value) => {
+        bodyReady = value;
+      }),
+    );
+    slotDisposers.push(
+      registerSlot("sidebar.right.pane.tab.title", title, (value) => {
+        titleReady = value;
+      }),
+    );
+  } catch (error) {
+    console.warn("[rich-ui] right sidebar slots unavailable", error);
+    for (const release of slotDisposers) safeRelease(release);
+    return { dispose() {}, ready: () => false };
+  }
+
   let typeDispose: (() => void) | undefined;
-  const seat = ctx.inject(["sidebarRightTabs"], (injected) => {
-    const tabs = injected.get("sidebarRightTabs") as
-      { register?: (definition: object) => () => void } | undefined;
-    typeDispose?.();
-    typeDispose = undefined;
-    typeReady = false;
-    if (!tabs?.register) return;
-    let release: (() => void) | undefined;
-    try {
-      release = tabs.register({
-        id: ENTITY_TAB_ID,
-        kind: ENTITY_TAB_KIND,
-        keepMounted: true,
-        title: () => "Entity",
-      });
-      typeReady = true;
-    } catch (error) {
-      console.warn("[rich-ui] entity tab type unavailable", error);
-      return;
-    }
-    typeDispose = () => {
+  let seat: (() => void) | void;
+  try {
+    seat = ctx.inject(["sidebarRightTabs"], (injected) => {
+      if (disposed) return;
+      safeRelease(typeDispose);
+      typeDispose = undefined;
       typeReady = false;
-      release?.();
-    };
-  });
+      let tabs: { register?: (definition: object) => () => void } | undefined;
+      try {
+        tabs = injected.get("sidebarRightTabs") as typeof tabs;
+      } catch (error) {
+        console.warn("[rich-ui] entity tab service unavailable", error);
+        return;
+      }
+      if (!tabs?.register) return;
+      let release: (() => void) | undefined;
+      try {
+        release = tabs.register({
+          id: ENTITY_TAB_ID,
+          kind: ENTITY_TAB_KIND,
+          keepMounted: true,
+          title: () => "Entity",
+        });
+        typeReady = true;
+      } catch (error) {
+        console.warn("[rich-ui] entity tab type unavailable", error);
+        return;
+      }
+      typeDispose = () => {
+        typeReady = false;
+        safeRelease(release);
+      };
+    });
+  } catch (error) {
+    console.warn("[rich-ui] entity tab registration failed", error);
+    for (const release of slotDisposers) safeRelease(release);
+    return { dispose() {}, ready: () => false };
+  }
+
   return {
     dispose() {
       if (disposed) return;
       disposed = true;
-      seat?.();
-      typeDispose?.();
-      for (const dispose of slotDisposers) {
-        try {
-          dispose?.();
-        } catch {
-          /* A failing release must not mask the others. */
-        }
-      }
+      safeRelease(seat ?? undefined);
+      safeRelease(typeDispose);
+      typeDispose = undefined;
+      for (const release of slotDisposers) safeRelease(release);
     },
     ready,
   };

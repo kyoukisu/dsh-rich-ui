@@ -79,6 +79,14 @@ describe("streaming prefix", () => {
     expect(parseStreamingSpec(prefix)).toBeNull();
     expect(parseStreamingSpec(`${prefix}2}}`)?.initialState).toEqual({ n: 2 });
   });
+  it("does not preview root members that the final validator rejects", () => {
+    const unknown = JSON.stringify({
+      version: 1,
+      unexpected: true,
+      nodes: [{ type: "text", content: "ok" }],
+    });
+    expect(parseStreamingSpec(unknown)).toBeNull();
+  });
   it("rejects a document without a finished version field", () => {
     expect(parseStreamingSpec('{"vers')).toBeNull();
     expect(parseStreamingSpec("")).toBeNull();

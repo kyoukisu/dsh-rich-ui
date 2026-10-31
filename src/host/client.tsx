@@ -96,6 +96,8 @@ interface Mount {
   mode: "rich" | "diagnostic";
   error?: string;
   sessionId?: string;
+  /** Row anchor plus ordinal; a recycled DOM fence belongs to a new response. */
+  owner?: string;
   failed?: boolean;
 }
 
@@ -109,12 +111,8 @@ function viewedSession(ctx: ClientContext): string | undefined {
     );
 }
 
-/** Stable scope identity; schema/content-version hashing remains the renderer's job. */
-export function fencePersistenceKey(
-  source: HTMLElement,
-  sessionId?: string,
-): string | undefined {
-  if (!sessionId) return undefined;
+/** Identity of the response row that owns a fence, independent of its content. */
+export function fenceOwnerKey(source: HTMLElement): string | undefined {
   const row = source.closest('[data-chat-flow-kind="assistant-step"]');
   const owner = source.closest(
     "[data-chat-anchor-key], [data-chat-node-key], [data-chat-flow-key]",
@@ -123,13 +121,24 @@ export function fencePersistenceKey(
     owner?.getAttribute("data-chat-anchor-key") ??
     owner?.getAttribute("data-chat-node-key") ??
     owner?.getAttribute("data-chat-flow-key");
-  if (anchor && row) {
-    const blocks = [...row.querySelectorAll<HTMLElement>(surfaces)].filter(
-      (block) => !block.closest(own) && !block.parentElement?.closest(surfaces),
-    );
-    const ordinal = blocks.indexOf(source);
-    if (ordinal >= 0)
-      return JSON.stringify(["rich-ui", sessionId, anchor, ordinal]);
+  if (!anchor || !row) return undefined;
+  const blocks = [...row.querySelectorAll<HTMLElement>(surfaces)].filter(
+    (block) => !block.closest(own) && !block.parentElement?.closest(surfaces),
+  );
+  const ordinal = blocks.indexOf(source);
+  return ordinal >= 0 ? `${anchor}\u0000${ordinal}` : undefined;
+}
+
+/** Stable scope identity; schema/content-version hashing remains the renderer's job. */
+export function fencePersistenceKey(
+  source: HTMLElement,
+  sessionId?: string,
+): string | undefined {
+  if (!sessionId) return undefined;
+  const owner = fenceOwnerKey(source);
+  if (owner) {
+    const [anchor, ordinal] = owner.split("\u0000");
+    return JSON.stringify(["rich-ui", sessionId, anchor, Number(ordinal)]);
   }
   // Content identity is the conservative fallback: no document-global ordinal.
   // Equal content in the same session shares state when host supplies no anchor.
@@ -256,7 +265,11 @@ export function installDomRenderer(
   let disposed = false;
   let scheduled = false;
   const remove = (source: HTMLElement, mount: Mount) => {
-    mount.root.unmount();
+    try {
+      mount.root.unmount();
+    } catch {
+      /* A boundary that failed during render may already be detached. */
+    }
     mount.container.remove();
     source.hidden = mount.hidden;
     mounts.delete(source);
@@ -293,6 +306,20 @@ export function installDomRenderer(
       // closed and that validate; the preview stays inert until it settles.
       const streaming = Boolean(source.closest("[data-streaming]"));
       const sessionId = viewedSession(ctx);
+      const owner = fenceOwnerKey(source);
+      // A failed child stays represented by its source until the document text
+      // changes. Recreating the same failing tree would loop forever and make a
+      // transient render error look like a flickering answer.
+      if (
+        mount?.failed &&
+        mount.raw === raw &&
+        mount.sessionId === sessionId &&
+        mount.streaming === streaming &&
+        mount.owner === owner
+      ) {
+        if (source.hidden) source.hidden = false;
+        continue;
+      }
       // Every streamed token mutates the DOM. Reuse the exact parsed result
       // when the text did not change; hidden/sibling repairs still run.
       if (
@@ -300,6 +327,7 @@ export function installDomRenderer(
         mount.raw === raw &&
         mount.sessionId === sessionId &&
         mount.streaming === streaming &&
+        mount.owner === owner &&
         !mount.failed
       ) {
         if (source.nextSibling !== mount.container)
@@ -328,7 +356,8 @@ export function installDomRenderer(
         !mount.failed &&
         mount.raw === raw &&
         mount.sessionId === sessionId &&
-        mount.streaming === streaming
+        mount.streaming === streaming &&
+        mount.owner === owner
       ) {
         // Host reconciliation may remove the foreign sibling or reset hidden.
         if (source.nextSibling !== mount.container)
@@ -344,6 +373,7 @@ export function installDomRenderer(
             createElement(RenderBoundary, {
               onFailure: () => {
                 target.failed = true;
+                target.container.hidden = true;
                 source.hidden = target.hidden;
               },
               children: createElement(RichResponse, {
@@ -385,6 +415,7 @@ export function installDomRenderer(
         mount.sessionId = sessionId;
         mount.streaming = streaming;
         mount.error = error;
+        mount.owner = owner;
         if (source.nextSibling !== mount.container)
           source.after(mount.container);
         if (!source.hidden) source.hidden = true;
@@ -404,6 +435,7 @@ export function installDomRenderer(
         mode,
         error,
         sessionId,
+        owner,
       };
       mounts.set(source, next);
       source.after(container);
@@ -437,7 +469,13 @@ export function installDomRenderer(
     subtree: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ["data-streaming", "hidden"],
+    attributeFilter: [
+      "data-streaming",
+      "hidden",
+      "data-chat-anchor-key",
+      "data-chat-node-key",
+      "data-chat-flow-key",
+    ],
   });
   scan();
   return () => {

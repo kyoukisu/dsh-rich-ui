@@ -16,6 +16,8 @@ interface Scan {
   nodes?: unknown[];
   /** True when the whole root object closed, so nothing is left to stream. */
   complete: boolean;
+  /** An unrecognised root member; the final parser rejects it, so the preview must not hide it. */
+  unknown?: boolean;
 }
 
 /** Walk a JSON value starting at `start`, returning the end index or -1. */
@@ -144,6 +146,7 @@ export function scanPrefix(raw: string): Scan {
       if (key === "version") result.version = value;
       else if (key === "title") result.title = value;
       else if (key === "initialState") result.initialState = value;
+      else result.unknown = true;
       index = skipSpace(text, end);
     }
     if (text[index] === ",") {
@@ -167,6 +170,7 @@ export function parseStreamingSpec(raw: string): RichSpec | null {
   const scan = scanPrefix(raw);
   if (
     scan.version !== 1 ||
+    scan.unknown ||
     !Array.isArray(scan.nodes) ||
     scan.nodes.length === 0
   )

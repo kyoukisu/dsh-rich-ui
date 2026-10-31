@@ -51,8 +51,8 @@ function ticksFor(min: number, max: number, count = 5) {
   if (hi === lo) hi = lo + 1;
   const raw = (hi - lo) / count;
   const magnitude = 10 ** Math.floor(Math.log10(raw));
-  const normal = raw / magnitude;
-  const step =
+  const normal = raw / (magnitude || raw);
+  const candidate =
     (normal <= 1
       ? 1
       : normal <= 2
@@ -61,12 +61,22 @@ function ticksFor(min: number, max: number, count = 5) {
           ? 2.5
           : normal <= 5
             ? 5
-            : 10) * magnitude;
+            : 10) * (magnitude || raw);
+  const step =
+    Number.isFinite(candidate) && candidate > 0 ? candidate : raw || 1;
   lo = Math.floor(lo / step) * step;
   hi = Math.ceil(hi / step) * step;
   const ticks: number[] = [];
-  for (let value = lo; value <= hi + step / 2; value += step)
-    ticks.push(Math.round(value * 1e6) / 1e6);
+  // Indexed ticks stop at 1000 iterations even when the range is so small that
+  // floating-point addition would no longer advance the loop variable.
+  for (let index = 0; index <= 1000; index++) {
+    const value = lo + index * step;
+    if (value > hi + step / 2) break;
+    // Fixed decimal rounding collapses legitimate sub-micro data into duplicate
+    // zero ticks. Twelve significant digits preserves the step at any scale.
+    const tick = Number(value.toPrecision(12));
+    if (ticks[ticks.length - 1] !== tick) ticks.push(tick);
+  }
   return { lo, hi, ticks };
 }
 
@@ -166,6 +176,17 @@ export function Chart({
     );
   }
   const { categories, series } = model;
+  if (
+    node.kind === "donut" &&
+    series.some((entry) => entry.values.some((v) => v < 0))
+  )
+    return (
+      <div className="ru-chart-shell" ref={shell}>
+        <p role="alert" className="ru-evaluation-error">
+          Donut values cannot be negative.
+        </p>
+      </div>
+    );
   const values = allValues(series);
   const total = series.reduce(
     (sum, entry) =>

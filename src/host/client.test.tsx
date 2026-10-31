@@ -171,6 +171,85 @@ describe("installed-host DOM contract", () => {
     ).toBe(true);
     sessionStorage.clear();
   });
+  it("stops retrying a fence whose render throws until its text changes", async () => {
+    const original = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "ResizeObserver",
+    );
+    let attempts = 0;
+    class BrokenObserver {
+      constructor() {
+        attempts += 1;
+        throw new Error("observer failed");
+      }
+    }
+    Object.defineProperty(globalThis, "ResizeObserver", {
+      configurable: true,
+      writable: true,
+      value: BrokenObserver,
+    });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { block, pre } = source(
+      JSON.stringify({
+        version: 1,
+        nodes: [
+          { type: "chart", kind: "bar", data: [{ label: "A", value: 1 }] },
+        ],
+      }),
+    );
+    dispose = installDomRenderer(ctx());
+    await tick();
+    await tick();
+    await tick();
+    expect(block.hidden).toBe(false);
+    expect(attempts).toBe(1);
+    expect(error).toHaveBeenCalled();
+
+    await act(async () => {
+      pre.textContent = JSON.stringify(sample);
+    });
+    await tick();
+    expect(block.hidden).toBe(true);
+    expect(
+      document.querySelector("[data-rich-ui-root]")?.textContent,
+    ).toContain("Hello rich UI");
+    if (original) Object.defineProperty(globalThis, "ResizeObserver", original);
+    else delete (globalThis as Record<string, unknown>).ResizeObserver;
+  });
+
+  it("drops persisted state when the same fence is reassigned to another response", async () => {
+    sessionStorage.clear();
+    const spec = {
+      version: 1,
+      initialState: { enabled: false },
+      nodes: [
+        { type: "switch", stateKey: "enabled", label: "Remember selection" },
+      ],
+    };
+    const { row } = source(JSON.stringify(spec));
+    row.dataset.chatAnchorKey = "response-a";
+    await act(async () => {
+      dispose = installDomRenderer(ctx());
+    });
+    await tick();
+    const checkbox = () =>
+      row.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    await act(async () => checkbox().click());
+    await tick();
+    expect(checkbox().checked).toBe(true);
+    expect(sessionStorage.length).toBe(1);
+
+    await act(async () => {
+      row.dataset.chatAnchorKey = "response-b";
+    });
+    await tick();
+    expect(checkbox().checked).toBe(false);
+    await act(async () => checkbox().click());
+    await tick();
+    expect(sessionStorage.length).toBe(2);
+    sessionStorage.clear();
+  });
+
   it("does not mount user fences or incomplete streaming JSON; observes settlement", async () => {
     const user = source(JSON.stringify(sample), "user");
     const assistant = source("{");

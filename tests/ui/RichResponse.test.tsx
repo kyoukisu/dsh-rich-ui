@@ -619,6 +619,21 @@ describe("RichResponse regressions", () => {
       document.querySelector(".ru-overlay")?.getAttribute("data-theme"),
     ).toBe("auto");
   });
+
+  it("detects the host dark attribute even without a data-theme element", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [{ type: "entity-ref", entityId: "one" }],
+      entities: [{ id: "one", kind: "test", title: "One" }],
+    };
+    document.body.dataset.dsDarkTheme = "";
+    act(() => root.render(<RichResponse spec={spec} />));
+    click(button("One"));
+    const overlay = document.querySelector(".ru-overlay");
+    expect(overlay?.getAttribute("data-theme")).toBe("dark");
+    expect(overlay?.hasAttribute("data-rich-ui-root")).toBe(true);
+    delete document.body.dataset.dsDarkTheme;
+  });
 });
 
 describe("dashboard vocabulary", () => {
@@ -687,6 +702,130 @@ describe("dashboard vocabulary", () => {
       "https://example.org/fixed.mp4",
     );
     expect(host.querySelector(".ru-media-fallback")).toBeNull();
+  });
+
+  it("keeps sub-micro line chart ticks distinct", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "chart",
+          kind: "line",
+          categories: ["A", "B"],
+          series: [{ label: "Rate", values: [0, 1e-7] }],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const labels = [...host.querySelectorAll("text.ru-axis")].map(
+      (node) => node.textContent,
+    );
+    expect(labels.some((label) => label?.includes("e-7"))).toBe(true);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it("rejects negative donut values instead of drawing a contradictory ring", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "chart",
+          kind: "donut",
+          data: [
+            { label: "Loss", value: -5 },
+            { label: "Gain", value: 10 },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelector(".ru-chart")).toBeNull();
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+      "cannot be negative",
+    );
+  });
+
+  it("rejects a negative donut value produced by state", () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { change: -3 },
+      nodes: [
+        {
+          type: "chart",
+          kind: "donut",
+          data: [
+            { label: "Before", value: 10 },
+            { label: "Change", value: { state: "change" } },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+      "cannot be negative",
+    );
+  });
+
+  it("keeps diagram connector text in the accessibility tree", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [
+        {
+          type: "diagram",
+          steps: [
+            { id: "a", label: "Start" },
+            { id: "b", label: "Fallback", connector: "on failure" },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const connector = host.querySelector(".ru-diagram-link")!;
+    expect(connector.getAttribute("aria-hidden")).toBeNull();
+    expect(connector.textContent).toContain("on failure");
+    expect(connector.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+      "true",
+    );
+  });
+
+  it("does not submit an enclosing form from local controls", () => {
+    let submits = 0;
+    const spec: RichSpec = {
+      version: 1,
+      entities: [{ id: "one", kind: "test", title: "One" }],
+      nodes: [
+        {
+          type: "tabs",
+          stateKey: "tab",
+          tabs: [
+            { id: "a", label: "A", children: [] },
+            { id: "b", label: "B", children: [] },
+          ],
+        },
+        {
+          type: "button",
+          label: "Act",
+          action: { type: "toggle", key: "flag" },
+        },
+        { type: "entity-ref", entityId: "one" },
+      ],
+    };
+    act(() =>
+      root.render(
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            submits += 1;
+          }}
+        >
+          <RichResponse spec={spec} />
+        </form>,
+      ),
+    );
+    click(button("B"));
+    click(button("Act"));
+    click(button("One"));
+    expect(submits).toBe(0);
   });
 
   it("labels small scatter ticks with significant digits", () => {

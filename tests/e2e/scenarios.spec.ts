@@ -23,9 +23,10 @@ test("film detail panel opens, navigates related entity, and restores focus", as
     dialog.getByRole("heading", { name: "Interstellar", exact: true }),
   ).toBeVisible();
   await dialog.getByRole("button", { name: "Image 2" }).click();
-  await expect(
-    dialog.getByRole("button", { name: "Image 2" }),
-  ).toHaveAttribute("aria-pressed", "true");
+  await expect(dialog.getByRole("button", { name: "Image 2" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await dialog.getByRole("button", { name: "Arrival", exact: true }).click();
   await expect(
     dialog.getByRole("heading", { name: "Arrival", exact: true }),
@@ -50,17 +51,11 @@ test("configurator updates text, conditional chart, tabs and notification locall
   page,
 }) => {
   await page.goto("/?demo=configurator");
-  await page
-    .getByRole("textbox", { name: "Project name" })
-    .fill("New system");
+  await page.getByRole("textbox", { name: "Project name" }).fill("New system");
   await expect(page.locator(".ru-title")).toHaveText("New system");
-  await expect(
-    page.getByRole("img", { name: "Line chart" }),
-  ).toBeVisible();
+  await expect(page.getByRole("img", { name: "Line chart" })).toBeVisible();
   await page.getByRole("switch", { name: "Enable analytics" }).uncheck();
-  await expect(page.getByRole("img", { name: "Line chart" })).toHaveCount(
-    0,
-  );
+  await expect(page.getByRole("img", { name: "Line chart" })).toHaveCount(0);
   await page.getByRole("tab", { name: "Table" }).click();
   await expect(page.getByRole("table")).toBeVisible();
   await page.getByRole("switch", { name: "Show notifications" }).check();
@@ -182,6 +177,55 @@ test("icons carry semantic colour, not one grey tone", async ({ page }) => {
     .evaluate((el) => getComputedStyle(el).color);
   expect(danger).not.toBe(muted);
 });
+test("dark secondary copy keeps readable contrast in cards and the drawer", async ({
+  page,
+}) => {
+  const contrast = (selector: string) =>
+    page
+      .locator(selector)
+      .first()
+      .evaluate((element) => {
+        const parse = (value: string) => {
+          const match = value.match(/rgba?\(([^)]+)\)/);
+          return match
+            ? match[1]!.split(",").map((part) => Number(part.trim()))
+            : [0, 0, 0, 0];
+        };
+        const luminance = ([r, g, b]: number[]) => {
+          const channel = (value: number) => {
+            const c = value / 255;
+            return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          };
+          return (
+            0.2126 * channel(r!) + 0.7152 * channel(g!) + 0.0722 * channel(b!)
+          );
+        };
+        let node: HTMLElement | null = element as HTMLElement;
+        let background = [255, 255, 255];
+        while (node) {
+          const candidate = parse(getComputedStyle(node).backgroundColor);
+          if ((candidate[3] ?? 1) > 0) {
+            background = candidate;
+            break;
+          }
+          node = node.parentElement;
+        }
+        const foreground = parse(getComputedStyle(element).color);
+        const a = luminance(foreground);
+        const b = luminance(background);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      });
+
+  await page.goto("/?demo=films&theme=dark");
+  expect(await contrast(".ru-entity-description")).toBeGreaterThanOrEqual(4.5);
+  await page
+    .locator(".ru-entity-card[aria-label='Details: Interstellar']")
+    .click();
+  await expect(page.locator(".ru-detail")).toBeVisible();
+  expect(await contrast(".ru-detail-body > p")).toBeGreaterThanOrEqual(4.5);
+  expect(await contrast(".ru-detail-subtitle")).toBeGreaterThanOrEqual(4.5);
+});
+
 test("entity rows open the same detail panel and keep focus contract", async ({
   page,
 }) => {
@@ -265,9 +309,7 @@ test("rejected block explains the error and reveals its source", async ({
   );
   await page.getByText("Show the source JSON").click();
   await expect(page.locator(".ru-diagnostic pre")).toContainText('"stat"');
-  await expect(
-    page.getByRole("button", { name: "Copy error" }),
-  ).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Copy error" })).toBeEnabled();
   await expect(
     page.getByRole("button", { name: "Ask the model to fix" }),
   ).toHaveCount(0);

@@ -121,6 +121,7 @@ function TabsBlock({
         {node.tabs.map((tab, index) => (
           <button
             key={tab.id}
+            type="button"
             id={`${uid}-${tab.id}`}
             role="tab"
             aria-selected={current === tab.id}
@@ -446,6 +447,7 @@ export function RichResponse({
           return (
             <button
               key={key}
+              type="button"
               className={`ru-button ru-button-${n.variant ?? "secondary"}`}
               disabled={
                 Boolean(n.disabled && ev(n.disabled)) ||
@@ -605,6 +607,7 @@ export function RichResponse({
           return (
             <button
               key={key}
+              type="button"
               className="ru-entity-card"
               onClick={() => openEntity(entity.id)}
               aria-label={`Details: ${entity.title}`}
@@ -683,6 +686,7 @@ function EntityRows({
       {entities.map((entity) => (
         <li key={entity.id}>
           <button
+            type="button"
             className="ru-entity-row"
             onClick={() => onOpen(entity.id)}
             aria-label={`Details: ${entity.title}`}
@@ -759,6 +763,40 @@ function Carousel({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** The host may expose the theme as an attribute, a class or only through the
+ * effective palette. The drawer is portaled outside the response wrapper, so it
+ * has to reproduce that decision instead of assuming the light base tokens. */
+function themeOf(source: HTMLElement): string | undefined {
+  let node: HTMLElement | null = source;
+  while (node) {
+    const explicit = node.getAttribute("data-theme");
+    if (explicit) return explicit;
+    if (node.hasAttribute("data-ds-dark-theme")) return "dark";
+    if (node.classList.contains("dark")) return "dark";
+    node = node.parentElement;
+  }
+  let probe: HTMLElement | null = source;
+  while (probe) {
+    const background = getComputedStyle(probe).backgroundColor;
+    if (background && background !== "transparent") {
+      const rgb = background.match(/rgba?\(([^)]+)\)/);
+      if (rgb) {
+        const [r, g, b, a = "1"] = rgb[1]!
+          .split(",")
+          .map((part) => part.trim());
+        if (Number(a) > 0) {
+          const luminance =
+            (0.2126 * Number(r) + 0.7152 * Number(g) + 0.0722 * Number(b)) /
+            255;
+          return luminance < 0.45 ? "dark" : "light";
+        }
+      }
+    }
+    probe = probe.parentElement;
+  }
+  return undefined;
+}
+
 function EntityPanel({
   entity,
   entities,
@@ -797,11 +835,7 @@ function EntityPanel({
   const [theme, setTheme] = useState<string>();
   useEffect(() => {
     const source = themeSource.current;
-    const sync = () =>
-      setTheme(
-        source?.closest("[data-theme]")?.getAttribute("data-theme") ??
-          undefined,
-      );
+    const sync = () => setTheme(source ? themeOf(source) : undefined);
     sync();
     const observer = new MutationObserver(sync);
     if (source) {
@@ -809,7 +843,7 @@ function EntityPanel({
       while (ancestor) {
         observer.observe(ancestor, {
           attributes: true,
-          attributeFilter: ["data-theme"],
+          attributeFilter: ["data-theme", "data-ds-dark-theme", "class"],
         });
         ancestor = ancestor.parentElement;
       }
@@ -896,6 +930,7 @@ function EntityPanel({
   return createPortal(
     <div
       className={`rich-ui ru-overlay ${modal ? "ru-modal" : "ru-drawer"}`}
+      data-rich-ui-root=""
       data-theme={theme}
       onClick={(event) => {
         if (modal && event.target === event.currentTarget) onClose();

@@ -23,11 +23,13 @@ const two: Entity = { id: "two", kind: "Film", title: "Two" };
 let host: HTMLDivElement;
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
 beforeEach(() => {
+  sessionStorage.clear();
   host = document.createElement("div");
   document.body.append(host);
 });
 afterEach(() => {
   host.remove();
+  sessionStorage.clear();
 });
 
 describe("native entity tab", () => {
@@ -167,6 +169,133 @@ describe("native entity tab", () => {
       ),
     ).toBe(true);
     expect(openTab).toHaveBeenCalledTimes(1);
+  });
+
+  it("restores the last entity when the host loses tab params on reload", async () => {
+    openEntityInSidebar({ sidebarRight: { openTab: vi.fn() } }, one, [
+      one,
+      two,
+    ]);
+    const Body = makeEntityTabBody(vi.fn(() => true));
+    const root = createRoot(host);
+    await act(async () => {
+      root.render(<Body useTabInfo={() => ({ tab: { navigation: {} } })} />);
+    });
+    expect(host.textContent).toContain("One");
+    expect(host.textContent).toContain("First entity");
+    await act(async () => root.unmount());
+  });
+
+  it("releases the first slot when the second registration throws", () => {
+    const releaseBody = vi.fn();
+    const injectSlot = vi
+      .fn()
+      .mockImplementationOnce((_name: string, callback: () => () => void) =>
+        callback(),
+      )
+      .mockImplementationOnce(() => {
+        throw new Error("slot unavailable");
+      });
+    const ctx = {
+      inject: vi.fn(() => vi.fn()),
+      slots: { inject: injectSlot, register: vi.fn(() => releaseBody) },
+    };
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const handle = installEntityTab(ctx as never);
+    expect(handle.ready()).toBe(false);
+    expect(releaseBody).toHaveBeenCalledTimes(1);
+    handle.dispose();
+    expect(releaseBody).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases slots when the tab service subscription throws", () => {
+    const releaseBody = vi.fn();
+    const releaseTitle = vi.fn();
+    const slotRegister = vi
+      .fn()
+      .mockReturnValueOnce(releaseBody)
+      .mockReturnValueOnce(releaseTitle);
+    const ctx = {
+      inject: vi.fn(() => {
+        throw new Error("service unavailable");
+      }),
+      slots: {
+        inject: vi.fn((_name: string, callback: () => () => void) =>
+          callback(),
+        ),
+        register: slotRegister,
+      },
+    };
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const handle = installEntityTab(ctx as never);
+    expect(handle.ready()).toBe(false);
+    expect(releaseBody).toHaveBeenCalledTimes(1);
+    expect(releaseTitle).toHaveBeenCalledTimes(1);
+  });
+
+  it("finishes cleanup when one release throws", () => {
+    const releaseBody = vi.fn(() => {
+      throw new Error("release failed");
+    });
+    const releaseTitle = vi.fn();
+    const releaseType = vi.fn(() => {
+      throw new Error("type release failed");
+    });
+    const ctx = {
+      inject: vi.fn(
+        (
+          _names: string[],
+          callback: (injected: { get(name: string): unknown }) => void,
+        ) => {
+          callback({ get: () => ({ register: vi.fn(() => releaseType) }) });
+          return vi.fn(() => {
+            throw new Error("seat release failed");
+          });
+        },
+      ),
+      slots: {
+        inject: vi.fn((_name: string, callback: () => () => void) =>
+          callback(),
+        ),
+        register: vi
+          .fn()
+          .mockReturnValueOnce(releaseBody)
+          .mockReturnValueOnce(releaseTitle),
+      },
+    };
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const handle = installEntityTab(ctx as never);
+    expect(handle.ready()).toBe(true);
+    expect(() => handle.dispose()).not.toThrow();
+    expect(releaseType).toHaveBeenCalledTimes(1);
+    expect(releaseBody).toHaveBeenCalledTimes(1);
+    expect(releaseTitle).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores a late service callback after disposal", () => {
+    let late: (() => void) | undefined;
+    const register = vi.fn(() => vi.fn());
+    const ctx = {
+      inject: vi.fn(
+        (
+          _names: string[],
+          callback: (injected: { get(name: string): unknown }) => void,
+        ) => {
+          late = () => callback({ get: () => ({ register }) });
+          return vi.fn();
+        },
+      ),
+      slots: {
+        inject: vi.fn((_name: string, callback: () => () => void) =>
+          callback(),
+        ),
+        register: vi.fn(() => vi.fn()),
+      },
+    };
+    const handle = installEntityTab(ctx as never);
+    handle.dispose();
+    late!();
+    expect(register).not.toHaveBeenCalled();
   });
 
   it("renders the shared details and follows related entities in the same tab", async () => {

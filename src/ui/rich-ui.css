@@ -107,7 +107,8 @@
 
 /* Inside the harness: adopt its palette and metrics so a reply does not read as
    a foreign widget. Component language stays ours. */
-[data-rich-ui-root] .rich-ui {
+[data-rich-ui-root] .rich-ui:not([data-theme="dark"]),
+.rich-ui[data-rich-ui-root]:not([data-theme="dark"]) {
   --ru-bg: var(--dsw-alias-bg-layer-1, #ffffff);
   --ru-surface: color-mix(
     in srgb,
@@ -122,14 +123,23 @@
   --ru-ink: var(--dsw-alias-label-primary, #171717);
   --ru-ink-soft: color-mix(
     in srgb,
-    var(--dsw-alias-label-primary, #171717) 82%,
+    var(--dsw-alias-label-primary, #171717) 88%,
     var(--dsw-alias-bg-layer-1, #ffffff)
   );
-  --ru-muted: var(--dsw-alias-label-secondary, #6b6b6b);
-  --ru-faint: var(--dsw-alias-label-tertiary, #6e6e6e);
-  --ru-caption-ink: var(
-    --dsw-alias-label-caption,
-    var(--dsw-alias-label-secondary, #5c5c60)
+  --ru-muted: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #171717) 70%,
+    var(--dsw-alias-bg-layer-1, #ffffff)
+  );
+  --ru-faint: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #171717) 60%,
+    var(--dsw-alias-bg-layer-1, #ffffff)
+  );
+  --ru-caption-ink: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #171717) 78%,
+    var(--dsw-alias-bg-layer-1, #ffffff)
   );
   --ru-border: var(--dsw-alias-border-l1, #e4e4e6);
   --ru-border-strong: var(--dsw-alias-border-l2, #d3d3d6);
@@ -195,14 +205,23 @@ body[data-ds-dark-theme] .rich-ui {
   --ru-ink: var(--dsw-alias-label-primary, #ececec);
   --ru-ink-soft: color-mix(
     in srgb,
-    var(--dsw-alias-label-primary, #ececec) 82%,
+    var(--dsw-alias-label-primary, #ececec) 88%,
     var(--dsw-alias-bg-layer-1, #212121)
   );
-  --ru-muted: var(--dsw-alias-label-secondary, #a3a3a5);
-  --ru-faint: var(--dsw-alias-label-tertiary, #8b8b8e);
-  --ru-caption-ink: var(
-    --dsw-alias-label-caption,
-    var(--dsw-alias-label-secondary, #b8b8ba)
+  --ru-muted: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #ececec) 70%,
+    var(--dsw-alias-bg-layer-1, #212121)
+  );
+  --ru-faint: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #ececec) 60%,
+    var(--dsw-alias-bg-layer-1, #212121)
+  );
+  --ru-caption-ink: color-mix(
+    in srgb,
+    var(--dsw-alias-label-primary, #ececec) 78%,
+    var(--dsw-alias-bg-layer-1, #212121)
   );
   --ru-border: var(--dsw-alias-border-l1, #3a3a3c);
   --ru-border-strong: var(--dsw-alias-border-l2, #4a4a4d);
@@ -453,6 +472,11 @@ body[data-ds-dark-theme] .rich-ui {
   background: var(--ru-border);
   margin: 4px 0;
 }
+.ru-divider:has(span) {
+  height: auto;
+  background: none;
+  margin: 16px 0 8px;
+}
 .ru-divider span {
   position: absolute;
   top: 50%;
@@ -462,6 +486,19 @@ body[data-ds-dark-theme] .rich-ui {
   color: var(--ru-muted);
   font-size: 11.5px;
   letter-spacing: 0.01em;
+}
+.ru-divider:has(span) span {
+  position: static;
+  display: block;
+  transform: none;
+  padding: 0;
+  background: none;
+  color: var(--ru-ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
 }
 
 /* Buttons and fields ------------------------------------------------------ */
@@ -1709,11 +1746,13 @@ body[data-ds-dark-theme] .rich-ui {
   line-height: 1.5;
   color: var(--ru-caption-ink);
 }
-.ru-entity-row-description {
+.ru-entity-row-meta > .ru-entity-row-description {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  color: var(--ru-ink-soft);
+  line-height: 1.55;
 }
 .ru-meta {
   display: flex;
@@ -1835,6 +1874,7 @@ body[data-ds-dark-theme] .rich-ui {
   flex-shrink: 0;
   width: 100%;
   aspect-ratio: 2 / 3;
+  max-height: 300px;
   height: auto;
   object-fit: cover;
   background: var(--ru-surface);
@@ -1857,11 +1897,13 @@ body[data-ds-dark-theme] .rich-ui {
   line-height: 1.5;
   color: var(--ru-caption-ink);
 }
-.ru-entity-description {
+.ru-entity-meta > .ru-entity-description {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  color: var(--ru-ink-soft);
+  line-height: 1.55;
 }
 .ru-entity-open {
   display: flex;
@@ -1975,12 +2017,12 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   outline: none;
 }
 .ru-detail-subtitle {
-  font-size: 13px;
-  color: var(--ru-muted);
+  font-size: 13.5px;
+  color: var(--ru-ink-soft);
   margin-bottom: 14px !important;
 }
 .ru-detail-body > p {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.7;
   color: var(--ru-ink-soft);
 }
