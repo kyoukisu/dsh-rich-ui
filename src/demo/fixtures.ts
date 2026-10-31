@@ -142,6 +142,11 @@ export const films: RichSpec = {
         { label: "Year", value: 2014 },
         { label: "Runtime", value: "169 min" },
       ],
+      cast: [
+        { name: "Matthew McConaughey", role: "Cooper" },
+        { name: "Anne Hathaway", role: "Brand" },
+        { name: "Jessica Chastain", role: "Murph" },
+      ],
       sources: [
         {
           title: "Movie page · TMDB",

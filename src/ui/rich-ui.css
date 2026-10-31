@@ -609,6 +609,8 @@ body[data-ds-dark-theme] .rich-ui {
   border-radius: 999px;
   background: var(--ru-surface-2);
 }
+/* A thumb filled with the surface colour disappeared into the track in dark
+   mode; the ink colour keeps it visible in both themes. */
 .ru-slider input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   -webkit-appearance: none;
@@ -617,18 +619,18 @@ body[data-ds-dark-theme] .rich-ui {
   height: 18px;
   margin-top: -6px;
   border-radius: 50%;
-  background: var(--ru-bg);
-  border: 1px solid var(--ru-border-strong);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+  background: var(--ru-ink);
+  border: 2px solid var(--ru-bg);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
 }
 .ru-slider input[type="range"]::-moz-range-thumb {
   box-sizing: border-box;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--ru-bg);
-  border: 1px solid var(--ru-border-strong);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+  background: var(--ru-ink);
+  border: 2px solid var(--ru-bg);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
 }
 .ru-slider input[type="range"]:focus-visible {
   outline-offset: 2px;
@@ -2093,6 +2095,55 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
 .ru-detail-body section {
   margin-top: 26px;
 }
+.ru-cast {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 2px;
+  list-style: none;
+  overflow-x: auto;
+}
+.ru-cast > li {
+  flex: 0 0 82px;
+  min-width: 0;
+}
+.ru-cast-photo,
+.ru-cast-initial {
+  display: flex;
+  width: 82px;
+  height: 82px;
+  border-radius: 9px;
+  object-fit: cover;
+  background: var(--ru-surface-2);
+}
+.ru-cast-initial {
+  align-items: center;
+  justify-content: center;
+  color: var(--ru-ink);
+  font-size: 24px;
+  font-weight: 620;
+}
+.ru-cast-copy {
+  display: block;
+  margin-top: 6px;
+  min-width: 0;
+}
+.ru-cast-copy strong,
+.ru-cast-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ru-cast-copy strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ru-ink);
+}
+.ru-cast-copy small {
+  font-size: 11px;
+  color: var(--ru-muted);
+}
 .ru-source {
   display: flex;
   align-items: center;
@@ -2197,6 +2248,18 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   .ru-grid {
     grid-template-columns: 1fr;
   }
+  /* Metrics are short: two per row keeps three KPI cards from turning into a
+     screen of mostly empty space. Complex grids still collapse to one column. */
+  .ru-grid:has(> .ru-stat) {
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: var(--ru-space-3);
+  }
+  .ru-grid:has(> .ru-stat) > .ru-stat {
+    padding: 13px;
+  }
+  .ru-grid:has(> .ru-stat) > .ru-stat:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
   .ru-card {
     padding: 15px;
     border-radius: 12px;
@@ -2296,6 +2359,7 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
     position: static;
     white-space: normal;
     overflow-wrap: anywhere;
+    font-size: 11.5px;
   }
   .ru-table-filter {
     max-width: none;

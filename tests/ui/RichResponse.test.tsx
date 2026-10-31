@@ -435,6 +435,28 @@ describe("RichResponse regressions", () => {
     expect(document.activeElement).toBe(opener);
     expect(document.body.style.overflow).toBe("");
   });
+  it("renders entity cast members with roles in the detail panel", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [{ type: "entity-ref", entityId: "one" }],
+      entities: [
+        {
+          id: "one",
+          kind: "Film",
+          title: "One",
+          cast: [
+            { name: "Ada", role: "Pilot" },
+            { name: "Bo", role: "Engineer" },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} detailMode="modal" />));
+    click(button("One"));
+    expect(document.querySelectorAll(".ru-cast > li")).toHaveLength(2);
+    expect(document.querySelector(".ru-cast-initial")?.textContent).toBe("A");
+    expect(document.querySelector(".ru-cast")?.textContent).toContain("Pilot");
+  });
   it("recaptures escaped keyboard focus and wraps backward in the modal", () => {
     const spec: RichSpec = {
       version: 1,

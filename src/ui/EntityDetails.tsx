@@ -94,6 +94,32 @@ export function EntityDetails({
             ))}
           </dl>
         ) : null}
+        {entity.cast?.length ? (
+          <section>
+            <h3 className="ru-section-title">Cast</h3>
+            <ul className="ru-cast">
+              {entity.cast.map((member) => (
+                <li key={`${member.name}-${member.role ?? ""}`}>
+                  {member.image ? (
+                    <Picture
+                      src={member.image}
+                      alt=""
+                      className="ru-cast-photo"
+                    />
+                  ) : (
+                    <span className="ru-cast-initial" aria-hidden="true">
+                      {member.name.slice(0, 1)}
+                    </span>
+                  )}
+                  <span className="ru-cast-copy">
+                    <strong>{member.name}</strong>
+                    {member.role && <small>{member.role}</small>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         {entity.sources?.length ? (
           <div className="ru-detail-actions">
             <a

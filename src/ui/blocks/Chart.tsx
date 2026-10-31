@@ -209,7 +209,7 @@ export function Chart({
           ? plotW / 2
           : (index * plotW) / (categories.length - 1));
   const multi = series.length > 1;
-  const labelEvery = Math.ceil(categories.length / (narrow ? 4 : 9));
+  const labelEvery = Math.ceil(categories.length / (narrow ? 6 : 9));
   const description = `${
     node.kind === "donut"
       ? "Donut chart"

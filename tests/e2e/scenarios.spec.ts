@@ -398,6 +398,13 @@ test("mobile tables keep the last column readable and covers fill their card", a
 }) => {
   await page.setViewportSize({ width: 393, height: 852 });
   await page.goto("/?demo=dashboard&theme=dark");
+  const tracks = await page
+    .locator(".ru-grid")
+    .first()
+    .evaluate(
+      (el) => getComputedStyle(el).gridTemplateColumns.split(" ").length,
+    );
+  expect(tracks).toBe(2);
   const table = page.locator(".ru-table-wrap").first();
   expect(await table.evaluate((el) => getComputedStyle(el).maskImage)).toBe(
     "none",

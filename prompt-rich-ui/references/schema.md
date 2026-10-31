@@ -6,7 +6,7 @@ Read before using an unfamiliar node. These are exact current parser fields; fie
 
 Root: `{version: 1, nodes: Node[], title?: string, entities?: Entity[], initialState?: Record<KEY, Scalar>}`.
 
-Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?: string, image?: URL, images?: URL[], facts?: {label: string, value: Scalar}[], sources?: {title: string, url: URL}[], related?: KEY[], badge?: {label: string, tone?: TONE}, thumbShape?:"poster"|"square"}`. `thumbShape` only affects the compact row thumbnail: `poster` (default) is 2:3 for film covers, `square` suits product photos. IDs must be unique; every entity-ref, related target and open-entity action target must exist. Entity titles/descriptions are literal strings, not Expr.
+Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?: string, image?: URL, images?: URL[], facts?: {label: string, value: Scalar}[], cast?: {name: string, role?: string, image?: URL}[], sources?: {title: string, url: URL}[], related?: KEY[], badge?: {label: string, tone?: TONE}, thumbShape?:"poster"|"square"}`. `thumbShape` only affects the compact row thumbnail: `poster` (default) is 2:3 for film covers, `square` suits product photos. `cast` is a short photo row in the detail panel for actors, characters or key people; omit it when the panel does not need that section. IDs must be unique; every entity-ref, related target and open-entity action target must exist. Entity titles/descriptions are literal strings, not Expr.
 
 ## Nodes
 

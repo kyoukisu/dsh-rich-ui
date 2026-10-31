@@ -50,6 +50,8 @@ export interface Entity {
   image?: string;
   images?: string[];
   facts?: { label: string; value: Scalar }[];
+  /** Key people or characters, shown as a compact photo row in the detail panel. */
+  cast?: { name: string; role?: string; image?: string }[];
   sources?: { title: string; url: string }[];
   related?: string[];
   /** Short highlight under the row, e.g. "Cheapest". */
@@ -807,6 +809,7 @@ export function parseRichSpec(input: unknown): RichSpec {
           "image",
           "images",
           "facts",
+          "cast",
           "sources",
           "related",
           "badge",
@@ -828,6 +831,14 @@ export function parseRichSpec(input: unknown): RichSpec {
           fields(x, ["label", "value"]);
           str(x.label);
           scalar(x.value);
+        });
+      if (e.cast !== undefined)
+        arr(e.cast, (member) => {
+          const x = obj(member);
+          fields(x, ["name"], ["role", "image"]);
+          str(x.name);
+          if (x.role !== undefined) str(x.role);
+          if (x.image !== undefined) url(x.image);
         });
       if (e.sources !== undefined)
         arr(e.sources, (f) => {

@@ -329,6 +329,40 @@ describe("semantic icon colour and entity rows", () => {
 });
 
 describe("commerce presentation", () => {
+  it("accepts entity cast members and rejects an unsafe portrait URL", () => {
+    const base = {
+      version: 1,
+      entities: [
+        {
+          id: "a",
+          kind: "Film",
+          title: "A",
+          cast: [
+            {
+              name: "Ada",
+              role: "Pilot",
+              image: "https://example.org/ada.jpg",
+            },
+          ],
+        },
+      ],
+      nodes: [{ type: "entity-ref", entityId: "a" }],
+    };
+    expect(() => parseRichSpec(base)).not.toThrow();
+    expect(() =>
+      parseRichSpec({
+        ...base,
+        entities: [
+          {
+            id: "a",
+            kind: "Film",
+            title: "A",
+            cast: [{ name: "Ada", image: "javascript:alert(1)" }],
+          },
+        ],
+      }),
+    ).toThrow(/URL/);
+  });
   it("accepts a meta strip and entity badges, rejecting bad shapes", () => {
     const base = {
       version: 1,
