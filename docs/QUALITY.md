@@ -29,7 +29,7 @@ An assistant's claims about its own implementation are not authoritative specifi
 
 ## Deliberately not completed yet
 
-Same-turn validation feedback, table filters, safe isolated mini-app runtime, maps/provider integration, Mermaid/ER graphs, entity data enrichment, writing artifacts, citations-to-document navigation, full fidelity measurements and live model-host end-to-end acceptance. These are backlog items, not implemented features.
+Same-turn validation feedback, safe isolated mini-app runtime, maps/provider integration, Mermaid/ER graphs, entity data enrichment, writing artifacts, citations-to-document navigation, full fidelity measurements and live model-host end-to-end acceptance. Table filters are implemented; they are no longer on this list.
 
 ## Security boundaries
 

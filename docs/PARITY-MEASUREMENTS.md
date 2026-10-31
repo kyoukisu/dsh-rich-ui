@@ -26,4 +26,4 @@ This is **our current rendering**, not the ChatGPT reference. It exists so that 
 
 - No reference screenshot was captured at these exact widths in the same browser, so no parity percentage can be derived.
 - Fonts are system sans, not the reference's brand font; line-break positions differ even at equal font size.
-- The ChatGPT entity panel could not be observed in a successful state (anonymous shared page returned an error), so panel geometry is unverified.
+- The ChatGPT entity panel was later observed in a successful state at 2048 × 1088: a non-modal right-edge panel about 466 px wide with a two-up gallery. Mobile geometry and dark theme remain uncaptured. See `REFERENCE-OBSERVATIONS.md`.

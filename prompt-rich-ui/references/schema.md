@@ -25,7 +25,7 @@ Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?:
 - `checkbox`: `{type:"checkbox",stateKey:string,label:string}` — boolean consent/selection, distinct from the `switch` toggle.
 - `radio`: `{type:"radio",stateKey:string,label?:string,layout?:"row"|"column",options:[{label,value}]}` — one choice from a short visible list. `layout:"column"` renders one option per row, like a navigable list; the default `row` keeps a compact inline strip.
 - `segmented`: `{type:"segmented",stateKey:string,label?:string,options:[{label,value}]}` — same contract as `radio`, rendered as a segmented control for 2–4 short options.
-- `input` with `inputType:"date"` accepts an ISO `YYYY-MM-DD` value; date and text values are never persisted.
+- `input` with `inputType:"date"` accepts a real calendar date as `YYYY-MM-DD` (or `""` when cleared); an impossible date is rejected before rendering. Date and text values are never persisted.
 - `image`: `{type:"image",src:URL,alt:string,caption?:string}`.
 - `video`: `{type:"video",src:URL,poster?:URL,title?:string,caption?:string}` — a direct video file with native controls; no autoplay, no third-party embed frames.
 - `audio`: `{type:"audio",src:URL,title?:string,caption?:string}` — a direct audio file with native controls.
@@ -34,7 +34,7 @@ Entity: `{id: KEY, kind: string, title: string, subtitle?: string, description?:
 - `tooltip`: `{type:"tooltip",label:string,text:string}`. Short plain-string explanation; no children, content, HTML or expression-valued text.
 - `entity-ref`: `{type:"entity-ref",entityId:KEY}` — a card that already renders the entity's poster, `kind`, title, subtitle, description and a Details affordance. Do not wrap it in a `card`, and never place an `image` or a description `text` beside it: that data comes from the entity object.
 - `button`: `{type:"button",label:string,action:Action,variant?:"primary"|"secondary"|"ghost",disabled?:Expr}`.
-- `input`: `{type:"input",stateKey:KEY,label?:string,placeholder?:string,inputType?:"text"|"number"}`.
+- `input`: `{type:"input",stateKey:KEY,label?:string,placeholder?:string,inputType?:"text"|"number"|"date"}`.
 - `select`: `{type:"select",stateKey:KEY,options:{label:string,value:Scalar}[],label?:string}`.
 - `slider`: `{type:"slider",stateKey:KEY,min:number,max:number,label?:string,step?:number}`. Min must be less than max; step positive.
 - `switch`: `{type:"switch",stateKey:KEY,label?:string}`.

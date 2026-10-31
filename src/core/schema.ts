@@ -268,7 +268,27 @@ export type StateDomain =
   | { kind: "boolean" }
   | { kind: "number"; min?: number; max?: number; step?: number }
   | { kind: "option"; values: Scalar[] }
-  | { kind: "string"; ids?: string[] };
+  | { kind: "string"; ids?: string[] }
+  | { kind: "date" };
+
+const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+/** Exact `YYYY-MM-DD` calendar date, as a native date input produces. */
+export function isCalendarDate(value: string): boolean {
+  const match = DATE_PATTERN.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year < 1 || month < 1 || month > 12 || day < 1 || day > 31) return false;
+  // Date.UTC treats 0–99 as 1900+, so set the year explicitly.
+  const date = new Date(Date.UTC(2000, month - 1, day));
+  date.setUTCFullYear(year);
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
 
 function scalarKey(value: Scalar): string {
   return `${typeof value}:${JSON.stringify(value)}`;
@@ -285,6 +305,8 @@ export function sameStateDomain(
   if (left.kind !== right.kind) return false;
   switch (left.kind) {
     case "boolean":
+      return true;
+    case "date":
       return true;
     case "number": {
       const other = right as typeof left;
@@ -309,14 +331,16 @@ export function sameStateDomain(
   }
 }
 
-/** Value-level guard for actions. Schema validation cannot evaluate an
- * expression ahead of a click, so the renderer checks the result here. */
+/** Value-level guard for actions and for the document's own initial state. The
+ * evaluator refuses unbounded scalars, so every control domain repeats those
+ * bounds here; otherwise a value the controls accept would break a neighbour. */
 export function stateValueFits(domain: StateDomain, value: Scalar): boolean {
   switch (domain.kind) {
     case "boolean":
       return typeof value === "boolean";
     case "number": {
       if (typeof value !== "number" || !Number.isFinite(value)) return false;
+      if (Math.abs(value) > 1e12) return false;
       if (domain.min !== undefined && value < domain.min) return false;
       if (domain.max !== undefined && value > domain.max) return false;
       if (domain.step) {
@@ -332,8 +356,13 @@ export function stateValueFits(domain: StateDomain, value: Scalar): boolean {
     case "option":
       return domain.values.some((option) => option === value);
     case "string":
+      if (typeof value !== "string" || value.length > LIMITS.string)
+        return false;
+      return !domain.ids || domain.ids.includes(value);
+    case "date":
+      // An empty value is the cleared state of a native date field.
       return (
-        typeof value === "string" && (!domain.ids || domain.ids.includes(value))
+        typeof value === "string" && (value === "" || isCalendarDate(value))
       );
   }
 }
@@ -344,6 +373,7 @@ function domainOfControl(control: {
   min?: number;
   max?: number;
   step?: number;
+  inputType?: "text" | "number" | "date";
   ids?: string[];
 }): StateDomain {
   switch (control.kind) {
@@ -359,7 +389,9 @@ function domainOfControl(control: {
         step: control.step,
       };
     case "string":
-      return { kind: "string", ids: control.ids };
+      return control.inputType === "date"
+        ? { kind: "date" }
+        : { kind: "string", ids: control.ids };
   }
 }
 
@@ -376,9 +408,13 @@ export function collectStateDomains(spec: RichSpec): Map<string, StateDomain> {
     for (const node of nodes) {
       switch (node.type) {
         case "input":
-          add(node.stateKey, {
-            kind: node.inputType === "number" ? "number" : "string",
-          });
+          add(
+            node.stateKey,
+            domainOfControl({
+              kind: node.inputType === "number" ? "number" : "string",
+              inputType: node.inputType ?? "text",
+            }),
+          );
           break;
         case "checkbox":
         case "switch":
@@ -893,18 +929,6 @@ export function parseRichSpec(input: unknown): RichSpec {
     if (!previous && stateKeys.size >= LIMITS.stateKeys)
       fail("Too many state keys");
     stateKeys.set(name, kind);
-  }
-  function initialValue(value: Scalar, kind: string): boolean {
-    switch (kind) {
-      case "boolean":
-        return typeof value === "boolean";
-      case "number":
-        return typeof value === "number";
-      case "string":
-        return typeof value === "string";
-      default:
-        return true;
-    }
   }
   function node(value: unknown): void {
     if (++nodeCount > LIMITS.nodes) fail("Node budget exceeded");
@@ -1428,23 +1452,8 @@ export function parseRichSpec(input: unknown): RichSpec {
     const state = root.initialState as Record<string, Scalar>;
     for (const control of controls) {
       if (!Object.hasOwn(state, control.key)) continue;
-      const value = state[control.key]!;
-      let valid = initialValue(value, control.kind);
-      if (valid && control.kind === "option")
-        valid = Boolean(control.values?.some((option) => option === value));
-      if (valid && control.kind === "number" && typeof value === "number") {
-        valid =
-          value >= (control.min ?? -1e12) && value <= (control.max ?? 1e12);
-        if (valid && control.step) {
-          const steps = (value - (control.min ?? 0)) / control.step;
-          valid =
-            Number.isFinite(steps) &&
-            Math.abs(steps - Math.round(steps)) < 1e-7;
-        }
-      }
-      if (valid && control.ids)
-        valid = typeof value === "string" && control.ids.includes(value);
-      if (!valid) fail(`Invalid initial value for "${control.key}"`);
+      if (!stateValueFits(domainOfControl(control), state[control.key]!))
+        fail(`Invalid initial value for "${control.key}"`);
     }
   }
   for (const id of refs) if (!entityIds.has(id)) fail(`Unknown entity: ${id}`);

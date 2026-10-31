@@ -46,6 +46,7 @@ import {
 } from "./blocks/Metrics";
 import { SortableTable } from "./blocks/Table";
 import { Layers } from "./blocks/Layers";
+import { InputField } from "./blocks/Field";
 import { Audio, Video } from "./blocks/Media";
 import "./rich-ui.css";
 
@@ -162,6 +163,10 @@ function TabsBlock({
         id={`${uid}-panel`}
         aria-labelledby={`${uid}-${current}`}
         className="ru-tabpanel"
+        // A tab is a separate declarative subtree. Keying the panel stops a
+        // filter, popover or scroll position from moving to the next tab when
+        // both hold a node at the same position.
+        key={current}
       >
         {node.tabs.find((tab) => tab.id === current)?.children.map(render)}
       </div>
@@ -461,25 +466,12 @@ export function RichResponse({
           );
         case "input":
           return (
-            <label key={key} className="ru-field">
-              <span>{n.label}</span>
-              <input
-                aria-label={n.label ?? n.stateKey}
-                type={n.inputType ?? "text"}
-                value={String(state[n.stateKey] ?? "")}
-                placeholder={n.placeholder}
-                onChange={(event) =>
-                  update(
-                    n.stateKey,
-                    n.inputType === "number"
-                      ? event.target.value === ""
-                        ? 0
-                        : Number(event.target.value)
-                      : event.target.value,
-                  )
-                }
-              />
-            </label>
+            <InputField
+              key={key}
+              node={n}
+              value={state[n.stateKey]}
+              onCommit={(value) => update(n.stateKey, value)}
+            />
           );
         case "select":
           return (
@@ -556,12 +548,18 @@ export function RichResponse({
           return (
             <ChoiceBlock key={key} node={n} state={state} update={update} />
           );
-        case "conditional":
+        case "conditional": {
+          const branch = ev(n.when) ? "then" : "else";
           return (
-            <React.Fragment key={key}>
-              {(ev(n.when) ? n.children : (n.elseChildren ?? [])).map(render)}
+            // The two branches are separate subtrees, so a node at the same
+            // position must not inherit the other branch's local UI state.
+            <React.Fragment key={`${String(key)}:${branch}`}>
+              {(branch === "then" ? n.children : (n.elseChildren ?? [])).map(
+                render,
+              )}
             </React.Fragment>
           );
+        }
         case "tabs":
           return (
             <TabsBlock

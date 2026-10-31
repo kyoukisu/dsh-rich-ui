@@ -21,11 +21,11 @@ This is the implementation backlog, not a completed-feature claim.
 ## Rich reference vocabulary
 
 - Popover, tooltip, segmented controls, date input, checkbox/radio groups.
-- Sortable tables (implemented); filters and entity search remain open.
+- Sortable tables and local filters (implemented); entity search remains open.
 - Image lightbox, accessible carousels, media playback.
 - Sources/citations panel and document navigation with genuine provenance.
 - Writing artifact with explicit edit/copy/export behaviour.
-- Mermaid/ER graphs, scatter plots and a more capable chart engine.
+- Mermaid/ER graphs; scatter plots are implemented, a more capable chart engine remains open.
 - Maps through explicitly configured provider and attribution.
 
 ## Mini-app runtime

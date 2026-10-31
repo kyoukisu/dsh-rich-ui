@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { LIMITS, parseRichSpec, validateExpr } from "../../src/core/schema";
+import {
+  LIMITS,
+  isCalendarDate,
+  parseRichSpec,
+  stateValueFits,
+  validateExpr,
+} from "../../src/core/schema";
 import { getInitialState } from "../../src/core/evaluator";
 const spec = (node: unknown) => ({ version: 1, nodes: [node] });
 describe("safe schema", () => {
@@ -976,5 +982,69 @@ describe("state budget and control coherence", () => {
       },
     ])
       expect(() => parseRichSpec(document)).toThrow();
+  });
+});
+
+describe("control value domains", () => {
+  const dateDoc = (initialState: Record<string, unknown>) => ({
+    version: 1,
+    initialState,
+    nodes: [{ type: "input", stateKey: "day", inputType: "date" }],
+  });
+
+  it("accepts a real calendar date, a leap day and a cleared date", () => {
+    for (const value of ["2026-10-31", "2028-02-29", ""])
+      expect(parseRichSpec(dateDoc({ day: value })).initialState?.day).toBe(
+        value,
+      );
+    expect(isCalendarDate("2028-02-29")).toBe(true);
+  });
+
+  it("rejects an impossible or malformed date before rendering", () => {
+    for (const value of [
+      "not-a-date",
+      "2026-02-29",
+      "2026-13-01",
+      "2026-04-31",
+      "2026-1-05",
+      20261031,
+    ])
+      expect(() => parseRichSpec(dateDoc({ day: value }))).toThrow();
+  });
+
+  it("separates a date field from a text field on the same key", () => {
+    expect(() =>
+      parseRichSpec({
+        version: 1,
+        initialState: { shared: "2026-10-31" },
+        nodes: [
+          { type: "input", stateKey: "shared", inputType: "date" },
+          { type: "input", stateKey: "shared", inputType: "text" },
+        ],
+      }),
+    ).toThrow(/conflicting control constraints/);
+  });
+
+  it("rejects an initial string beyond the evaluator budget", () => {
+    expect(() =>
+      parseRichSpec({
+        version: 1,
+        initialState: { note: "x".repeat(LIMITS.string + 1) },
+        nodes: [{ type: "input", stateKey: "note" }],
+      }),
+    ).toThrow(/String budget exceeded/);
+  });
+
+  it("keeps typed values inside the same bounds as the evaluator", () => {
+    expect(stateValueFits({ kind: "date" }, "2026-10-31")).toBe(true);
+    expect(stateValueFits({ kind: "date" }, "2026-02-29")).toBe(false);
+    expect(stateValueFits({ kind: "number" }, 1e12)).toBe(true);
+    expect(stateValueFits({ kind: "number" }, 1e12 + 1)).toBe(false);
+    expect(stateValueFits({ kind: "string" }, "x".repeat(LIMITS.string))).toBe(
+      true,
+    );
+    expect(
+      stateValueFits({ kind: "string" }, "x".repeat(LIMITS.string + 1)),
+    ).toBe(false);
   });
 });

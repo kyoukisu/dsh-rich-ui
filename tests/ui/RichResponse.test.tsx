@@ -3,7 +3,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RichResponse } from "../../src/ui/RichResponse";
-import { type RichSpec } from "../../src/core/schema";
+import { LIMITS, type RichNode, type RichSpec } from "../../src/core/schema";
 
 let host: HTMLDivElement;
 let root: Root;
@@ -1143,5 +1143,206 @@ describe("inline entity chips", () => {
     act(() => root.render(<RichResponse spec={spec} />));
     click(host.querySelector("button.ru-inline-entity")!);
     expect(document.querySelector(".ru-detail h2")?.textContent).toBe("One");
+  });
+});
+
+describe("typed input bounds", () => {
+  const setValue = (input: HTMLInputElement, value: string) =>
+    act(() => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+  it("refuses a typed number the evaluator cannot use", () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { count: 5 },
+      nodes: [
+        {
+          type: "input",
+          stateKey: "count",
+          inputType: "number",
+          label: "Count",
+        },
+        {
+          type: "computed",
+          expr: { op: "mul", args: [{ state: "count" }, 2] },
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const input = host.querySelector<HTMLInputElement>('input[type="number"]')!;
+    setValue(input, "1000000000001");
+    expect(host.querySelector("output")?.textContent).toBe("10");
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    expect(host.querySelector(".ru-field-error")?.textContent).toContain(
+      "between",
+    );
+  });
+
+  it("recovers when the reader corrects an out-of-range number", () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { count: 5 },
+      nodes: [
+        {
+          type: "input",
+          stateKey: "count",
+          inputType: "number",
+          label: "Count",
+        },
+        { type: "computed", expr: { state: "count" } },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const input = host.querySelector<HTMLInputElement>('input[type="number"]')!;
+    setValue(input, "1e13");
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    setValue(input, "42");
+    expect(input.getAttribute("aria-invalid")).toBeNull();
+    expect(host.querySelector("output")?.textContent).toBe("42");
+  });
+
+  it("caps a long text value at the document string budget", () => {
+    const spec: RichSpec = {
+      version: 1,
+      nodes: [{ type: "input", stateKey: "note", label: "Note" }],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const input = host.querySelector<HTMLInputElement>('input[type="text"]')!;
+    setValue(input, "x".repeat(LIMITS.string + 100));
+    expect(input.value).toHaveLength(LIMITS.string);
+  });
+
+  it("rejects an impossible date written by a set action", async () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { day: "2026-10-31" },
+      nodes: [
+        { type: "input", stateKey: "day", inputType: "date", label: "Day" },
+        {
+          type: "button",
+          label: "Bad date",
+          action: { type: "set", key: "day", value: "2026-02-29" },
+        },
+        { type: "computed", expr: { state: "day" } },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    await act(async () => {
+      button("Bad date").click();
+    });
+    expect(host.querySelector('[role="status"]')?.textContent).toContain(
+      "Action failed",
+    );
+    expect(host.querySelector("output")?.textContent).toBe("2026-10-31");
+  });
+
+  it("shows a valid date and never invents a cleared one", () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { day: "2026-10-31" },
+      nodes: [
+        { type: "input", stateKey: "day", inputType: "date", label: "Day" },
+        { type: "computed", expr: { state: "day" } },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    expect(
+      host.querySelector<HTMLInputElement>('input[type="date"]')!.value,
+    ).toBe("2026-10-31");
+    expect(host.querySelector("output")?.textContent).toBe("2026-10-31");
+  });
+});
+
+describe("local state isolation", () => {
+  const filtered = (rows: string[]): RichNode => ({
+    type: "table",
+    filterable: true,
+    columns: [{ key: "k", label: "Name" }],
+    rows: rows.map((k) => ({ k })),
+  });
+  const sorted = (name: string): RichNode => ({
+    type: "table",
+    sortable: true,
+    columns: [{ key: "k", label: "Name" }],
+    rows: [{ k: name }],
+  });
+  const rows = () =>
+    Array.from(host.querySelectorAll("tbody tr td")).map(
+      (cell) => cell.textContent,
+    );
+
+  it("does not carry a table filter into another tab", () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { view: "a" },
+      nodes: [
+        {
+          type: "tabs",
+          stateKey: "view",
+          tabs: [
+            {
+              id: "a",
+              label: "First",
+              children: [filtered(["Alpha", "Beta"])],
+            },
+            {
+              id: "b",
+              label: "Second",
+              children: [filtered(["Gamma", "Delta"])],
+            },
+          ],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const filter = () =>
+      host.querySelector<HTMLInputElement>('input[type="search"]')!;
+    act(() => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!.call(filter(), "Alpha");
+      filter().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(rows()).toEqual(["Alpha"]);
+    click(
+      Array.from(host.querySelectorAll('[role="tab"]')).find((tab) =>
+        tab.textContent?.includes("Second"),
+      )!,
+    );
+    expect(filter().value).toBe("");
+    expect(rows()).toEqual(["Gamma", "Delta"]);
+  });
+
+  it("forgets a sort when a conditional switches branches", () => {
+    const spec: RichSpec = {
+      version: 1,
+      initialState: { alt: false },
+      nodes: [
+        { type: "switch", stateKey: "alt", label: "Alternate" },
+        {
+          type: "conditional",
+          when: { state: "alt" },
+          children: [sorted("First")],
+          elseChildren: [sorted("Second")],
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={spec} />));
+    const header = () => host.querySelector("th")!;
+    expect(header().getAttribute("aria-sort")).toBe("none");
+    click(header().querySelector("button")!);
+    expect(header().getAttribute("aria-sort")).toBe("ascending");
+    const toggle = host.querySelector<HTMLInputElement>(
+      'input[role="switch"]',
+    )!;
+    click(toggle);
+    expect(header().getAttribute("aria-sort")).toBe("none");
+    expect(rows()).toEqual(["First"]);
   });
 });

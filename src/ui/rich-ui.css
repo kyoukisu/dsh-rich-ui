@@ -578,6 +578,19 @@ body[data-ds-dark-theme] .rich-ui {
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ru-accent) 18%, transparent);
 }
+.ru-field input[aria-invalid="true"] {
+  border-color: var(--ru-danger);
+  box-shadow: none;
+}
+.ru-field input[aria-invalid="true"]:focus {
+  border-color: var(--ru-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ru-danger) 20%, transparent);
+}
+.ru-field-error {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ru-danger);
+}
 .ru-slider > span {
   display: flex;
   justify-content: space-between;

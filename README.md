@@ -59,7 +59,7 @@ The renderer is a real React tree behind a strict schema. There is no generated 
 <p align="center">
   <img alt="The same dashboard on a 390 pixel phone: two-column KPI cards, all six chart month labels and a four-column table that fits" src="docs/images/dashboard-mobile.png" width="300">
   <br>
-  <em>390 px: cards stack, the chart gets its own coordinate system, the table still fits.</em>
+  <em>390 px: KPI cards in two columns, every chart label, and a table that still fits.</em>
 </p>
 
 ## Live demo
@@ -207,7 +207,7 @@ npm ci
 npm run dev            # lab at http://127.0.0.1:4173, HMR, no Harness needed
 npm run build          # typecheck + lab build
 npm run build:plugin   # the two real bundle artifacts
-npm test               # 169 unit, schema and DOM tests
+npm test               # 197 unit, schema and DOM tests
 npm run test:browser   # Playwright desktop + mobile (goldens never auto-update)
 ```
 
