@@ -152,10 +152,12 @@
     var(--dsw-alias-state-business-primary, #1f7a63) 12%,
     var(--dsw-alias-bg-layer-1, #ffffff)
   );
-  --ru-success: var(--dsw-alias-state-business-primary, #177a4f);
+  /* Success is its own semantic token. The host business accent is frequently
+     blue, and reusing it painted green "done" states as links. */
+  --ru-success: var(--dsw-alias-state-success-primary, #177a4f);
   --ru-success-soft: color-mix(
     in srgb,
-    var(--dsw-alias-state-business-primary, #177a4f) 12%,
+    var(--dsw-alias-state-success-primary, #177a4f) 12%,
     var(--dsw-alias-bg-layer-1, #ffffff)
   );
   --ru-warning: var(--dsw-alias-state-warn-primary, #92600f);
@@ -234,10 +236,10 @@ body[data-ds-dark-theme] .rich-ui {
     var(--dsw-alias-state-business-primary, #6fc5a6) 18%,
     var(--dsw-alias-bg-layer-1, #212121)
   );
-  --ru-success: var(--dsw-alias-state-business-primary, #74c79f);
+  --ru-success: var(--dsw-alias-state-success-primary, #74c79f);
   --ru-success-soft: color-mix(
     in srgb,
-    var(--dsw-alias-state-business-primary, #74c79f) 18%,
+    var(--dsw-alias-state-success-primary, #74c79f) 18%,
     var(--dsw-alias-bg-layer-1, #212121)
   );
   --ru-warning: var(--dsw-alias-state-warn-primary, #e0b062);

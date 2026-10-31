@@ -57,7 +57,7 @@ The renderer is a real React tree behind a strict schema. There is no generated 
 </p>
 
 <p align="center">
-  <img alt="The same dashboard on a 390 pixel phone: stacked KPI cards, a readable chart and a four-column table that fits" src="docs/images/dashboard-mobile.png" width="300">
+  <img alt="The same dashboard on a 390 pixel phone: two-column KPI cards, all six chart month labels and a four-column table that fits" src="docs/images/dashboard-mobile.png" width="300">
   <br>
   <em>390 px: cards stack, the chart gets its own coordinate system, the table still fits.</em>
 </p>

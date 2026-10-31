@@ -393,6 +393,38 @@ test("dark host tokens beat the light bridge inside a rich root", async ({
   expect(tone.background).not.toBe("rgba(0, 0, 0, 0)");
 });
 
+test("success states use the host success token, not its blue business accent", async ({
+  page,
+}) => {
+  await page.goto("/?demo=dashboard&theme=light");
+  const color = await page.evaluate(() => {
+    document.body.style.setProperty(
+      "--dsw-alias-state-business-primary",
+      "#4176e6",
+    );
+    document.body.style.setProperty(
+      "--dsw-alias-state-success-primary",
+      "#22c55e",
+    );
+    const root = document.createElement("div");
+    root.setAttribute("data-rich-ui-root", "");
+    const ui = document.createElement("div");
+    ui.className = "rich-ui";
+    const stat = document.createElement("div");
+    stat.className = "ru-stat";
+    stat.dataset.tone = "success";
+    const value = document.createElement("div");
+    value.className = "ru-stat-value";
+    value.textContent = "98.7%";
+    stat.append(value);
+    ui.append(stat);
+    root.append(ui);
+    document.body.append(root);
+    return getComputedStyle(value).color;
+  });
+  expect(color).toBe("rgb(34, 197, 94)");
+});
+
 test("mobile tables keep the last column readable and covers fill their card", async ({
   page,
 }) => {
