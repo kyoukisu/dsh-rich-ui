@@ -18,3 +18,14 @@ Support separate **non-modal entity drawer** and **modal/lightbox** primitives; 
 ## Evidence limitations
 
 The shared conversation's assistant prose claims capabilities, but is not an authoritative component spec. Runtime controls and observed interaction are stronger evidence. Anonymous session failure does not imply entity panels always fail in logged-in ChatGPT.
+
+## 2026-10-31 update: successful entity panel
+
+The same shared conversation (source B) loaded its entity panel anonymously at 2048 × 1088, so the earlier error state was transient rather than a permanent limitation. Observed in a fresh capture:
+
+- A non-modal panel occupies the right edge, roughly 466 px wide; the conversation column reflows and there is no scrim.
+- The top gallery shows two portrait images side by side, edge to edge, with pagination dots at the lower right and a close control overlaid at the upper right.
+- The title and italic subtitle form one block, followed by dense prose, a cast section with three square photo thumbnails and truncated labels, and further prose sections.
+- The panel is visually part of the app shell: a thin left border, no floating card shadow, and no rounded outer container.
+
+This is one observed state, not a full component specification. Mobile geometry, dark theme, keyboard focus order and the gallery's full swipe behaviour were not captured. The current renderer still differs in two visible ways: its detail surface is modal on narrow screens, and its gallery is a single hero image with a thumbnail strip rather than a two-up row.
