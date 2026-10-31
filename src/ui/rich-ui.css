@@ -107,8 +107,10 @@
 
 /* Inside the harness: adopt its palette and metrics so a reply does not read as
    a foreign widget. Component language stays ours. */
-[data-rich-ui-root] .rich-ui:not([data-theme="dark"]),
-.rich-ui[data-rich-ui-root]:not([data-theme="dark"]) {
+/* Low-specificity bridge: a dark host rule must win, otherwise the hard-coded
+   light info tokens survive on a dark page and alerts lose their contrast. */
+:where([data-rich-ui-root]) .rich-ui:not([data-theme="dark"]),
+:where([data-rich-ui-root]).rich-ui:not([data-theme="dark"]) {
   --ru-bg: var(--dsw-alias-bg-layer-1, #ffffff);
   --ru-surface: color-mix(
     in srgb,
@@ -1098,6 +1100,7 @@ body[data-ds-dark-theme] .rich-ui {
      height limit the header scrolls away with the page. */
   max-height: min(70vh, 560px);
   overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--ru-border);
   border-radius: 12px;
   background: var(--ru-bg);
@@ -1675,6 +1678,12 @@ body[data-ds-dark-theme] .rich-ui {
   min-height: 120px;
   max-height: 160px;
 }
+.ru-poster-frame > .ru-image-fallback.ru-poster {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+}
 .ru-image-fallback.ru-poster-thumb {
   width: 52px;
   height: 74px;
@@ -1767,7 +1776,10 @@ body[data-ds-dark-theme] .rich-ui {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .ru-meta-item + .ru-meta-item::before {
   content: "·";
@@ -1870,12 +1882,24 @@ body[data-ds-dark-theme] .rich-ui {
   transform: translateY(-2px);
   box-shadow: var(--ru-shadow);
 }
-.ru-poster {
+/* The frame owns the cap. Putting max-height on the replaced element itself
+   lets the browser shrink its used width to keep the 2:3 ratio, which leaves a
+   blank strip beside the cover on some mobile engines. */
+.ru-poster-frame {
+  display: block;
   flex-shrink: 0;
   width: 100%;
-  aspect-ratio: 2 / 3;
   max-height: 300px;
-  height: auto;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: var(--ru-surface);
+}
+.ru-poster {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  max-height: none;
   object-fit: cover;
   background: var(--ru-surface);
 }
@@ -2262,8 +2286,16 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   .ru-th-button svg {
     display: none;
   }
+  /* A permanent fade hides the last column even after the reader scrolls to
+     the end. Let the page scroll instead of nesting a vertical scroller, and
+     let header labels wrap so four short columns fit a phone without a swipe. */
   .ru-table-wrap {
-    mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent);
+    max-height: none;
+  }
+  .rich-ui th {
+    position: static;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .ru-table-filter {
     max-width: none;
@@ -2460,7 +2492,9 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   line-height: 1.55;
   text-decoration: none;
   vertical-align: baseline;
-  white-space: nowrap;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 button.ru-inline-entity {
   cursor: pointer;

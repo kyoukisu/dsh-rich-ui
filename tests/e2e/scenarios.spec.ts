@@ -364,3 +364,99 @@ test("popover controls follow the page theme, not the OS", async ({ page }) => {
       .evaluate((el) => getComputedStyle(el).colorScheme),
   ).toBe("dark");
 });
+
+test("dark host tokens beat the light bridge inside a rich root", async ({
+  page,
+}) => {
+  await page.goto("/?demo=dashboard&theme=light");
+  const tone = await page.evaluate(() => {
+    document.body.setAttribute("data-ds-dark-theme", "");
+    const root = document.createElement("div");
+    root.setAttribute("data-rich-ui-root", "");
+    const ui = document.createElement("div");
+    ui.className = "rich-ui";
+    const callout = document.createElement("div");
+    callout.className = "ru-callout ru-info";
+    callout.textContent = "Info";
+    ui.append(callout);
+    root.append(ui);
+    document.body.append(root);
+    const style = getComputedStyle(callout);
+    return {
+      info: style.getPropertyValue("--ru-info").trim(),
+      color: style.color,
+      background: style.backgroundColor,
+    };
+  });
+  expect(tone.info).toBe("#85b6ee");
+  expect(tone.color).toBe("rgb(133, 182, 238)");
+  expect(tone.background).not.toBe("rgba(0, 0, 0, 0)");
+});
+
+test("mobile tables keep the last column readable and covers fill their card", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page.goto("/?demo=dashboard&theme=dark");
+  const table = page.locator(".ru-table-wrap").first();
+  expect(await table.evaluate((el) => getComputedStyle(el).maskImage)).toBe(
+    "none",
+  );
+  expect(await table.evaluate((el) => getComputedStyle(el).maxHeight)).toBe(
+    "none",
+  );
+  expect(
+    await table
+      .locator("th")
+      .first()
+      .evaluate((el) => getComputedStyle(el).position),
+  ).toBe("static");
+
+  await page.goto("/?demo=films&theme=dark");
+  const frame = page.locator(".ru-poster-frame").first();
+  await expect(frame).toBeVisible();
+  const ratio = await frame.evaluate((el) => {
+    const image = el.querySelector("img");
+    if (!image) return 0;
+    return (
+      image.getBoundingClientRect().width / el.getBoundingClientRect().width
+    );
+  });
+  expect(ratio).toBeGreaterThan(0.95);
+});
+
+test("carousel arrows respect reduced motion and move one card at a time", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/?demo=films&theme=dark");
+  await page.evaluate(() => {
+    type Scrollable = { scrollBy(options?: ScrollToOptions): void };
+    const proto = Element.prototype as unknown as Scrollable;
+    const original = proto.scrollBy;
+    (window as unknown as { __scrollCalls: ScrollToOptions[] }).__scrollCalls =
+      [];
+    proto.scrollBy = function (options?: ScrollToOptions) {
+      (
+        window as unknown as { __scrollCalls: ScrollToOptions[] }
+      ).__scrollCalls.push(options ?? {});
+      original.call(this, options);
+    };
+  });
+  await page.getByRole("button", { name: "Next cards" }).click();
+  await page.waitForTimeout(120);
+  const result = await page.evaluate(() => {
+    const track = document.querySelector(".ru-carousel-track")!;
+    const card = track.firstElementChild!.getBoundingClientRect().width;
+    return {
+      calls: (window as unknown as { __scrollCalls: ScrollToOptions[] })
+        .__scrollCalls,
+      left: track.scrollLeft,
+      card,
+    };
+  });
+  expect(result.calls.at(-1)?.behavior).toBe("auto");
+  expect(result.left).toBeGreaterThan(result.card * 0.8);
+  expect(result.left).toBeLessThan(result.card * 1.4);
+});

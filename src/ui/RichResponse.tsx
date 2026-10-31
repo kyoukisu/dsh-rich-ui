@@ -613,7 +613,9 @@ export function RichResponse({
               aria-label={`Details: ${entity.title}`}
             >
               {entity.image && (
-                <Picture src={entity.image} alt="" className="ru-poster" />
+                <span className="ru-poster-frame">
+                  <Picture src={entity.image} alt="" className="ru-poster" />
+                </span>
               )}
               <span className="ru-entity-meta">
                 <span className="ru-eyebrow">{entity.kind}</span>
@@ -729,25 +731,31 @@ function EntityRows({
 
 function Carousel({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  const move = (direction: 1 | -1) => {
+    const track = ref.current;
+    if (!track) return;
+    const card = track.firstElementChild as HTMLElement | null;
+    const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0;
+    const distance = card ? card.getBoundingClientRect().width + gap : 330;
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    track.scrollBy({
+      left: direction * distance,
+      behavior: reduced ? "auto" : "smooth",
+    });
+  };
   return (
     <div className="ru-carousel">
       <div className="ru-carousel-controls">
         <button
           type="button"
           aria-label="Previous cards"
-          onClick={() =>
-            ref.current?.scrollBy({ left: -330, behavior: "smooth" })
-          }
+          onClick={() => move(-1)}
         >
           <ChevronLeft size={17} />
         </button>
-        <button
-          type="button"
-          aria-label="Next cards"
-          onClick={() =>
-            ref.current?.scrollBy({ left: 330, behavior: "smooth" })
-          }
-        >
+        <button type="button" aria-label="Next cards" onClick={() => move(1)}>
           <ChevronRight size={17} />
         </button>
       </div>

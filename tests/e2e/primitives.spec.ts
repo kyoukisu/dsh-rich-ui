@@ -43,9 +43,7 @@ test.describe("primitives browser QA", () => {
     const help = page.getByRole("button", { name: "Primitives help" });
     await help.focus();
     const tooltip = page.getByRole("tooltip");
-    await expect(tooltip).toHaveText(
-      "The hint appears on hover and on focus",
-    );
+    await expect(tooltip).toHaveText("The hint appears on hover and on focus");
     await expect(help).toHaveAccessibleDescription(
       "The hint appears on hover and on focus",
     );
@@ -146,4 +144,42 @@ test.describe("primitives browser QA", () => {
       await expect(trigger).toBeFocused();
     }
   });
+});
+
+test("primitives tooltip and popover stay inside a narrow edge viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 480 });
+  await page.goto("/?demo=primitives");
+  const help = page.getByRole("button", { name: "Primitives help" });
+  await help.evaluate((element) => {
+    const anchor = element.closest(".ru-primitive-tooltip") as HTMLElement;
+    anchor.style.position = "fixed";
+    anchor.style.right = "0px";
+    anchor.style.top = "20px";
+  });
+  await help.focus();
+  const tooltip = page.getByRole("tooltip");
+  await expect(tooltip).toBeVisible();
+  const tip = await tooltip.boundingBox();
+  expect(tip!.x).toBeGreaterThanOrEqual(0);
+  expect(tip!.y).toBeGreaterThanOrEqual(0);
+  expect(tip!.x + tip!.width).toBeLessThanOrEqual(321);
+  expect(tip!.y + tip!.height).toBeLessThanOrEqual(481);
+
+  const trigger = page.getByRole("button", { name: "Open settings" });
+  await trigger.evaluate((element) => {
+    const anchor = element.closest(".ru-primitive-popover") as HTMLElement;
+    anchor.style.position = "fixed";
+    anchor.style.right = "0px";
+    anchor.style.bottom = "0px";
+  });
+  await trigger.click();
+  const panel = page.getByRole("region", { name: "Open settings" });
+  await expect(panel).toBeVisible();
+  const box = await panel.boundingBox();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(321);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(481);
 });

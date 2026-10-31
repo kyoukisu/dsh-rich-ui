@@ -1,6 +1,7 @@
 import React, {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactElement,
@@ -10,6 +11,66 @@ import "./primitives.css";
 
 const focusable =
   'button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+/** Position against the visible viewport, including the area above a mobile keyboard. */
+function useViewportPlacement(
+  open: boolean,
+  anchor: React.RefObject<HTMLElement>,
+  panel: React.RefObject<HTMLElement>,
+  preferAbove = false,
+) {
+  useLayoutEffect(() => {
+    const element = panel.current;
+    const target = anchor.current;
+    if (!open || !element || !target) return;
+    const viewport = window.visualViewport;
+    const place = () => {
+      element.style.transform = "";
+      element.style.maxHeight = "";
+      const bounds = target.getBoundingClientRect();
+      const margin = 8;
+      const left = (viewport?.offsetLeft ?? 0) + margin;
+      const top = (viewport?.offsetTop ?? 0) + margin;
+      const right = left + (viewport?.width ?? window.innerWidth) - margin * 2;
+      const bottom =
+        top + (viewport?.height ?? window.innerHeight) - margin * 2;
+      const rect = element.getBoundingClientRect();
+      const gap = preferAbove ? 0 : 6;
+      const above = Math.max(0, bounds.top - top - gap);
+      const below = Math.max(0, bottom - bounds.bottom - gap);
+      const useAbove = preferAbove
+        ? above >= rect.height || above > below
+        : below < rect.height && above > below;
+      element.style.maxHeight = `${Math.min(rect.height, useAbove ? above : below)}px`;
+      const sized = element.getBoundingClientRect();
+      // For a tooltip the stylesheet already subtracts half its width, so
+      // sized.left is its current visual edge. Clamp that edge and translate
+      // by the difference. Popover panels have no base transform.
+      const x = Math.max(left, Math.min(sized.left, right - sized.width));
+      const y = Math.max(
+        top,
+        useAbove ? bounds.top - gap - sized.height : bounds.bottom + gap,
+      );
+      element.style.transform = `${preferAbove ? "translateX(-50%) " : ""}translate(${x - sized.left}px, ${y - sized.top}px)`;
+    };
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    viewport?.addEventListener("resize", place);
+    viewport?.addEventListener("scroll", place);
+    const observer =
+      typeof ResizeObserver === "function" ? new ResizeObserver(place) : null;
+    observer?.observe(element);
+    observer?.observe(target);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+      viewport?.removeEventListener("resize", place);
+      viewport?.removeEventListener("scroll", place);
+      observer?.disconnect();
+    };
+  }, [open, anchor, panel, preferAbove]);
+}
 
 export interface PopoverProps {
   label: string;
@@ -22,43 +83,7 @@ export function Popover({ label, children }: PopoverProps) {
   const container = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
-  /** Keep the panel inside the viewport: a right-edge trigger must flip or
-   * shift instead of widening the document. */
-  useEffect(() => {
-    if (!open) return;
-    const element = panel.current;
-    const anchor = trigger.current;
-    if (!element || !anchor) return;
-    const place = () => {
-      element.style.insetBlockStart = "";
-      element.style.insetBlockEnd = "";
-      element.style.transform = "";
-      const panelRect = element.getBoundingClientRect();
-      const anchorRect = anchor.getBoundingClientRect();
-      const margin = 8;
-      let shift = 0;
-      if (panelRect.right > window.innerWidth - margin)
-        shift = window.innerWidth - margin - panelRect.right;
-      if (panelRect.left + shift < margin) shift = margin - panelRect.left;
-      if (shift) element.style.transform = `translateX(${shift}px)`;
-      if (
-        panelRect.bottom > window.innerHeight - margin &&
-        anchorRect.top - panelRect.height - 6 >= margin
-      ) {
-        element.style.insetBlockStart = "auto";
-        element.style.insetBlockEnd = "calc(100% + 0.4rem)";
-      }
-    };
-    place();
-    window.addEventListener("resize", place);
-    const observer =
-      typeof ResizeObserver === "function" ? new ResizeObserver(place) : null;
-    observer?.observe(element);
-    return () => {
-      window.removeEventListener("resize", place);
-      observer?.disconnect();
-    };
-  }, [open]);
+  useViewportPlacement(open, trigger, panel);
   useEffect(() => {
     if (!open) return;
     (
@@ -138,6 +163,9 @@ export function Tooltip({ text, children }: TooltipProps) {
   const [focused, setFocused] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const open = (hovered || focused) && !dismissed;
+  const anchor = useRef<HTMLSpanElement>(null);
+  const panel = useRef<HTMLSpanElement>(null);
+  useViewportPlacement(open, anchor, panel, true);
   useEffect(() => {
     if (!open) return;
     const key = (event: KeyboardEvent) => {
@@ -156,6 +184,7 @@ export function Tooltip({ text, children }: TooltipProps) {
   return (
     <span
       className="ru-primitive-tooltip"
+      ref={anchor}
       onMouseEnter={() => {
         setHovered(true);
         if (!focused) setDismissed(false);
@@ -177,7 +206,12 @@ export function Tooltip({ text, children }: TooltipProps) {
     >
       {React.cloneElement(children, { "aria-describedby": describedBy })}
       {open && (
-        <span className="ru-primitive-tooltip-text" role="tooltip" id={id}>
+        <span
+          className="ru-primitive-tooltip-text"
+          role="tooltip"
+          id={id}
+          ref={panel}
+        >
           {text}
         </span>
       )}
