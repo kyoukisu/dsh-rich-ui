@@ -1,5 +1,11 @@
 import React, { useEffect, useId, useState } from "react";
-import { ArrowUpRight, Check, ChevronRight, ExternalLink } from "lucide-react";
+import {
+  ArrowUpRight,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+} from "lucide-react";
 import type { Entity } from "../core/schema";
 import { formatNumber } from "./blocks/Metrics";
 import { Picture } from "./Picture";
@@ -60,7 +66,7 @@ export function EntityDetails({
               />
             ))}
           </div>
-          {pages > 1 && (
+          {pages > 1 && pages <= 5 && (
             <div className="ru-detail-dots">
               {Array.from({ length: pages }, (_, index) => (
                 <button
@@ -71,6 +77,31 @@ export function EntityDetails({
                   onClick={() => setPage(index)}
                 />
               ))}
+            </div>
+          )}
+          {pages > 5 && (
+            <div className="ru-detail-pager">
+              <button
+                type="button"
+                aria-label="Previous photos"
+                disabled={page === 0}
+                onClick={() => setPage((current) => Math.max(0, current - 1))}
+              >
+                <ChevronLeft size={15} aria-hidden="true" />
+              </button>
+              <output aria-live="polite">
+                {page + 1} / {pages}
+              </output>
+              <button
+                type="button"
+                aria-label="Next photos"
+                disabled={page === pages - 1}
+                onClick={() =>
+                  setPage((current) => Math.min(pages - 1, current + 1))
+                }
+              >
+                <ChevronRight size={15} aria-hidden="true" />
+              </button>
             </div>
           )}
         </div>
@@ -125,7 +156,9 @@ export function EntityDetails({
                   )}
                   <span className="ru-cast-copy">
                     <strong title={member.name}>{member.name}</strong>
-                    {member.role && <small title={member.role}>{member.role}</small>}
+                    {member.role && (
+                      <small title={member.role}>{member.role}</small>
+                    )}
                   </span>
                 </li>
               ))}

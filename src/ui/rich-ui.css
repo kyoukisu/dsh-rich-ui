@@ -2080,6 +2080,44 @@ body[data-ds-dark-theme] .ru-drawer > .ru-detail {
   background: var(--ru-ink);
   opacity: 1;
 }
+/* Long galleries: a dot per page would overflow the panel, so swap the strip
+   for arrows and a counter. Two photos still share one page. */
+.ru-detail-pager {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ru-bg) 72%, transparent);
+  backdrop-filter: blur(8px);
+}
+.ru-detail-pager button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ru-ink);
+  display: grid;
+  place-items: center;
+}
+.ru-detail-pager button:hover:not(:disabled) {
+  background: var(--ru-surface-2);
+}
+.ru-detail-pager button:disabled {
+  opacity: 0.35;
+}
+.ru-detail-pager output {
+  min-width: 38px;
+  text-align: center;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ru-ink);
+}
 .ru-detail-body {
   padding: 22px 24px 32px;
 }

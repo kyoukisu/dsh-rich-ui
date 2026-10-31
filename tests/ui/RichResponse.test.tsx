@@ -1146,6 +1146,46 @@ describe("entity detail gallery", () => {
     ).toBe(dots[1]);
   });
 
+  it("pages a long gallery with arrows and a counter, not endless dots", () => {
+    const many: RichSpec = {
+      version: 1,
+      nodes: [{ type: "entity-ref", entityId: "many" }],
+      entities: [
+        {
+          id: "many",
+          kind: "Film",
+          title: "Many",
+          images: Array.from(
+            { length: 12 },
+            (_, index) => `https://example.org/${index + 1}.jpg`,
+          ),
+        },
+      ],
+    };
+    act(() => root.render(<RichResponse spec={many} />));
+    click(document.querySelector('[aria-label="Details: Many"]')!);
+    expect(document.querySelectorAll(".ru-detail-dots")).toHaveLength(0);
+    const counter = () => document.querySelector(".ru-detail-pager output");
+    const photos = () =>
+      document.querySelectorAll(".ru-detail-page .ru-detail-photo");
+    expect(counter()?.textContent).toBe("1 / 6");
+    expect(photos()[0]!.getAttribute("alt")).toBe("Many — image 1");
+    click(document.querySelector('[aria-label="Next photos"]')!);
+    click(document.querySelector('[aria-label="Next photos"]')!);
+    expect(counter()?.textContent).toBe("3 / 6");
+    expect(photos()[0]!.getAttribute("alt")).toBe("Many — image 5");
+    click(document.querySelector('[aria-label="Previous photos"]')!);
+    expect(counter()?.textContent).toBe("2 / 6");
+    for (let i = 0; i < 4; i++)
+      click(document.querySelector('[aria-label="Next photos"]')!);
+    expect(counter()?.textContent).toBe("6 / 6");
+    expect(
+      document
+        .querySelector('[aria-label="Next photos"]')!
+        .hasAttribute("disabled"),
+    ).toBe(true);
+  });
+
   it("keeps the single hero when there is one photo", () => {
     const one: RichSpec = {
       version: 1,
